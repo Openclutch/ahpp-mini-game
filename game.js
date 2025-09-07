@@ -71,6 +71,7 @@
       p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, pet:state.p1.pet, pets:state.p1.pets },
       p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets },
     }));
+    console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
   }
   // Autosave + on close
@@ -98,6 +99,18 @@
   const buyCarrotP2 = document.getElementById('buyCarrotP2');
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
+
+  // Basic debug logging so we can inspect whether key elements were found
+  console.log('DOM elements loaded', {
+    p1moneyEl,
+    p2moneyEl,
+    p1hud,
+    p2hud,
+    buyCandyP1,
+    buyCandyP2,
+    buyCarrotP1,
+    buyCarrotP2,
+  });
 
   function log(msg) {
     const d = document.createElement('div');
@@ -168,7 +181,9 @@
 
   // Touch controls
   const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  console.log('Touch support detected:', isTouch);
   if (isTouch) {
+    console.log('Touch mode enabled – pointer interactions will trigger player actions');
     cv.addEventListener('pointerdown', e => {
       const rect = cv.getBoundingClientRect();
       const x = (e.clientX - rect.left) * cv.width / rect.width;
@@ -181,6 +196,8 @@
       playerAction(p, plot.owner);
       p.x = oldX; p.y = oldY;
     });
+  } else {
+    console.log('Keyboard mode enabled – using WASD/Arrow keys for movement');
   }
 
   function movePlayer(p, up, left, down, right) {
@@ -211,6 +228,12 @@
   function playerByName(name){ return name==='P1' ? state.p1 : state.p2; }
 
   function playerAction(p, who) {
+    console.log('playerAction triggered', {
+      who,
+      position: { x: p.x, y: p.y },
+      bag: { ...p.bag },
+      seeds: { ...p.invSeeds },
+    });
     // Vendors
     if (inside(p.x,p.y,p.w,p.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
       state.shopOpen = !state.shopOpen; state.sellOpen = false; log(`${who} toggled Seed Shop.`); return;
@@ -437,6 +460,15 @@
     p1hud.textContent = `P1 Seeds: 🍬${state.p1.invSeeds.candy} 🥕${state.p1.invSeeds.carrot} | Bag: 🍬${state.p1.bag.candy||0} 🥕${state.p1.bag.carrot||0} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
     p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
 
+    // Log HUD state roughly once per second to help debug bag/seed values
+    if (!draw._lastLog || Date.now() - draw._lastLog > 1000) {
+      console.log('HUD state', {
+        p1: { money: state.p1.money, bag: { ...state.p1.bag }, seeds: { ...state.p1.invSeeds } },
+        p2: { money: state.p2.money, bag: { ...state.p2.bag }, seeds: { ...state.p2.invSeeds } },
+      });
+      draw._lastLog = Date.now();
+    }
+
     // Panels visibility
     shopPanel.style.display = state.shopOpen? 'block':'none';
     sellPanel.style.display = state.sellOpen? 'block':'none';
@@ -510,7 +542,12 @@
   }
 
   // ---------- MAIN LOOP ----------
+  let firstTick = true;
   function tick() {
+    if (firstTick) {
+      console.log('Game loop started');
+      firstTick = false;
+    }
     if (!isTouch) {
       movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
       movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
@@ -551,5 +588,9 @@
   } else {
     log('Save loaded from previous session.');
   }
+  console.log('Initialization complete', {
+    startingP1: state.p1,
+    startingP2: state.p2,
+  });
   tick();
 })();

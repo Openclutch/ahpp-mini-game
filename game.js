@@ -40,7 +40,7 @@
     plots: [],
     p1: { x: 220, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
     p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
-    shopOpen:false, sellOpen:false,
+    shopOpen:null, sellOpen:false,
     activeEvent:null, eventUntil:0,
     // Center challenge
     challenge:null,
@@ -62,7 +62,7 @@
       state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
       Object.assign(state.p1, saved.p1 || {});
       Object.assign(state.p2, saved.p2 || {});
-      state.shopOpen = false;
+      state.shopOpen = null;
       state.sellOpen = false;
 
       if (state.p1.money == null) state.p1.money = 10;
@@ -138,7 +138,7 @@
   btnLoad.onclick = () => {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if (!saved) { log('No browser save found.'); return; }
-    Object.assign(state, saved, { shopOpen:false, sellOpen:false });
+    Object.assign(state, saved, { shopOpen:null, sellOpen:false });
     log('Save loaded from browser.');
   };
   btnExport.onclick = () => {
@@ -150,7 +150,7 @@
   btnImport.onclick = () => fileImport.click();
   fileImport.onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
-    try { const txt = await f.text(); const data = JSON.parse(txt); localStorage.setItem(SAVE_KEY, JSON.stringify(data)); Object.assign(state, data, { shopOpen:false, sellOpen:false }); log('Imported save file.'); }
+    try { const txt = await f.text(); const data = JSON.parse(txt); localStorage.setItem(SAVE_KEY, JSON.stringify(data)); Object.assign(state, data, { shopOpen:null, sellOpen:false }); log('Imported save file.'); }
     catch { log('Failed to import save.'); }
   };
 
@@ -250,12 +250,12 @@
     });
     // Vendors
     if (inside(p.x,p.y,p.w,p.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      state.shopOpen = !state.shopOpen; state.sellOpen = false; log(`${who} toggled Seed Shop.`); return;
+      state.shopOpen = state.shopOpen===who ? null : who; state.sellOpen = false; log(`${who} toggled Seed Shop.`); return;
     }
     if (inside(p.x,p.y,p.w,p.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
       const sold = sellAll(p);
-      if (sold>0) { log(`${who} sold harvest for ¢${sold}.`); state.sellOpen = true; state.shopOpen=false; }
-      else { log(`${who} has nothing to sell.`); state.sellOpen=true; state.shopOpen=false; }
+      if (sold>0) { log(`${who} sold harvest for ¢${sold}.`); state.sellOpen = true; state.shopOpen=null; }
+      else { log(`${who} has nothing to sell.`); state.sellOpen=true; state.shopOpen=null; }
       return;
     }
 
@@ -360,6 +360,9 @@
   // Vendor UI buttons
   function tryBuy(who, kind) {
     const target = playerByName(who);
+    if (state.shopOpen !== who || !inside(target.x,target.y,target.w,target.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
+      log(`${who} must be at the Seed Shop to buy seeds.`); return;
+    }
     if (target.money < PRICES[kind]) { log(`${who} can’t afford ${CROPS[kind].name} (¢${PRICES[kind]}).`); return; }
     target.money -= PRICES[kind];
     target.invSeeds[kind]++;
@@ -485,6 +488,8 @@
 
     // Panels visibility
     shopPanel.style.display = state.shopOpen? 'block':'none';
+    buyCandyP1.style.display = buyCarrotP1.style.display = state.shopOpen==='P1' ? 'inline-block' : 'none';
+    buyCandyP2.style.display = buyCarrotP2.style.display = state.shopOpen==='P2' ? 'inline-block' : 'none';
     sellPanel.style.display = state.sellOpen? 'block':'none';
 
     // World event banner
@@ -574,9 +579,11 @@
 
     if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
 
-    if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h) &&
-        !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      state.shopOpen = false;
+    if (state.shopOpen === 'P1' && !inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
+      state.shopOpen = null;
+    }
+    if (state.shopOpen === 'P2' && !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
+      state.shopOpen = null;
     }
     if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h) &&
         !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {

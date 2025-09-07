@@ -23,7 +23,8 @@
     .panel { background:#ffffffdd; border:2px solid #333; border-radius:8px; padding:10px; width:190px; }
     .panel h3 { margin:0 0 6px 0; font-size:16px; }
     .panel .row { display:flex; align-items:center; justify-content:space-between; gap:6px; margin:6px 0; }
-    .panel button { padding:6px 8px; border-radius:6px; border:1px solid #222; background:#e8f3ff; cursor:pointer; }
+      .panel button { padding:6px 8px; border-radius:6px; border:1px solid #222; background:#e8f3ff; cursor:pointer; }
+      .seed-list { max-height:150px; overflow-y:auto; }
 
     /* Event feed (starts OFF‑SCREEN) */
     #events { position:absolute; right:-380px; top:10px; width:340px; max-width:48vw; background:#ffffffd9; border:2px solid #333; border-radius:8px; padding:8px 10px; transition:right .18s ease-out; }
@@ -81,10 +82,7 @@
     <div class="window" id="vendors">
       <div class="panel" id="shopPanel">
         <h3>Seed Shop</h3>
-        <div class="row"><span>Candy Blossom</span><span>¢<b id="priceCandy">2</b></span></div>
-        <div class="row"><button id="buyCandyP1">Buy P1</button><button class="p2" id="buyCandyP2">Buy P2</button></div>
-        <div class="row"><span>Carrot</span><span>¢<b id="priceCarrot">2000</b></span></div>
-        <div class="row"><button id="buyCarrotP1">Buy P1</button><button class="p2" id="buyCarrotP2">Buy P2</button></div>
+        <div id="seedList" class="seed-list"></div>
         <div style="font-size:12px;opacity:.8;">Stand in the shop & press your <b>Action</b> key (P1:<code>E</code>, P2:<code>/</code>) to toggle this UI.</div>
       </div>
       <div class="panel" id="sellPanel">

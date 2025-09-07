@@ -1,6 +1,5 @@
 (() => {
   // ---------- CONFIG ----------
-  const PRICES = { candy: 2, carrot: 2000 }; // cents
   const CROPS = {
     candy: { name: 'Candy Blossom', growMs: 60000, sell: 6 }, // 1 min, sells for 6¢
     carrot: { name: 'Carrot', growMs: 600000, sell: 3000 }    // 10 min, sells for 3000¢
@@ -12,6 +11,37 @@
     { id:'bunny',  name:'Bunny',      emoji:'🐰', speed:+0.4 },
     { id:'sprout', name:'Sprout',     emoji:'🌱', plantGrowth:1.10 },
   ];
+
+  const SEED_CATALOG = [
+    { id:'candy', name:'Candy Blossom', harvest:'Multiple', sheckles:2, robux:0 },
+    { id:'carrot', name:'Carrot', harvest:'Single', sheckles:10, robux:7 },
+    { id:'strawberry', name:'Strawberry', harvest:'Multiple', sheckles:50, robux:21 },
+    { id:'blueberry', name:'Blueberry', harvest:'Multiple', sheckles:400, robux:49 },
+    { id:'orangeTulip', name:'Orange Tulip', harvest:'Single', sheckles:600, robux:14 },
+    { id:'tomato', name:'Tomato', harvest:'Multiple', sheckles:800, robux:79 },
+    { id:'corn', name:'Corn', harvest:'Multiple', sheckles:1300, robux:135 },
+    { id:'daffodil', name:'Daffodil', harvest:'Single', sheckles:1000, robux:19 },
+    { id:'watermelon', name:'Watermelon', harvest:'Single', sheckles:2500, robux:195 },
+    { id:'pumpkin', name:'Pumpkin', harvest:'Single', sheckles:3000, robux:210 },
+    { id:'apple', name:'Apple', harvest:'Multiple', sheckles:3250, robux:375 },
+    { id:'bamboo', name:'Bamboo', harvest:'Single', sheckles:4000, robux:99 },
+    { id:'coconut', name:'Coconut', harvest:'Multiple', sheckles:6000, robux:435 },
+    { id:'cactus', name:'Cactus', harvest:'Multiple', sheckles:15000, robux:497 },
+    { id:'dragonFruit', name:'Dragon Fruit', harvest:'Multiple', sheckles:50000, robux:597 },
+    { id:'mango', name:'Mango', harvest:'Multiple', sheckles:100000, robux:580 },
+    { id:'grape', name:'Grape', harvest:'Multiple', sheckles:850000, robux:599 },
+    { id:'mushroom', name:'Mushroom', harvest:'Single', sheckles:150000, robux:249 },
+    { id:'pepper', name:'Pepper', harvest:'Multiple', sheckles:1000000, robux:629 },
+    { id:'cacao', name:'Cacao', harvest:'Multiple', sheckles:2500000, robux:679 },
+    { id:'beanstalk', name:'Beanstalk', harvest:'Multiple', sheckles:10000000, robux:715 },
+    { id:'emberLily', name:'Ember Lily', harvest:'Multiple', sheckles:15000000, robux:779 },
+    { id:'sugarApple', name:'Sugar Apple', harvest:'Multiple', sheckles:25000000, robux:819 },
+    { id:'burningBud', name:'Burning Bud', harvest:'Multiple', sheckles:40000000, robux:915 },
+    { id:'giantPinecone', name:'Giant Pinecone', harvest:'Multiple', sheckles:55000000, robux:929 },
+    { id:'elderStrawberry', name:'Elder Strawberry', harvest:'Multiple', sheckles:70000000, robux:957 },
+    { id:'romanesco', name:'Romanesco', harvest:'Multiple', sheckles:88000000, robux:987 },
+  ];
+  const seedStock = new Set();
 
   // Stable save key + migrate from legacy
   const SAVE_KEY = 'garden-duo-main';
@@ -38,8 +68,8 @@
     priceMult: 1,
     growthMult: 1,
     plots: [],
-    p1: { x: 220, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
-    p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
+    p1: { x: 220, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
+    p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
     p2Active: false,
     shopOpen:null, sellOpen:false,
     activeEvent:null, eventUntil:0,
@@ -78,6 +108,13 @@
     }
   } catch {}
 
+  for (const s of SEED_CATALOG) {
+    if (state.p1.invSeeds[s.id] == null) state.p1.invSeeds[s.id] = 0;
+    if (state.p2.invSeeds[s.id] == null) state.p2.invSeeds[s.id] = 0;
+    if (state.p1.bag[s.id] == null) state.p1.bag[s.id] = 0;
+    if (state.p2.bag[s.id] == null) state.p2.bag[s.id] = 0;
+  }
+
   function save() {
     const minimal = JSON.parse(JSON.stringify({
       priceMult: state.priceMult,
@@ -108,14 +145,9 @@
   const btnImport = document.getElementById('btnImport');
   const fileImport = document.getElementById('fileImport');
   const addP2Btn = document.getElementById('addP2');
-  const p2Elems = document.querySelectorAll('.p2');
-
-  const buyCandyP1 = document.getElementById('buyCandyP1');
-  const buyCandyP2 = document.getElementById('buyCandyP2');
-  const buyCarrotP1 = document.getElementById('buyCarrotP1');
-  const buyCarrotP2 = document.getElementById('buyCarrotP2');
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
+  const seedListEl = document.getElementById('seedList');
 
   // Basic debug logging so we can inspect whether key elements were found
   console.log('DOM elements loaded', {
@@ -123,15 +155,14 @@
     p2moneyEl,
     p1hud,
     p2hud,
-    buyCandyP1,
-    buyCandyP2,
-    buyCarrotP1,
-    buyCarrotP2,
+    shopPanel,
+    sellPanel,
+    seedListEl,
   });
 
   addP2Btn.onclick = () => {
     state.p2Active = true;
-    p2Elems.forEach(el => el.classList.remove('p2'));
+    document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
     addP2Btn.style.display = 'none';
   };
 
@@ -259,7 +290,9 @@
     });
     // Vendors
     if (inside(p.x,p.y,p.w,p.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      state.shopOpen = state.shopOpen===who ? null : who; state.sellOpen = false; log(`${who} toggled Seed Shop.`); return;
+      state.shopOpen = state.shopOpen===who ? null : who; state.sellOpen = false; log(`${who} toggled Seed Shop.`);
+      if (state.shopOpen) { generateSeedStock(); renderSeedShop(); }
+      return;
     }
     if (inside(p.x,p.y,p.w,p.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
       const sold = sellAll(p);
@@ -366,22 +399,48 @@
     p.money += total; save(); return total;
   }
 
-  // Vendor UI buttons
-  function tryBuy(who, kind) {
+  function generateSeedStock(){
+    seedStock.clear();
+    SEED_CATALOG.forEach((s,i)=>{
+      const prob = 1 - (i/SEED_CATALOG.length)*0.9;
+      if (Math.random() < prob) seedStock.add(s.id);
+    });
+  }
+
+  function renderSeedShop(){
+    if (!seedListEl) return;
+    seedListEl.innerHTML='';
+    for (const s of SEED_CATALOG){
+      const row=document.createElement('div');
+      row.className='row';
+      const name=document.createElement('span'); name.textContent=s.name;
+      const price=document.createElement('span'); price.textContent=`¢${s.sheckles}`;
+      row.append(name, price); seedListEl.appendChild(row);
+      const actions=document.createElement('div'); actions.className='row';
+      if (seedStock.has(s.id)){
+        const b1=document.createElement('button'); b1.textContent='Buy P1'; b1.onclick=()=>buySeed('P1', s.id); actions.appendChild(b1);
+        const b2=document.createElement('button'); b2.textContent='Buy P2'; b2.className='p2'; b2.onclick=()=>buySeed('P2', s.id); actions.appendChild(b2);
+      } else {
+        const sold=document.createElement('span'); sold.textContent='Out of stock'; actions.appendChild(sold);
+      }
+      seedListEl.appendChild(actions);
+    }
+    if (state.p2Active) document.querySelectorAll('#seedList .p2').forEach(el=>el.classList.remove('p2'));
+  }
+
+  function buySeed(who, id){
+    const seed = SEED_CATALOG.find(s=>s.id===id);
     const target = playerByName(who);
+    if (!seed || !seedStock.has(id)) { log('Seed not available.'); return; }
     if (state.shopOpen !== who || !inside(target.x,target.y,target.w,target.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
       log(`${who} must be at the Seed Shop to buy seeds.`); return;
     }
-    if (target.money < PRICES[kind]) { log(`${who} can’t afford ${CROPS[kind].name} (¢${PRICES[kind]}).`); return; }
-    target.money -= PRICES[kind];
-    target.invSeeds[kind]++;
-    log(`${who} bought 1 × ${CROPS[kind].name} seed.`);
+    if (target.money < seed.sheckles) { log(`${who} can’t afford ${seed.name} (¢${seed.sheckles}).`); return; }
+    target.money -= seed.sheckles;
+    target.invSeeds[id] = (target.invSeeds[id]||0) + 1;
+    log(`${who} bought 1 × ${seed.name} seed.`);
     save();
   }
-  buyCandyP1.onclick = ()=>tryBuy('P1','candy');
-  buyCandyP2.onclick = ()=>tryBuy('P2','candy');
-  buyCarrotP1.onclick = ()=>tryBuy('P1','carrot');
-  buyCarrotP2.onclick = ()=>tryBuy('P2','carrot');
 
   // ---------- WORLD / PET CHALLENGE ----------
   function maybeStartWorldEvent() {
@@ -480,12 +539,16 @@
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
     const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
     const petName1 = matchPet1 ? matchPet1.name : '—';
-    p1hud.textContent = `P1 Seeds: 🍬${state.p1.invSeeds.candy} 🥕${state.p1.invSeeds.carrot} | Bag: 🍬${state.p1.bag.candy||0} 🥕${state.p1.bag.carrot||0} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
+    const inv1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
+    const bag1 = Object.entries(state.p1.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
+    p1hud.textContent = `P1 Seeds: ${inv1} | Bag: ${bag1} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
     if (state.p2Active) {
       p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
       const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
       const petName2 = matchPet2 ? matchPet2.name : '—';
-      p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
+      const inv2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
+      const bag2 = Object.entries(state.p2.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
+      p2hud.textContent = `P2 Seeds: ${inv2} | Bag: ${bag2} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
     }
 
     // Log HUD state roughly once per second to help debug bag/seed values
@@ -502,10 +565,6 @@
 
     // Panels visibility
     shopPanel.style.display = state.shopOpen? 'block':'none';
-    buyCandyP1.style.display = buyCarrotP1.style.display = state.shopOpen==='P1' ? 'inline-block' : 'none';
-    if (state.p2Active) {
-      buyCandyP2.style.display = buyCarrotP2.style.display = state.shopOpen==='P2' ? 'inline-block' : 'none';
-    }
     sellPanel.style.display = state.sellOpen? 'block':'none';
 
     // World event banner
@@ -613,8 +672,6 @@
   }
 
   // Init
-  document.getElementById('priceCandy').textContent = PRICES.candy;
-  document.getElementById('priceCarrot').textContent = PRICES.carrot;
   toggleBtn.onclick = () => eventsPanel.classList.toggle('open');
 
   if (!localStorage.getItem(SAVE_KEY)) {

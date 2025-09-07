@@ -56,7 +56,15 @@
   try {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if (saved) {
-      Object.assign(state, saved, { shopOpen:false, sellOpen:false });
+      // Merge saved data without dropping player defaults like position and size
+      state.priceMult = saved.priceMult ?? state.priceMult;
+      state.growthMult = saved.growthMult ?? state.growthMult;
+      state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
+      Object.assign(state.p1, saved.p1 || {});
+      Object.assign(state.p2, saved.p2 || {});
+      state.shopOpen = false;
+      state.sellOpen = false;
+
       if (state.p1.money == null) state.p1.money = 10;
       if (state.p2.money == null) state.p2.money = 10;
       if (state.p1.pet == null) state.p1.pet = null;

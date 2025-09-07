@@ -58,11 +58,12 @@
 <div id="wrap">
   <header>
     <div class="pill" id="p1money">P1 Money: ¢0</div>
-    <div class="pill" id="p2money">P2 Money: ¢0</div>
+    <div class="pill" id="p2money" style="display:none;">P2 Money: ¢0</div>
     <div class="pill" id="p1hud">P1 Seeds: — | Bag: —</div>
-    <div class="pill" id="p2hud">P2 Seeds: — | Bag: —</div>
+    <div class="pill" id="p2hud" style="display:none;">P2 Seeds: — | Bag: —</div>
     <button id="toggleEvents" title="Toggle Events (H)">Events</button>
     <div class="savebar">
+      <button id="btnAddP2" title="Add second player">Add Player 2</button>
       <button id="btnSave" title="Save to browser (Autosaves too)">Save</button>
       <button id="btnLoad" title="Load from browser">Load</button>
       <button id="btnExport" title="Download save file">Export</button>
@@ -78,9 +79,9 @@
       <div class="panel" id="shopPanel">
         <h3>Seed Shop</h3>
         <div class="row"><span>Candy Blossom</span><span>¢<b id="priceCandy">2</b></span></div>
-        <div class="row"><button id="buyCandyP1">Buy P1</button><button id="buyCandyP2">Buy P2</button></div>
+        <div class="row"><button id="buyCandyP1">Buy P1</button><button id="buyCandyP2" style="display:none;">Buy P2</button></div>
         <div class="row"><span>Carrot</span><span>¢<b id="priceCarrot">2000</b></span></div>
-        <div class="row"><button id="buyCarrotP1">Buy P1</button><button id="buyCarrotP2">Buy P2</button></div>
+        <div class="row"><button id="buyCarrotP1">Buy P1</button><button id="buyCarrotP2" style="display:none;">Buy P2</button></div>
         <div style="font-size:12px;opacity:.8;">Stand in the shop & press your <b>Action</b> key (P1:<code>E</code>, P2:<code>/</code>) to toggle this UI.</div>
       </div>
       <div class="panel" id="sellPanel">

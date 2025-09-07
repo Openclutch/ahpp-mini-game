@@ -39,7 +39,7 @@
     growthMult: 1,
     plots: [],
     p1: { x: 220, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
-    p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
+    p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[], active:false },
     shopOpen:false, sellOpen:false,
     activeEvent:null, eventUntil:0,
     // Center challenge
@@ -60,6 +60,7 @@
       state.p1.money ??= 10; state.p2.money ??= 10;
       state.p1.pet??=null; state.p2.pet??=null;
       state.p1.pets??=[]; state.p2.pets??=[];
+      state.p2.active ??= false;
     }
   } catch {}
 
@@ -69,7 +70,7 @@
       growthMult: state.growthMult,
       plots: state.plots,
       p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, pet:state.p1.pet, pets:state.p1.pets },
-      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets },
+      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets, active:state.p2.active },
     }));
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
@@ -92,6 +93,8 @@
   const btnExport = document.getElementById('btnExport');
   const btnImport = document.getElementById('btnImport');
   const fileImport = document.getElementById('fileImport');
+  const btnAddP2 = document.getElementById('btnAddP2');
+  const p2Controls = document.getElementById('p2Controls');
 
   const buyCandyP1 = document.getElementById('buyCandyP1');
   const buyCandyP2 = document.getElementById('buyCandyP2');
@@ -110,7 +113,26 @@
     buyCandyP2,
     buyCarrotP1,
     buyCarrotP2,
+    btnAddP2,
   });
+
+  // Hide P2 UI until activated
+  p2moneyEl.style.display = 'none';
+  p2hud.style.display = 'none';
+  buyCandyP2.style.display = 'none';
+  buyCarrotP2.style.display = 'none';
+  if (p2Controls) p2Controls.style.display = 'none';
+
+  function enableP2() {
+    state.p2.active = true;
+    p2moneyEl.style.display = 'block';
+    p2hud.style.display = 'block';
+    buyCandyP2.style.display = '';
+    buyCarrotP2.style.display = '';
+    if (p2Controls && isTouch) p2Controls.style.display = 'flex';
+    btnAddP2.style.display = 'none';
+  }
+  btnAddP2.onclick = enableP2;
 
   function log(msg) {
     const d = document.createElement('div');
@@ -449,16 +471,18 @@
     // Players
     if (!isTouch) {
       drawPlayer(state.p1, '#2563eb');
-      drawPlayer(state.p2, '#e11d48');
+      if (state.p2.active) drawPlayer(state.p2, '#e11d48');
     }
 
     // HUD
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
-    p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
     const petName1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id)?.name : '—';
-    const petName2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id)?.name : '—';
     p1hud.textContent = `P1 Seeds: 🍬${state.p1.invSeeds.candy} 🥕${state.p1.invSeeds.carrot} | Bag: 🍬${state.p1.bag.candy||0} 🥕${state.p1.bag.carrot||0} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
-    p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
+    if (state.p2.active) {
+      p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
+      const petName2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id)?.name : '—';
+      p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
+    }
 
     // Log HUD state roughly once per second to help debug bag/seed values
     if (!draw._lastLog || Date.now() - draw._lastLog > 1000) {
@@ -550,22 +574,22 @@
     }
     if (!isTouch) {
       movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
-      movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
+      if (state.p2.active) movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
 
       if (justPressed('KeyE')) playerAction(state.p1, 'P1');
-      if (justPressed('Slash')) playerAction(state.p2, 'P2');
+      if (state.p2.active && justPressed('Slash')) playerAction(state.p2, 'P2');
 
       if (justPressed('KeyQ')) state.p1.selected = (state.p1.selected==='candy'?'carrot':'candy');
-      if (justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
+      if (state.p2.active && justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
 
       if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
 
       if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h) &&
-          !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
+          (!state.p2.active || !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h))) {
         state.shopOpen = false;
       }
       if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h) &&
-          !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
+          (!state.p2.active || !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h))) {
         state.sellOpen = false;
       }
     }
@@ -580,6 +604,7 @@
   document.getElementById('priceCandy').textContent = PRICES.candy;
   document.getElementById('priceCarrot').textContent = PRICES.carrot;
   toggleBtn.onclick = () => eventsPanel.classList.toggle('open');
+  if (state.p2.active) enableP2();
 
   if (!localStorage.getItem(SAVE_KEY)) {
     log('Welcome! Buy seeds at the Seed Shop (top-left).');

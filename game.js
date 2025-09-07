@@ -40,6 +40,7 @@
     plots: [],
     p1: { x: 220, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
     p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{candy:0,carrot:0}, bag:{candy:0,carrot:0}, selected:'candy', pet:null, pets:[] },
+    p2Active: false,
     shopOpen:null, sellOpen:false,
     activeEvent:null, eventUntil:0,
     // Center challenge
@@ -106,6 +107,8 @@
   const btnExport = document.getElementById('btnExport');
   const btnImport = document.getElementById('btnImport');
   const fileImport = document.getElementById('fileImport');
+  const addP2Btn = document.getElementById('addP2');
+  const p2Elems = document.querySelectorAll('.p2');
 
   const buyCandyP1 = document.getElementById('buyCandyP1');
   const buyCandyP2 = document.getElementById('buyCandyP2');
@@ -125,6 +128,12 @@
     buyCarrotP1,
     buyCarrotP2,
   });
+
+  addP2Btn.onclick = () => {
+    state.p2Active = true;
+    p2Elems.forEach(el => el.classList.remove('p2'));
+    addP2Btn.style.display = 'none';
+  };
 
   function log(msg) {
     const d = document.createElement('div');
@@ -465,31 +474,38 @@
 
     // Players
     drawPlayer(state.p1, '#2563eb');
-    drawPlayer(state.p2, '#e11d48');
+    if (state.p2Active) drawPlayer(state.p2, '#e11d48');
 
     // HUD
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
-    p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
     const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
-    const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
     const petName1 = matchPet1 ? matchPet1.name : '—';
-    const petName2 = matchPet2 ? matchPet2.name : '—';
     p1hud.textContent = `P1 Seeds: 🍬${state.p1.invSeeds.candy} 🥕${state.p1.invSeeds.carrot} | Bag: 🍬${state.p1.bag.candy||0} 🥕${state.p1.bag.carrot||0} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
-    p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
+    if (state.p2Active) {
+      p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
+      const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
+      const petName2 = matchPet2 ? matchPet2.name : '—';
+      p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
+    }
 
     // Log HUD state roughly once per second to help debug bag/seed values
     if (!draw._lastLog || Date.now() - draw._lastLog > 1000) {
-      console.log('HUD state', {
-        p1: { money: state.p1.money, bag: { ...state.p1.bag }, seeds: { ...state.p1.invSeeds } },
-        p2: { money: state.p2.money, bag: { ...state.p2.bag }, seeds: { ...state.p2.invSeeds } },
-      });
+      const logData = {
+        p1: { money: state.p1.money, bag: { ...state.p1.bag }, seeds: { ...state.p1.invSeeds } }
+      };
+      if (state.p2Active) {
+        logData.p2 = { money: state.p2.money, bag: { ...state.p2.bag }, seeds: { ...state.p2.invSeeds } };
+      }
+      console.log('HUD state', logData);
       draw._lastLog = Date.now();
     }
 
     // Panels visibility
     shopPanel.style.display = state.shopOpen? 'block':'none';
     buyCandyP1.style.display = buyCarrotP1.style.display = state.shopOpen==='P1' ? 'inline-block' : 'none';
-    buyCandyP2.style.display = buyCarrotP2.style.display = state.shopOpen==='P2' ? 'inline-block' : 'none';
+    if (state.p2Active) {
+      buyCandyP2.style.display = buyCarrotP2.style.display = state.shopOpen==='P2' ? 'inline-block' : 'none';
+    }
     sellPanel.style.display = state.sellOpen? 'block':'none';
 
     // World event banner
@@ -569,24 +585,24 @@
       firstTick = false;
     }
     movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
-    movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
+    if (state.p2Active) movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
 
     if (justPressed('KeyE')) playerAction(state.p1, 'P1');
-    if (justPressed('Slash')) playerAction(state.p2, 'P2');
+    if (state.p2Active && justPressed('Slash')) playerAction(state.p2, 'P2');
 
     if (justPressed('KeyQ')) state.p1.selected = (state.p1.selected==='candy'?'carrot':'candy');
-    if (justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
+    if (state.p2Active && justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
 
     if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
 
     if (state.shopOpen === 'P1' && !inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
       state.shopOpen = null;
     }
-    if (state.shopOpen === 'P2' && !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
+    if (state.p2Active && state.shopOpen === 'P2' && !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
       state.shopOpen = null;
     }
     if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h) &&
-        !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
+        (!state.p2Active || !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h))) {
       state.sellOpen = false;
     }
 
@@ -611,6 +627,7 @@
   console.log('Initialization complete', {
     startingP1: state.p1,
     startingP2: state.p2,
+    p2Active: state.p2Active,
   });
   tick();
 })();

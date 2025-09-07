@@ -53,15 +53,16 @@
     #p1Controls .actions { margin-left:10px; }
     #p2Controls .actions { margin-right:10px; }
     .actions button { width:60px; height:40px; background:#ffffffaa; border:1px solid #333; border-radius:6px; }
+    .p2 { display:none; }
   </style>
 </head>
 <body>
 <div id="wrap">
   <header>
     <div class="pill" id="p1money">P1 Money: ¢0</div>
-    <div class="pill" id="p2money">P2 Money: ¢0</div>
+    <div class="pill p2" id="p2money">P2 Money: ¢0</div>
     <div class="pill" id="p1hud">P1 Seeds: — | Bag: —</div>
-    <div class="pill" id="p2hud">P2 Seeds: — | Bag: —</div>
+    <div class="pill p2" id="p2hud">P2 Seeds: — | Bag: —</div>
     <button id="toggleEvents" title="Toggle Events (H)">Events</button>
     <div class="savebar">
       <button id="btnSave" title="Save to browser (Autosaves too)">Save</button>
@@ -70,6 +71,7 @@
       <button id="btnImport" title="Import save file">Import</button>
       <label for="fileImport" class="sr-only">Import save file</label>
       <input id="fileImport" type="file" accept="application/json" title="Import save file" />
+      <button id="addP2" title="Enable second player">Add Player 2</button>
     </div>
     <div class="hint">Growth persists via timestamps. Rotten plants must be <b>fixed</b> by the plot owner for ¢10. A random <b>Center Challenge</b> can grant pets with perks.</div>
   </header>
@@ -80,9 +82,9 @@
       <div class="panel" id="shopPanel">
         <h3>Seed Shop</h3>
         <div class="row"><span>Candy Blossom</span><span>¢<b id="priceCandy">2</b></span></div>
-        <div class="row"><button id="buyCandyP1">Buy P1</button><button id="buyCandyP2">Buy P2</button></div>
+        <div class="row"><button id="buyCandyP1">Buy P1</button><button class="p2" id="buyCandyP2">Buy P2</button></div>
         <div class="row"><span>Carrot</span><span>¢<b id="priceCarrot">2000</b></span></div>
-        <div class="row"><button id="buyCarrotP1">Buy P1</button><button id="buyCarrotP2">Buy P2</button></div>
+        <div class="row"><button id="buyCarrotP1">Buy P1</button><button class="p2" id="buyCarrotP2">Buy P2</button></div>
         <div style="font-size:12px;opacity:.8;">Stand in the shop & press your <b>Action</b> key (P1:<code>E</code>, P2:<code>/</code>) to toggle this UI.</div>
       </div>
       <div class="panel" id="sellPanel">
@@ -110,7 +112,7 @@
         <button data-key="KeyE">Action</button>
       </div>
     </div>
-    <div class="touch-controls" id="p2Controls">
+    <div class="touch-controls p2" id="p2Controls">
       <div class="dpad">
         <button class="up" data-key="ArrowUp">▲</button>
         <button class="down" data-key="ArrowDown">▼</button>
@@ -126,7 +128,7 @@
   <footer>
     <div>
       <b>Controls:</b> P1 <code>WASD</code> move, <code>Q</code> cycle seed, <code>E</code> action.
-      P2 <code>Arrows</code> move, <code>.</code> cycle seed, <code>/</code> action. <b>H</b> toggles Events panel.
+      Enable P2 via the top-right button; P2 uses <code>Arrows</code> move, <code>.</code> cycle seed, <code>/</code> action. <b>H</b> toggles Events panel.
     </div>
     <div>
       Plant on your own plots. If a plant rots, the owner can fix the plot for ¢10. Complete center challenges to earn pets (perks!).

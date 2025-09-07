@@ -450,10 +450,8 @@
     }
 
     // Players
-    if (!isTouch) {
-      drawPlayer(state.p1, '#2563eb');
-      drawPlayer(state.p2, '#e11d48');
-    }
+    drawPlayer(state.p1, '#2563eb');
+    drawPlayer(state.p2, '#e11d48');
 
     // HUD
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
@@ -551,26 +549,24 @@
       console.log('Game loop started');
       firstTick = false;
     }
-    if (!isTouch) {
-      movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
-      movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
+    movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
+    movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
 
-      if (justPressed('KeyE')) playerAction(state.p1, 'P1');
-      if (justPressed('Slash')) playerAction(state.p2, 'P2');
+    if (justPressed('KeyE')) playerAction(state.p1, 'P1');
+    if (justPressed('Slash')) playerAction(state.p2, 'P2');
 
-      if (justPressed('KeyQ')) state.p1.selected = (state.p1.selected==='candy'?'carrot':'candy');
-      if (justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
+    if (justPressed('KeyQ')) state.p1.selected = (state.p1.selected==='candy'?'carrot':'candy');
+    if (justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
 
-      if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
+    if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
 
-      if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h) &&
-          !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-        state.shopOpen = false;
-      }
-      if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h) &&
-          !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
-        state.sellOpen = false;
-      }
+    if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h) &&
+        !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
+      state.shopOpen = false;
+    }
+    if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h) &&
+        !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
+      state.sellOpen = false;
     }
 
     maybeStartWorldEvent();

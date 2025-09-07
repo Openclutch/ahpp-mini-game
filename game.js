@@ -2,8 +2,8 @@
   // ---------- CONFIG ----------
   const PRICES = { candy: 2, carrot: 2000 }; // cents
   const CROPS = {
-    candy: { name: 'Candy Blossom', growMs: 60_000, sell: 6 }, // 1 min, sells for 6¢
-    carrot: { name: 'Carrot', growMs: 600_000, sell: 3000 }    // 10 min, sells for 3000¢
+    candy: { name: 'Candy Blossom', growMs: 60000, sell: 6 }, // 1 min, sells for 6¢
+    carrot: { name: 'Carrot', growMs: 600000, sell: 3000 }    // 10 min, sells for 3000¢
   };
   const REPAIR_COST = 10; // cents
   // PETS (one active perk per player)
@@ -27,10 +27,10 @@
 
   // World events
   const WORLD_EVENTS = [
-    { id:'rain',   label:'Rain! Growth +50% for 30s',  dur:30_000, apply:s=>{s.growthMult*=1.5;} },
-    { id:'drought',label:'Heatwave! Growth -30% for 30s', dur:30_000, apply:s=>{s.growthMult*=0.7;} },
-    { id:'boom',   label:'Market Boom! Prices +50% for 30s', dur:30_000, apply:s=>{s.priceMult*=1.5;} },
-    { id:'slump',  label:'Market Slump! Prices -30% for 30s', dur:30_000, apply:s=>{s.priceMult*=0.7;} },
+    { id:'rain',   label:'Rain! Growth +50% for 30s',  dur:30000, apply:s=>{s.growthMult*=1.5;} },
+    { id:'drought',label:'Heatwave! Growth -30% for 30s', dur:30000, apply:s=>{s.growthMult*=0.7;} },
+    { id:'boom',   label:'Market Boom! Prices +50% for 30s', dur:30000, apply:s=>{s.priceMult*=1.5;} },
+    { id:'slump',  label:'Market Slump! Prices -30% for 30s', dur:30000, apply:s=>{s.priceMult*=0.7;} },
   ];
 
   // ---------- STATE ----------
@@ -57,12 +57,15 @@
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
     if (saved) {
       Object.assign(state, saved, { shopOpen:false, sellOpen:false });
-      state.p1.money ??= 10; state.p2.money ??= 10;
-      state.p1.pet??=null; state.p2.pet??=null;
-      state.p1.pets??=[]; state.p2.pets??=[];
+      if (state.p1.money == null) state.p1.money = 10;
+      if (state.p2.money == null) state.p2.money = 10;
+      if (state.p1.pet == null) state.p1.pet = null;
+      if (state.p2.pet == null) state.p2.pet = null;
+      if (!Array.isArray(state.p1.pets)) state.p1.pets = [];
+      if (!Array.isArray(state.p2.pets)) state.p2.pets = [];
       // Default seed selection if missing from saved data
-      state.p1.selected ??= 'candy';
-      state.p2.selected ??= 'candy';
+      if (state.p1.selected == null) state.p1.selected = 'candy';
+      if (state.p2.selected == null) state.p2.selected = 'candy';
     }
   } catch {}
 
@@ -78,7 +81,7 @@
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
   }
   // Autosave + on close
-  setInterval(save, 10_000);
+  setInterval(save, 10000);
   window.addEventListener('beforeunload', save);
 
   // ---------- DOM ----------
@@ -365,21 +368,21 @@
     const now = Date.now();
     if (state.activeEvent && now < state.eventUntil) return;
     if (state.activeEvent) { state.activeEvent = null; state.priceMult = 1; state.growthMult = 1; }
-    if (!maybeStartWorldEvent.nextAt) maybeStartWorldEvent.nextAt = now + (45_000 + Math.random()*30_000);
+    if (!maybeStartWorldEvent.nextAt) maybeStartWorldEvent.nextAt = now + (45000 + Math.random()*30000);
     if (now < maybeStartWorldEvent.nextAt) return;
     const evt = WORLD_EVENTS[Math.floor(Math.random()*WORLD_EVENTS.length)];
     state.activeEvent = evt.id; state.eventUntil = now + evt.dur; evt.apply(state);
-    maybeStartWorldEvent.nextAt = now + evt.dur + (40_000 + Math.random()*25_000);
+    maybeStartWorldEvent.nextAt = now + evt.dur + (40000 + Math.random()*25000);
     log(evt.label);
   }
 
   function maybeSpawnChallenge(){
     const now = Date.now();
     if (state.challenge && now < state.challenge.endsAt) return;
-    if (!maybeSpawnChallenge.nextAt) maybeSpawnChallenge.nextAt = now + (50_000 + Math.random()*40_000);
+    if (!maybeSpawnChallenge.nextAt) maybeSpawnChallenge.nextAt = now + (50000 + Math.random()*40000);
     if (now < maybeSpawnChallenge.nextAt) return;
-    state.challenge = { x: WORLD.w/2, y: WORLD.h/2, r: 60, goal: 10, progress:0, endsAt: now + 25_000 };
-    maybeSpawnChallenge.nextAt = now + 75_000 + Math.random()*45_000;
+    state.challenge = { x: WORLD.w/2, y: WORLD.h/2, r: 60, goal: 10, progress:0, endsAt: now + 25000 };
+    maybeSpawnChallenge.nextAt = now + 75000 + Math.random()*45000;
     log('Center Challenge appeared! Stand in the circle and press Action to charge it to 10 before time runs out.');
   }
 
@@ -458,8 +461,10 @@
     // HUD
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
     p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
-    const petName1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id)?.name : '—';
-    const petName2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id)?.name : '—';
+    const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
+    const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
+    const petName1 = matchPet1 ? matchPet1.name : '—';
+    const petName2 = matchPet2 ? matchPet2.name : '—';
     p1hud.textContent = `P1 Seeds: 🍬${state.p1.invSeeds.candy} 🥕${state.p1.invSeeds.carrot} | Bag: 🍬${state.p1.bag.candy||0} 🥕${state.p1.bag.carrot||0} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
     p2hud.textContent = `P2 Seeds: 🍬${state.p2.invSeeds.candy} 🥕${state.p2.invSeeds.carrot} | Bag: 🍬${state.p2.bag.candy||0} 🥕${state.p2.bag.carrot||0} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
 
@@ -480,7 +485,8 @@
     if (state.activeEvent) {
       ctx.fillStyle = '#0008'; ctx.fillRect(cv.width/2-170, 14, 340, 30);
       ctx.fillStyle = '#fff'; ctx.font = '16px sans-serif';
-      const label = WORLD_EVENTS.find(e=>e.id===state.activeEvent)?.label || '—';
+      const evt = WORLD_EVENTS.find(e=>e.id===state.activeEvent);
+      const label = evt ? evt.label : '—';
       ctx.fillText(label, cv.width/2-160, 34);
     }
   }

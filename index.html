@@ -13,6 +13,7 @@
     header button { border:1px solid #1a2730; background:#2f4656; color:#e8f6ff; border-radius:999px; padding:4px 10px; cursor:pointer; }
     header .savebar { display:flex; gap:8px; align-items:center; margin-left:auto; }
     header .savebar input[type=file]{ display:none; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
     #gameArea { position:relative; flex:1; }
     canvas { width:100%; height:100%; display:block; image-rendering: pixelated; }
@@ -67,7 +68,8 @@
       <button id="btnLoad" title="Load from browser">Load</button>
       <button id="btnExport" title="Download save file">Export</button>
       <button id="btnImport" title="Import save file">Import</button>
-      <input id="fileImport" type="file" accept="application/json" />
+      <label for="fileImport" class="sr-only">Import save file</label>
+      <input id="fileImport" type="file" accept="application/json" title="Import save file" />
     </div>
     <div class="hint">Growth persists via timestamps. Rotten plants must be <b>fixed</b> by the plot owner for ¢10. A random <b>Center Challenge</b> can grant pets with perks.</div>
   </header>

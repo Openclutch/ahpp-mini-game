@@ -37,6 +37,21 @@
     /* Footer help */
     footer { background:#20303c; color:#cfe3ff; padding:6px 10px; font-size:14px; display:flex; justify-conte-between; gap:10px; flex-wrap:wrap; }
     footer code { background:#0f1b23; color:#b3e6ff; padding:2px 6px; border-radius:6px; }
+
+    /* Touch controls */
+    .touch-controls { position:absolute; bottom:10px; display:none; gap:12px; }
+    #p1Controls { left:10px; flex-direction:row; }
+    #p2Controls { right:10px; flex-direction:row-reverse; }
+    .dpad { position:relative; width:100px; height:100px; }
+    .dpad button { position:absolute; width:40px; height:40px; background:#ffffffaa; border:1px solid #333; border-radius:6px; }
+    .dpad .up { top:0; left:30px; }
+    .dpad .down { bottom:0; left:30px; }
+    .dpad .left { left:0; top:30px; }
+    .dpad .right { right:0; top:30px; }
+    .actions { display:flex; flex-direction:column; gap:10px; }
+    #p1Controls .actions { margin-left:10px; }
+    #p2Controls .actions { margin-right:10px; }
+    .actions button { width:60px; height:40px; background:#ffffffaa; border:1px solid #333; border-radius:6px; }
   </style>
 </head>
 <body>
@@ -80,10 +95,35 @@
     </div>
 
     <div id="tooltip"></div>
+
+    <div class="touch-controls" id="p1Controls">
+      <div class="dpad">
+        <button class="up" data-key="KeyW">▲</button>
+        <button class="down" data-key="KeyS">▼</button>
+        <button class="left" data-key="KeyA">◀</button>
+        <button class="right" data-key="KeyD">▶</button>
+      </div>
+      <div class="actions">
+        <button data-key="KeyQ">Cycle</button>
+        <button data-key="KeyE">Action</button>
+      </div>
+    </div>
+    <div class="touch-controls" id="p2Controls">
+      <div class="dpad">
+        <button class="up" data-key="ArrowUp">▲</button>
+        <button class="down" data-key="ArrowDown">▼</button>
+        <button class="left" data-key="ArrowLeft">◀</button>
+        <button class="right" data-key="ArrowRight">▶</button>
+      </div>
+      <div class="actions">
+        <button data-key="Period">Cycle</button>
+        <button data-key="Slash">Action</button>
+      </div>
+    </div>
   </div>
   <footer>
     <div>
-      <b>Controls:</b> P1 <code>WASD</code> move, <code>Q</code> cycle seed, <code>E</code> action. 
+      <b>Controls:</b> P1 <code>WASD</code> move, <code>Q</code> cycle seed, <code>E</code> action.
       P2 <code>Arrows</code> move, <code>.</code> cycle seed, <code>/</code> action. <b>H</b> toggles Events panel.
     </div>
     <div>
@@ -260,6 +300,28 @@
   const keys = new Set();
   window.addEventListener('keydown', e=>{ keys.add(e.code); if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault(); });
   window.addEventListener('keyup', e=>{ keys.delete(e.code); });
+
+  // Touch controls
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isTouch) {
+    for (const el of document.querySelectorAll('.touch-controls')) {
+      el.style.display = 'flex';
+    }
+  }
+  for (const btn of document.querySelectorAll('[data-key]')) {
+    btn.addEventListener('pointerdown', e => {
+      keys.add(btn.dataset.key);
+      e.preventDefault();
+      btn.setPointerCapture(e.pointerId);
+    });
+    btn.addEventListener('pointerup', e => {
+      keys.delete(btn.dataset.key);
+      btn.releasePointerCapture(e.pointerId);
+    });
+    const clear = () => { keys.delete(btn.dataset.key); };
+    btn.addEventListener('pointerleave', clear);
+    btn.addEventListener('pointercancel', clear);
+  }
 
   function movePlayer(p, up, left, down, right) {
     const sp = p.speedBase + (p.pet && p.pet.id==='bunny' ? (PETS.find(x=>x.id==='bunny').speed||0) : 0);

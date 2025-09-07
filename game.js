@@ -60,6 +60,9 @@
       state.p1.money ??= 10; state.p2.money ??= 10;
       state.p1.pet??=null; state.p2.pet??=null;
       state.p1.pets??=[]; state.p2.pets??=[];
+      // Default seed selection if missing from saved data
+      state.p1.selected ??= 'candy';
+      state.p2.selected ??= 'candy';
     }
   } catch {}
 
@@ -68,8 +71,8 @@
       priceMult: state.priceMult,
       growthMult: state.growthMult,
       plots: state.plots,
-      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, pet:state.p1.pet, pets:state.p1.pets },
-      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets },
+      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, pet:state.p1.pet, pets:state.p1.pets, selected:state.p1.selected },
+      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets, selected:state.p2.selected },
     }));
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));

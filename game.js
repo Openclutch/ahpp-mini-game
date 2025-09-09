@@ -556,8 +556,8 @@
     ctx.fillStyle = patterns.grass; ctx.fillRect(0,0,cv.width,cv.height);
 
     // Vendors
-    drawVendor(VENDORS.shop, 'Seed Shop');
-    drawVendor(VENDORS.sell, 'Sell');
+    drawVendor(VENDORS.shop, 'Seed Shop', 'vendorShop');
+    drawVendor(VENDORS.sell, 'Sell', 'vendorSell');
 
     // Garden rectangles
     for (const gdn of GARDENS) {
@@ -629,10 +629,12 @@
     }
   }
 
-  function drawVendor(v, label) {
-    ctx.fillStyle = '#f8f2d0'; ctx.fillRect(v.x, v.y, v.w, v.h);
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.strokeRect(v.x, v.y, v.w, v.h);
-    ctx.fillStyle = '#111'; ctx.font = '16px sans-serif'; ctx.fillText(label, v.x+10, v.y+24);
+  function drawVendor(v, label, sprite) {
+    if (!drawSprite(ctx, sprite, v.x, v.y, v.w, v.h)) {
+      ctx.fillStyle = '#f8f2d0'; ctx.fillRect(v.x, v.y, v.w, v.h);
+      ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.strokeRect(v.x, v.y, v.w, v.h);
+      ctx.fillStyle = '#111'; ctx.font = '16px sans-serif'; ctx.fillText(label, v.x+10, v.y+24);
+    }
   }
 
   function drawPlot(pl) {
@@ -649,38 +651,16 @@
     const c = pl.crop; const st = plantStage(c);
     if (c.dead) { ctx.fillStyle = 'rgba(40,20,10,0.65)'; ctx.fillRect(pl.x+4, pl.y+4, pl.w-8, pl.h-8); return; }
 
-    let scale = 1; if (c.yield===2) scale *= 1.15;
-    if (c.kind==='candy') drawCandyPlant(pl, st, scale, !!c.mutation && c.mutation.id==='glitter');
-    else drawCarrotPlant(pl, st, scale);
-  }
-
-  function drawCandyPlant(pl, st, scale, glitter){
-    const cx = pl.x + pl.w/2; const cy = pl.y + pl.h - 6; 
-    const stemH = Math.max(6, st*(pl.h-14)) * scale;
-    ctx.strokeStyle = '#2c6e3f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy-stemH); ctx.stroke();
-    ctx.fillStyle = '#3f9958'; for (let i=0;i<3;i++){ ctx.beginPath(); ctx.ellipse(cx-6+i*6, cy-stemH*0.6 - i*3, 8, 3, i*0.7, 0, Math.PI*2); ctx.fill(); }
-    const r = 6 + st*6 * scale; const bx = cx, by = cy-stemH-2;
-    ctx.fillStyle = '#b06bd3';
-    for (let i=0;i<6;i++){ ctx.beginPath(); ctx.ellipse(bx+Math.cos(i)*r, by+Math.sin(i)*r, 6, 10, i, 0, Math.PI*2); ctx.fill(); }
-    ctx.fillStyle = '#ffd1e6'; ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
-    if (glitter){ for (let i=0;i<5;i++){ ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(bx+Math.cos(i*2)*r*1.2, by+Math.sin(i*2)*r*1.2, 1, 1); } }
-  }
-
-  function drawCarrotPlant(pl, st, scale){
-    const cx = pl.x + pl.w/2; const baseY = pl.y + pl.h - 6;
-    const top = Math.max(8, st*(pl.h-14)) * scale;
-    ctx.strokeStyle = '#2f8a3a'; ctx.lineWidth = 2;
-    for (let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(cx, baseY-top); ctx.lineTo(cx-14+i*7, baseY-top-10-Math.random()*6); ctx.stroke(); }
-    const vis = Math.min(1, st*1.2);
-    ctx.fillStyle = '#e67e22';
-    ctx.beginPath(); ctx.moveTo(cx, baseY-4 - vis*18);
-    ctx.lineTo(cx-10*scale, baseY-4);
-    ctx.lineTo(cx+10*scale, baseY-4);
-    ctx.closePath(); ctx.fill();
+    // Determine sprite based on crop type and growth stage
+    let spriteName = 'sprout';
+    if (st >= 1) spriteName = (c.kind === 'candy') ? 'plantCandy' : 'plantCarrot';
+    drawSprite(ctx, spriteName, pl.x+4, pl.y+4, pl.w-8, pl.h-8);
   }
 
   function drawPlayer(p, color) {
-    ctx.fillStyle = color; ctx.fillRect(p.x, p.y, p.w, p.h);
+    drawSprite(ctx, 'farmer', p.x, p.y, p.w, p.h);
+    // outline to distinguish players
+    if (color){ ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.w, p.h); }
     // pet icon that follows
     if (p.pet){ const pet = PETS.find(pt=>pt.id===p.pet.id); if (pet){ ctx.font='16px sans-serif'; ctx.fillText(pet.emoji, p.x-12, p.y-6); } }
     ctx.fillStyle = '#0007'; ctx.fillRect(p.x-2, p.y-18, 24, 14);

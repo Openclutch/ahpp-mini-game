@@ -1,0 +1,8 @@
+{
+  "farmer": [0, 0],
+  "sprout": [8, 0],
+  "plantCandy": [9, 0],
+  "plantCarrot": [10, 0],
+  "vendorShop": [0, 1],
+  "vendorSell": [1, 1]
+}

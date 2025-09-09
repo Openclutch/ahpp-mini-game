@@ -407,13 +407,14 @@
 
     if (!plot.crop) {
       const kind = p.selected;
-      if (p.invSeeds[kind]>0) {
+      const crop = CROPS[kind];
+      if (crop && p.invSeeds[kind] > 0) {
         p.invSeeds[kind]--;
         plot.crop = createPlant(kind, p); // per-player growth perk applies
-        log(`${who} planted ${CROPS[kind].name}${plot.crop.mutation?` (mutation: ${plot.crop.mutation.label})`:''}.`);
+        log(`${who} planted ${crop.name}${plot.crop.mutation?` (mutation: ${plot.crop.mutation.label})`:''}.`);
         save();
       } else {
-        log(`${who} has no ${CROPS[kind].name} seeds. Buy at the shop.`);
+        log(`${who} has no ${crop ? crop.name + ' ' : ''}seeds. Buy at the shop.`);
       }
       return;
     }

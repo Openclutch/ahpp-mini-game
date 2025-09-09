@@ -148,6 +148,8 @@
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
   const seedListEl = document.getElementById('seedList');
+  const p1Controls = document.getElementById('p1Controls');
+  const p2Controls = document.getElementById('p2Controls');
 
   // Basic debug logging so we can inspect whether key elements were found
   console.log('DOM elements loaded', {
@@ -160,11 +162,55 @@
     seedListEl,
   });
 
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  function bindTouchControls(container) {
+    container.querySelectorAll('button').forEach(btn => {
+      const code = btn.dataset.key;
+      const start = e => { e.preventDefault(); keys.add(code); };
+      const end = () => { keys.delete(code); };
+      btn.addEventListener('touchstart', start);
+      btn.addEventListener('touchend', end);
+      btn.addEventListener('touchcancel', end);
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', end);
+      btn.addEventListener('mouseleave', end);
+    });
+  }
+
+  bindTouchControls(p1Controls);
+  bindTouchControls(p2Controls);
+
+  // Hide virtual controls if a keyboard is used
+  window.addEventListener('keydown', () => {
+    p1Controls.style.display = 'none';
+    p2Controls.style.display = 'none';
+  }, { once: true });
+
   addP2Btn.onclick = () => {
     state.p2Active = true;
     document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
     addP2Btn.style.display = 'none';
+  }
+
+  addP2Btn.onclick = () => {
+    if (net) net.disconnect();
+    enableP2();
   };
+
+  let net = null;
+  if (window.Network) {
+    net = new Network(msg => {
+      if (msg.type === 'state') {
+        Object.assign(state.p2, { x: msg.x, y: msg.y, selected: msg.selected });
+        if (!state.p2Active) enableP2();
+      } else if (msg.type === 'action') {
+        playerAction(state.p2, 'P2');
+      } else if (msg.type === 'cycle') {
+        state.p2.selected = state.p2.selected === 'candy' ? 'carrot' : 'candy';
+      }
+    });
+  }
 
   function log(msg) {
     const d = document.createElement('div');
@@ -230,11 +276,17 @@
 
   // ---------- INPUT ----------
   const keys = new Set();
-  window.addEventListener('keydown', e=>{ keys.add(e.code); if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault(); });
-  window.addEventListener('keyup', e=>{ keys.delete(e.code); });
+  window.addEventListener('keydown', e=>{
+    keys.add(e.code);
+    if (net) net.handleKey(e.code, true);
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+  });
+  window.addEventListener('keyup', e=>{
+    keys.delete(e.code);
+    if (net) net.handleKey(e.code, false);
+  });
 
   // Touch controls
-  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   console.log('Touch support detected:', isTouch);
   if (isTouch) {
     console.log('Touch mode enabled – pointer interactions will trigger player actions');
@@ -625,6 +677,10 @@
     }
     movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
     if (state.p2Active) movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
+
+    if (net && net.isOpen) {
+      net.sendState({ x: state.p1.x, y: state.p1.y, selected: state.p1.selected });
+    }
 
     if (justPressed('KeyE')) playerAction(state.p1, 'P1');
     if (state.p2Active && justPressed('Slash')) playerAction(state.p2, 'P2');

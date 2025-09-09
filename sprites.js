@@ -1,7 +1,7 @@
 const ATLAS_COLS = 24;
 const ATLAS_ROWS = 16;
 const atlas = new Image();
-atlas.src = 'assets/atlas.png';
+atlas.src = 'textures.png';
 
 let cellW = 0;
 let cellH = 0;

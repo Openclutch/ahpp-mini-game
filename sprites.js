@@ -1,7 +1,9 @@
 const ATLAS_COLS = 24;
 const ATLAS_ROWS = 16;
 const atlas = new Image();
-atlas.src = 'textures.png';
+// Cache busting timestamp ensures updated textures are fetched
+const CACHE_BUST = Date.now();
+atlas.src = `textures.png?v=${CACHE_BUST}`;
 
 let cellW = 0;
 let cellH = 0;
@@ -15,7 +17,7 @@ atlas.onload = () => {
 const SPRITES = {};
 
 function loadSpriteMap(url = 'assets/sprites.json') {
-  fetch(url)
+  fetch(`${url}?v=${CACHE_BUST}`)
     .then(r => r.json())
     .then(map => Object.assign(SPRITES, map))
     .catch(err => console.warn('Failed to load sprite map', err));

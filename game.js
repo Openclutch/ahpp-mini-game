@@ -175,6 +175,11 @@
       btn.addEventListener('mousedown', start);
       btn.addEventListener('mouseup', end);
       btn.addEventListener('mouseleave', end);
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        keys.add(code);
+        setTimeout(() => keys.delete(code), 100);
+      });
     });
   }
 

@@ -10,6 +10,7 @@
     { id:'bee',    name:'Honey Bee',  emoji:'🐝', priceMult:1.10 },
     { id:'bunny',  name:'Bunny',      emoji:'🐰', speed:+0.4 },
     { id:'sprout', name:'Sprout',     emoji:'🌱', plantGrowth:1.10 },
+    { id:'robot',  name:'Robot',      emoji:'🤖', randomMutation:true },
   ];
 
   const SEED_CATALOG = [
@@ -47,12 +48,12 @@
   const SAVE_KEY = 'garden-duo-main';
   const LEGACY_KEYS = ['garden-duo-v1','garden-duo-v2','garden-duo-v3'];
 
-  // Random plant mutations
+  // Plant mutation effects
   const MUTATIONS = [
-    { id:'swift',   label:'Swift Growth', effect:p=>p.growMs*=0.7, rarity:0.15 },
-    { id:'giant',   label:'Giant Yield',  effect:p=>p.yield=2,     rarity:0.10 },
-    { id:'glitter', label:'Glitter Value',effect:p=>p.sellMult=2,  rarity:0.05 },
-    { id:'rot',     label:'Rot-Prone',    effect:p=>p.rotChance=0.25, rarity:0.06 },
+    { id:'swift',   label:'Swift Growth', effect:p=>p.growMs*=0.7 },
+    { id:'giant',   label:'Giant Yield',  effect:p=>p.yield=2 },
+    { id:'glitter', label:'Glitter Value',effect:p=>p.sellMult=2 },
+    { id:'rot',     label:'Rot-Prone',    effect:p=>p.rotChance=0.25 },
   ];
 
   // World events
@@ -98,6 +99,14 @@
     if (state.p2.money == null) state.p2.money = 10;
     if (state.p1.pet == null) state.p1.pet = null;
     if (state.p2.pet == null) state.p2.pet = null;
+    if (state.p1.pet && (state.p1.pet.x == null || state.p1.pet.y == null)) {
+      state.p1.pet.x = state.p1.x - 16;
+      state.p1.pet.y = state.p1.y - 16;
+    }
+    if (state.p2.pet && (state.p2.pet.x == null || state.p2.pet.y == null)) {
+      state.p2.pet.x = state.p2.x - 16;
+      state.p2.pet.y = state.p2.y - 16;
+    }
     if (!Array.isArray(state.p1.pets)) state.p1.pets = [];
     if (!Array.isArray(state.p2.pets)) state.p2.pets = [];
     if (state.p1.selected == null) state.p1.selected = 'candy';
@@ -330,13 +339,24 @@
   }
 
   function movePlayer(p, up, left, down, right) {
-    const sp = p.speedBase + (p.pet && p.pet.id==='bunny' ? (PETS.find(x=>x.id==='bunny').speed||0) : 0);
+    const pet = p.pet ? PETS.find(x=>x.id===p.pet.id) : null;
+    const sp = p.speedBase + (pet?.speed || 0);
     if (keys.has(up)) p.y -= sp;
     if (keys.has(down)) p.y += sp;
     if (keys.has(left)) p.x -= sp;
     if (keys.has(right)) p.x += sp;
     p.x = Math.max(0, Math.min(WORLD.w-p.w, p.x));
     p.y = Math.max(0, Math.min(WORLD.h-p.h, p.y));
+  }
+
+  function movePet(p) {
+    if (!p.pet) return;
+    const targetX = p.x - 16;
+    const targetY = p.y - 16;
+    if (p.pet.x == null) p.pet.x = targetX;
+    if (p.pet.y == null) p.pet.y = targetY;
+    p.pet.x += (targetX - p.pet.x) * 0.05;
+    p.pet.y += (targetY - p.pet.y) * 0.05;
   }
 
   const pressed = new Set();
@@ -455,13 +475,17 @@
 
   function createPlant(kind, planter) {
     const base = { kind, plantedAt: Date.now(), growMs: CROPS[kind].growMs, yield:1, sellMult:1, rotChance:0, mutation:null, dead:false };
-    // Planter's pet perk
-    if (planter && planter.pet && planter.pet.id==='sprout') { base.growMs /= (PETS.find(x=>x.id==='sprout').plantGrowth||1); }
-    // Mutation roll
-    const roll = Math.random();
-    let acc=0; let picked=null;
-    for (const m of MUTATIONS) { acc += m.rarity; if (roll < acc) { picked = m; break; } }
-    if (picked) { base.mutation = { id:picked.id, label:picked.label }; picked.effect(base); }
+    if (planter && planter.pet) {
+      const pet = PETS.find(x=>x.id===planter.pet.id);
+      if (pet) {
+        if (pet.plantGrowth) base.growMs /= pet.plantGrowth;
+        if (pet.randomMutation) {
+          const mut = MUTATIONS[Math.floor(Math.random()*MUTATIONS.length)];
+          base.mutation = { id: mut.id, label: mut.label };
+          mut.effect(base);
+        }
+      }
+    }
     return base;
   }
 
@@ -478,7 +502,8 @@
 
   function priceOf(kind, seller) {
     const base = Math.round(CROPS[kind].sell * state.priceMult);
-    const petBoost = (seller && seller.pet && seller.pet.id==='bee') ? PETS.find(x=>x.id==='bee').priceMult : 1;
+    const pet = seller && seller.pet ? PETS.find(x=>x.id===seller.pet.id) : null;
+    const petBoost = pet?.priceMult || 1;
     return Math.round(base * petBoost * (seller && seller.bonusPriceMult || 1));
   }
 
@@ -561,7 +586,8 @@
     const pool = PETS.filter(pt=>!ownedIds.has(pt.id));
     if (pool.length){
       const pet = pool[Math.floor(Math.random()*pool.length)];
-      p.pets.push({id:pet.id}); p.pet = {id:pet.id};
+      p.pets.push({id:pet.id});
+      p.pet = {id:pet.id, x:p.x-16, y:p.y-16};
       log(`${who} received a pet: ${pet.name}! Perk applied.`);
     } else {
       p.money += 100; log(`${who} already has all pets. Awarded ¢100 instead.`);
@@ -625,6 +651,8 @@
     // Players
     drawPlayer(state.p1, '#2563eb');
     if (state.p2Active) drawPlayer(state.p2, '#e11d48');
+    drawPet(state.p1);
+    if (state.p2Active) drawPet(state.p2);
 
     // HUD
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
@@ -702,11 +730,17 @@
     drawSprite(ctx, 'farmer', p.x, p.y, p.w, p.h);
     // outline to distinguish players
     if (color){ ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.w, p.h); }
-    // pet icon that follows
-    if (p.pet){ const pet = PETS.find(pt=>pt.id===p.pet.id); if (pet){ ctx.font='16px sans-serif'; ctx.fillText(pet.emoji, p.x-12, p.y-6); } }
     ctx.fillStyle = '#0007'; ctx.fillRect(p.x-2, p.y-18, 24, 14);
     ctx.fillStyle = '#fff'; ctx.font='12px sans-serif';
     ctx.fillText(seedEmoji(p.selected), p.x+3, p.y-6);
+  }
+
+  function drawPet(p) {
+    if (!p.pet) return;
+    const pet = PETS.find(pt=>pt.id===p.pet.id);
+    if (!pet) return;
+    ctx.font='16px sans-serif';
+    ctx.fillText(pet.emoji, p.pet.x, p.pet.y);
   }
 
   // ---------- MAIN LOOP ----------
@@ -717,7 +751,8 @@
       firstTick = false;
     }
     movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
-    if (state.p2Active) movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight');
+    movePet(state.p1);
+    if (state.p2Active) { movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight'); movePet(state.p2); }
 
     if (net && net.isOpen) {
       net.sendState({ x: state.p1.x, y: state.p1.y, selected: state.p1.selected });

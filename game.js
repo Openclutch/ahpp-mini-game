@@ -191,6 +191,7 @@
     state.p2Active = true;
     document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
     addP2Btn.style.display = 'none';
+    if (!state.plots.some(pl => pl.owner === 'P2')) { addGardenPlots('P2'); save(); }
   }
 
   addP2Btn.onclick = () => {
@@ -255,21 +256,29 @@
     { x: WORLD.w-360, y: 220, w: 320, h: 360, cols:5, rows:4, owner:'P2' },
   ];
 
-  if (!state.plots || !state.plots.length) {
-    for (const g of GARDENS) {
-      const cellW = Math.floor(g.w / g.cols);
-      const cellH = Math.floor(g.h / g.rows);
-      for (let r=0;r<g.rows;r++) for (let c=0;c<g.cols;c++) {
-        state.plots.push({
-          x: g.x + c*cellW + 6,
-          y: g.y + r*cellH + 6,
-          w: cellW - 12,
-          h: cellH - 12,
-          owner: g.owner,
-          crop:null,
-        });
-      }
+  function addGardenPlots(owner){
+    const g = GARDENS.find(g=>g.owner===owner); if (!g) return;
+    const cellW = Math.floor(g.w / g.cols);
+    const cellH = Math.floor(g.h / g.rows);
+    for (let r=0;r<g.rows;r++) for (let c=0;c<g.cols;c++) {
+      state.plots.push({
+        x: g.x + c*cellW + 6,
+        y: g.y + r*cellH + 6,
+        w: cellW - 12,
+        h: cellH - 12,
+        owner,
+        crop:null,
+      });
     }
+  }
+
+  if (!state.plots || !state.plots.length) {
+    addGardenPlots('P1');
+    if (state.p2Active) addGardenPlots('P2');
+  }
+
+  function activePlots(){
+    return state.p2Active ? state.plots : state.plots.filter(pl=>pl.owner!=='P2');
   }
 
   for (const pl of state.plots) { if (!pl.owner) pl.owner = (pl.x < WORLD.w/2 ? 'P1' : 'P2'); }
@@ -294,7 +303,7 @@
       const rect = cv.getBoundingClientRect();
       const x = (e.clientX - rect.left) * cv.width / rect.width;
       const y = (e.clientY - rect.top) * cv.height / rect.height;
-      const plot = state.plots.find(pl => inside(x, y, 0, 0, pl.x, pl.y, pl.w, pl.h));
+      const plot = activePlots().find(pl => inside(x, y, 0, 0, pl.x, pl.y, pl.w, pl.h));
       if (!plot) return;
       const p = playerByName(plot.owner);
       const oldX = p.x, oldY = p.y;
@@ -362,7 +371,7 @@
     }
 
     // Plant / harvest / fix / inspect
-    const plot = state.plots.find(pl => inside(p.x,p.y,p.w,p.h, pl.x,pl.y,pl.w,pl.h));
+    const plot = activePlots().find(pl => inside(p.x,p.y,p.w,p.h, pl.x,pl.y,pl.w,pl.h));
     if (!plot) return;
 
     // Enforce ownership
@@ -561,6 +570,7 @@
 
     // Garden rectangles
     for (const gdn of GARDENS) {
+      if (gdn.owner==='P2' && !state.p2Active) continue;
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(gdn.x+2, gdn.y+2, gdn.w, gdn.h);
       ctx.fillStyle = '#7fb07f'; ctx.fillRect(gdn.x, gdn.y, gdn.w, gdn.h);
@@ -570,7 +580,7 @@
     }
 
     // Plots
-    for (const pl of state.plots) drawPlot(pl);
+    for (const pl of activePlots()) drawPlot(pl);
 
     // Center challenge circle
     if (state.challenge && Date.now() < state.challenge.endsAt){

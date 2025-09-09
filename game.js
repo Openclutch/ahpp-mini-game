@@ -84,28 +84,30 @@
   }
   migrateLegacy();
 
+  function applySavedState(saved) {
+    if (!saved) return false;
+    state.priceMult = saved.priceMult ?? state.priceMult;
+    state.growthMult = saved.growthMult ?? state.growthMult;
+    state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
+    Object.assign(state.p1, saved.p1 || {});
+    Object.assign(state.p2, saved.p2 || {});
+    state.shopOpen = null;
+    state.sellOpen = false;
+
+    if (state.p1.money == null) state.p1.money = 10;
+    if (state.p2.money == null) state.p2.money = 10;
+    if (state.p1.pet == null) state.p1.pet = null;
+    if (state.p2.pet == null) state.p2.pet = null;
+    if (!Array.isArray(state.p1.pets)) state.p1.pets = [];
+    if (!Array.isArray(state.p2.pets)) state.p2.pets = [];
+    if (state.p1.selected == null) state.p1.selected = 'candy';
+    if (state.p2.selected == null) state.p2.selected = 'candy';
+    return true;
+  }
+
   try {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
-    if (saved) {
-      // Merge saved data without dropping player defaults like position and size
-      state.priceMult = saved.priceMult ?? state.priceMult;
-      state.growthMult = saved.growthMult ?? state.growthMult;
-      state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
-      Object.assign(state.p1, saved.p1 || {});
-      Object.assign(state.p2, saved.p2 || {});
-      state.shopOpen = null;
-      state.sellOpen = false;
-
-      if (state.p1.money == null) state.p1.money = 10;
-      if (state.p2.money == null) state.p2.money = 10;
-      if (state.p1.pet == null) state.p1.pet = null;
-      if (state.p2.pet == null) state.p2.pet = null;
-      if (!Array.isArray(state.p1.pets)) state.p1.pets = [];
-      if (!Array.isArray(state.p2.pets)) state.p2.pets = [];
-      // Default seed selection if missing from saved data
-      if (state.p1.selected == null) state.p1.selected = 'candy';
-      if (state.p2.selected == null) state.p2.selected = 'candy';
-    }
+    if (applySavedState(saved)) save();
   } catch {}
 
   for (const s of SEED_CATALOG) {
@@ -224,8 +226,8 @@
   btnSave.onclick = () => { save(); log('Game saved to browser.'); };
   btnLoad.onclick = () => {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
-    if (!saved) { log('No browser save found.'); return; }
-    Object.assign(state, saved, { shopOpen:null, sellOpen:false });
+    if (!applySavedState(saved)) { log('No browser save found.'); return; }
+    save();
     log('Save loaded from browser.');
   };
   btnExport.onclick = () => {
@@ -237,8 +239,15 @@
   btnImport.onclick = () => fileImport.click();
   fileImport.onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
-    try { const txt = await f.text(); const data = JSON.parse(txt); localStorage.setItem(SAVE_KEY, JSON.stringify(data)); Object.assign(state, data, { shopOpen:null, sellOpen:false }); log('Imported save file.'); }
-    catch { log('Failed to import save.'); }
+    try {
+      const txt = await f.text();
+      const data = JSON.parse(txt);
+      applySavedState(data);
+      save();
+      log('Imported save file.');
+    } catch {
+      log('Failed to import save.');
+    }
   };
 
   // ---------- WORLD LAYOUT ----------

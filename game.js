@@ -213,7 +213,7 @@
       } else if (msg.type === 'action') {
         playerAction(state.p2, 'P2');
       } else if (msg.type === 'cycle') {
-        state.p2.selected = state.p2.selected === 'candy' ? 'carrot' : 'candy';
+        cycleSeed(state.p2);
       }
     });
   }
@@ -346,6 +346,20 @@
   function dist(ax,ay,bx,by){ const dx=ax-bx, dy=ay-by; return Math.hypot(dx,dy); }
 
   function playerByName(name){ return name==='P1' ? state.p1 : state.p2; }
+
+  function cycleSeed(p){
+    const available = Object.keys(p.invSeeds).filter(id => p.invSeeds[id] > 0);
+    if (available.length === 0) return;
+    let idx = available.indexOf(p.selected);
+    idx = (idx + 1) % available.length;
+    p.selected = available[idx];
+  }
+
+  function seedEmoji(id){
+    if (id === 'candy') return '🍬';
+    if (id === 'carrot') return '🥕';
+    return '🌱';
+  }
 
   function playerAction(p, who) {
     console.log('playerAction triggered', {
@@ -608,14 +622,16 @@
     const petName1 = matchPet1 ? matchPet1.name : '—';
     const inv1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
     const bag1 = Object.entries(state.p1.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
-    p1hud.textContent = `P1 Seeds: ${inv1} | Bag: ${bag1} | Pet: ${petName1} | Selected: ${CROPS[state.p1.selected].name}`;
+    const sel1 = CROPS[state.p1.selected]?.name || state.p1.selected;
+    p1hud.textContent = `P1 Seeds: ${inv1} | Bag: ${bag1} | Pet: ${petName1} | Selected: ${sel1}`;
     if (state.p2Active) {
       p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
       const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
       const petName2 = matchPet2 ? matchPet2.name : '—';
       const inv2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
       const bag2 = Object.entries(state.p2.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
-      p2hud.textContent = `P2 Seeds: ${inv2} | Bag: ${bag2} | Pet: ${petName2} | Selected: ${CROPS[state.p2.selected].name}`;
+      const sel2 = CROPS[state.p2.selected]?.name || state.p2.selected;
+      p2hud.textContent = `P2 Seeds: ${inv2} | Bag: ${bag2} | Pet: ${petName2} | Selected: ${sel2}`;
     }
 
     // Log HUD state roughly once per second to help debug bag/seed values
@@ -680,7 +696,7 @@
     if (p.pet){ const pet = PETS.find(pt=>pt.id===p.pet.id); if (pet){ ctx.font='16px sans-serif'; ctx.fillText(pet.emoji, p.x-12, p.y-6); } }
     ctx.fillStyle = '#0007'; ctx.fillRect(p.x-2, p.y-18, 24, 14);
     ctx.fillStyle = '#fff'; ctx.font='12px sans-serif';
-    ctx.fillText(p.selected==='candy'?'🍬':'🥕', p.x+3, p.y-6);
+    ctx.fillText(seedEmoji(p.selected), p.x+3, p.y-6);
   }
 
   // ---------- MAIN LOOP ----------
@@ -700,8 +716,8 @@
     if (justPressed('KeyE')) playerAction(state.p1, 'P1');
     if (state.p2Active && justPressed('Slash')) playerAction(state.p2, 'P2');
 
-    if (justPressed('KeyQ')) state.p1.selected = (state.p1.selected==='candy'?'carrot':'candy');
-    if (state.p2Active && justPressed('Period')) state.p2.selected = (state.p2.selected==='candy'?'carrot':'candy');
+    if (justPressed('KeyQ')) cycleSeed(state.p1);
+    if (state.p2Active && justPressed('Period')) cycleSeed(state.p2);
 
     if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
 

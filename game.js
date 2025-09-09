@@ -148,6 +148,8 @@
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
   const seedListEl = document.getElementById('seedList');
+  const p1Controls = document.getElementById('p1Controls');
+  const p2Controls = document.getElementById('p2Controls');
 
   // Basic debug logging so we can inspect whether key elements were found
   console.log('DOM elements loaded', {
@@ -159,6 +161,31 @@
     sellPanel,
     seedListEl,
   });
+
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  function bindTouchControls(container) {
+    container.querySelectorAll('button').forEach(btn => {
+      const code = btn.dataset.key;
+      const start = e => { e.preventDefault(); keys.add(code); };
+      const end = () => { keys.delete(code); };
+      btn.addEventListener('touchstart', start);
+      btn.addEventListener('touchend', end);
+      btn.addEventListener('touchcancel', end);
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', end);
+      btn.addEventListener('mouseleave', end);
+    });
+  }
+
+  bindTouchControls(p1Controls);
+  bindTouchControls(p2Controls);
+
+  // Hide virtual controls if a keyboard is used
+  window.addEventListener('keydown', () => {
+    p1Controls.style.display = 'none';
+    p2Controls.style.display = 'none';
+  }, { once: true });
 
   addP2Btn.onclick = () => {
     state.p2Active = true;
@@ -234,7 +261,6 @@
   window.addEventListener('keyup', e=>{ keys.delete(e.code); });
 
   // Touch controls
-  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   console.log('Touch support detected:', isTouch);
   if (isTouch) {
     console.log('Touch mode enabled – pointer interactions will trigger player actions');

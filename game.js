@@ -69,8 +69,8 @@
     priceMult: 1,
     growthMult: 1,
     plots: [],
-    p1: { x: 220, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
-    p2: { x: 1060, y: 450, w:20, h:20, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
+    p1: { x: 220, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
+    p2: { x: 1060, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
     p2Active: false,
     shopOpen:null, sellOpen:false,
     activeEvent:null, eventUntil:0,
@@ -101,6 +101,7 @@
 
     if (state.p1.money == null) state.p1.money = 10;
     if (state.p2.money == null) state.p2.money = 10;
+
     if (state.p1.selected == null) state.p1.selected = 'candy';
     if (state.p2.selected == null) state.p2.selected = 'candy';
     return true;
@@ -343,8 +344,8 @@
 
   function movePet(p) {
     if (!p.pet) return;
-    const targetX = p.x - 16;
-    const targetY = p.y - 16;
+    const targetX = p.x - p.w * 0.8;
+    const targetY = p.y - p.h * 0.8;
     if (p.pet.x == null) p.pet.x = targetX;
     if (p.pet.y == null) p.pet.y = targetY;
     p.pet.x += (targetX - p.pet.x) * 0.05;
@@ -778,10 +779,10 @@
 
     // Selected seed bubble
     ctx.fillStyle = '#0007';
-    ctx.fillRect(p.x - 2, p.y - 20, 24, 16);
+    ctx.fillRect(p.x - 2, p.y - 20, p.w + 4, 16);
     ctx.fillStyle = '#fff';
     ctx.font = '12px sans-serif';
-    ctx.fillText(seedEmoji(p.selected), p.x + 3, p.y - 8);
+    ctx.fillText(seedEmoji(p.selected), p.x + p.w / 2 - 5, p.y - 8);
   }
 
   function drawPet(p) {

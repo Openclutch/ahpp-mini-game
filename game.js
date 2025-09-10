@@ -92,23 +92,15 @@
     state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
     Object.assign(state.p1, saved.p1 || {});
     Object.assign(state.p2, saved.p2 || {});
+    state.p1.pet = null;
+    state.p2.pet = null;
+    state.p1.pets = [];
+    state.p2.pets = [];
     state.shopOpen = null;
     state.sellOpen = false;
 
     if (state.p1.money == null) state.p1.money = 10;
     if (state.p2.money == null) state.p2.money = 10;
-    if (state.p1.pet == null) state.p1.pet = null;
-    if (state.p2.pet == null) state.p2.pet = null;
-    if (state.p1.pet && (state.p1.pet.x == null || state.p1.pet.y == null)) {
-      state.p1.pet.x = state.p1.x - 16;
-      state.p1.pet.y = state.p1.y - 16;
-    }
-    if (state.p2.pet && (state.p2.pet.x == null || state.p2.pet.y == null)) {
-      state.p2.pet.x = state.p2.x - 16;
-      state.p2.pet.y = state.p2.y - 16;
-    }
-    if (!Array.isArray(state.p1.pets)) state.p1.pets = [];
-    if (!Array.isArray(state.p2.pets)) state.p2.pets = [];
     if (state.p1.selected == null) state.p1.selected = 'candy';
     if (state.p2.selected == null) state.p2.selected = 'candy';
     return true;
@@ -131,8 +123,8 @@
       priceMult: state.priceMult,
       growthMult: state.growthMult,
       plots: state.plots,
-      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, pet:state.p1.pet, pets:state.p1.pets, selected:state.p1.selected },
-      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets, selected:state.p2.selected },
+      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, selected:state.p1.selected },
+      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, selected:state.p2.selected },
     }));
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));

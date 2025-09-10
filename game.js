@@ -42,6 +42,12 @@
     { id:'elderStrawberry', name:'Elder Strawberry', harvest:'Multiple', sheckles:70000000, robux:957 },
     { id:'romanesco', name:'Romanesco', harvest:'Multiple', sheckles:88000000, robux:987 },
   ];
+  // Provide basic crop stats for seeds missing from CROPS so they can be planted
+  for (const s of SEED_CATALOG) {
+    if (!CROPS[s.id]) {
+      CROPS[s.id] = { name: s.name, growMs: 600000, sell: s.sheckles * 100 };
+    }
+  }
   const seedStock = new Set();
 
   // Stable save key + migrate from legacy
@@ -384,11 +390,36 @@
     }
   }
 
-  function seedEmoji(id){
-    if (id === 'candy') return '🍬';
-    if (id === 'carrot') return '🥕';
-    return '🌱';
-  }
+  const SEED_EMOJIS = {
+    candy:'🍬',
+    carrot:'🥕',
+    strawberry:'🍓',
+    blueberry:'🫐',
+    orangeTulip:'🌷',
+    tomato:'🍅',
+    corn:'🌽',
+    daffodil:'🌼',
+    watermelon:'🍉',
+    pumpkin:'🎃',
+    apple:'🍎',
+    bamboo:'🎍',
+    coconut:'🥥',
+    cactus:'🌵',
+    dragonFruit:'🐉',
+    mango:'🥭',
+    grape:'🍇',
+    mushroom:'🍄',
+    pepper:'🌶️',
+    cacao:'🍫',
+    beanstalk:'🌿',
+    emberLily:'🔥',
+    sugarApple:'🍏',
+    burningBud:'💥',
+    giantPinecone:'🌲',
+    elderStrawberry:'🍓',
+    romanesco:'🥦'
+  };
+  function seedEmoji(id){ return SEED_EMOJIS[id] || '🌱'; }
 
   function playerAction(p, who) {
     console.log('playerAction triggered', {
@@ -528,7 +559,7 @@
     for (const s of SEED_CATALOG){
       const row=document.createElement('div');
       row.className='row';
-      const name=document.createElement('span'); name.textContent=s.name;
+      const name=document.createElement('span'); name.textContent=seedEmoji(s.id)+" "+s.name;
       const price=document.createElement('span'); price.textContent=`¢${s.sheckles}`;
       row.append(name, price); seedListEl.appendChild(row);
       const actions=document.createElement('div'); actions.className='row';

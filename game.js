@@ -92,23 +92,16 @@
     state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
     Object.assign(state.p1, saved.p1 || {});
     Object.assign(state.p2, saved.p2 || {});
+    state.p1.pet = null;
+    state.p2.pet = null;
+    state.p1.pets = [];
+    state.p2.pets = [];
     state.shopOpen = null;
     state.sellOpen = false;
 
     if (state.p1.money == null) state.p1.money = 10;
     if (state.p2.money == null) state.p2.money = 10;
-    if (state.p1.pet == null) state.p1.pet = null;
-    if (state.p2.pet == null) state.p2.pet = null;
-    if (state.p1.pet && (state.p1.pet.x == null || state.p1.pet.y == null)) {
-      state.p1.pet.x = state.p1.x - state.p1.w * 0.8;
-      state.p1.pet.y = state.p1.y - state.p1.h * 0.8;
-    }
-    if (state.p2.pet && (state.p2.pet.x == null || state.p2.pet.y == null)) {
-      state.p2.pet.x = state.p2.x - state.p2.w * 0.8;
-      state.p2.pet.y = state.p2.y - state.p2.h * 0.8;
-    }
-    if (!Array.isArray(state.p1.pets)) state.p1.pets = [];
-    if (!Array.isArray(state.p2.pets)) state.p2.pets = [];
+
     if (state.p1.selected == null) state.p1.selected = 'candy';
     if (state.p2.selected == null) state.p2.selected = 'candy';
     return true;
@@ -131,8 +124,8 @@
       priceMult: state.priceMult,
       growthMult: state.growthMult,
       plots: state.plots,
-      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, pet:state.p1.pet, pets:state.p1.pets, selected:state.p1.selected },
-      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, pet:state.p2.pet, pets:state.p2.pets, selected:state.p2.selected },
+      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, selected:state.p1.selected },
+      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, selected:state.p2.selected },
     }));
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
@@ -382,6 +375,13 @@
     let idx = available.indexOf(p.selected);
     idx = (idx + 1) % available.length;
     p.selected = available[idx];
+  }
+
+  function selectSeedByIndex(p, idx) {
+    const available = Object.keys(p.invSeeds).filter(id => p.invSeeds[id] > 0);
+    if (idx >= 0 && idx < available.length) {
+      p.selected = available[idx];
+    }
   }
 
   function seedEmoji(id){
@@ -658,7 +658,8 @@
     p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
     const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
     const petName1 = matchPet1 ? matchPet1.name : '—';
-    const inv1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
+    const invEntries1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0);
+    const inv1 = invEntries1.map(([k,v],i)=>`${i+1}:${k}(${v})`).join(', ') || '—';
     const bag1 = Object.entries(state.p1.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
     const sel1 = CROPS[state.p1.selected]?.name || state.p1.selected;
     p1hud.textContent = `P1 Seeds: ${inv1} | Bag: ${bag1} | Pet: ${petName1} | Selected: ${sel1}`;
@@ -666,7 +667,8 @@
       p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
       const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
       const petName2 = matchPet2 ? matchPet2.name : '—';
-      const inv2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
+      const invEntries2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0);
+      const inv2 = invEntries2.map(([k,v],i)=>`${i+1}:${k}(${v})`).join(', ') || '—';
       const bag2 = Object.entries(state.p2.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
       const sel2 = CROPS[state.p2.selected]?.name || state.p2.selected;
       p2hud.textContent = `P2 Seeds: ${inv2} | Bag: ${bag2} | Pet: ${petName2} | Selected: ${sel2}`;
@@ -808,6 +810,11 @@
 
     if (justPressed('KeyE')) playerAction(state.p1, 'P1');
     if (state.p2Active && justPressed('Slash')) playerAction(state.p2, 'P2');
+
+    for (let i = 1; i <= 10; i++) {
+      if (justPressed('Digit' + (i % 10))) selectSeedByIndex(state.p1, i - 1);
+      if (state.p2Active && justPressed('Numpad' + (i % 10))) selectSeedByIndex(state.p2, i - 1);
+    }
 
     if (justPressed('KeyQ')) cycleSeed(state.p1);
     if (state.p2Active && justPressed('Period')) cycleSeed(state.p2);

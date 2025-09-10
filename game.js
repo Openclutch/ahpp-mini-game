@@ -749,10 +749,38 @@
   }
 
   function drawPlayer(p, color) {
-    ctx.fillStyle = color; ctx.fillRect(p.x, p.y, p.w, p.h);
-    ctx.fillStyle = '#0007'; ctx.fillRect(p.x-2, p.y-18, 24, 14);
-    ctx.fillStyle = '#fff'; ctx.font='12px sans-serif';
-    ctx.fillText(seedEmoji(p.selected), p.x+3, p.y-6);
+    // Body
+    const cx = p.x + p.w / 2;
+    ctx.fillStyle = color;
+    ctx.fillRect(p.x + 4, p.y + 8, p.w - 8, p.h - 8);
+
+    // Head
+    ctx.fillStyle = '#ffdfba';
+    const r = p.w * 0.25;
+    ctx.beginPath();
+    ctx.arc(cx, p.y + r + 1, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hat
+    ctx.fillStyle = '#8b4513';
+    ctx.fillRect(p.x + 2, p.y, p.w - 4, 3);
+    ctx.beginPath();
+    ctx.moveTo(cx - r, p.y);
+    ctx.lineTo(cx + r, p.y);
+    ctx.lineTo(cx, p.y - r * 1.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Tool emoji for flair
+    ctx.font = '12px serif';
+    ctx.fillText('🌾', p.x + p.w - 6, p.y + p.h + 2);
+
+    // Selected seed bubble
+    ctx.fillStyle = '#0007';
+    ctx.fillRect(p.x - 2, p.y - 20, 24, 16);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px sans-serif';
+    ctx.fillText(seedEmoji(p.selected), p.x + 3, p.y - 8);
   }
 
   function drawPet(p) {

@@ -174,6 +174,19 @@
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
+  function updateTouchLayout() {
+    document.body.classList.toggle('single-player', !state.p2Active);
+  }
+
+  function enableP2() {
+    if (state.p2Active) return;
+    state.p2Active = true;
+    document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
+    addP2Btn.style.display = 'none';
+    if (!state.plots.some(pl => pl.owner === 'P2')) { addGardenPlots('P2'); save(); }
+    updateTouchLayout();
+  }
+
   function bindTouchControls(container) {
     container.querySelectorAll('button').forEach(btn => {
       const code = btn.dataset.key;
@@ -195,19 +208,13 @@
 
   bindTouchControls(p1Controls);
   bindTouchControls(p2Controls);
+  updateTouchLayout();
 
   // Hide virtual controls if a keyboard is used
   window.addEventListener('keydown', () => {
     p1Controls.style.display = 'none';
     p2Controls.style.display = 'none';
   }, { once: true });
-
-  addP2Btn.onclick = () => {
-    state.p2Active = true;
-    document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
-    addP2Btn.style.display = 'none';
-    if (!state.plots.some(pl => pl.owner === 'P2')) { addGardenPlots('P2'); save(); }
-  }
 
   addP2Btn.onclick = () => {
     if (net) net.disconnect();

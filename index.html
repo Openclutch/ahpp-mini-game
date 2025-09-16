@@ -47,12 +47,12 @@
     #p1Controls { left:16px; right:auto; }
     #p2Controls { right:16px; left:auto; flex-direction:row-reverse; }
     body.single-player #p1Controls { left:auto; right:16px; }
-    .dpad { position:relative; width:120px; height:120px; }
-    .dpad button { position:absolute; width:56px; height:56px; background:#ffffffd0; border:1px solid #333; border-radius:12px; font-size:20px; }
-    .dpad .up { top:0; left:50%; transform:translate(-50%, 0); }
-    .dpad .down { bottom:0; left:50%; transform:translate(-50%, 0); }
-    .dpad .left { left:0; top:50%; transform:translate(0, -50%); }
-    .dpad .right { right:0; top:50%; transform:translate(0, -50%); }
+    .dpad { position:relative; width:120px; height:120px; border-radius:50%; background:#ffffffd0; border:1px solid #333; box-shadow:inset 0 0 12px #00000018; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
+    .dpad::before, .dpad::after { content:""; position:absolute; background:#1b2b38; opacity:.08; }
+    .dpad::before { width:70%; height:2px; }
+    .dpad::after { width:2px; height:70%; }
+    .dpad .stick { width:60px; height:60px; border-radius:50%; background:#f8fbff; border:1px solid #333; box-shadow:0 3px 6px #00000033; transition:transform .05s ease-out; pointer-events:none; }
+    .dpad.active .stick { box-shadow:0 4px 12px #00000055; }
     .actions { display:flex; flex-direction:column; gap:16px; }
     .actions button { width:84px; height:56px; background:#ffffffd0; border:1px solid #333; border-radius:12px; }
     body.single-player #p1Controls .actions { align-items:flex-end; }
@@ -101,11 +101,8 @@
     <div id="tooltip"></div>
 
     <div class="touch-controls" id="p1Controls">
-      <div class="dpad">
-        <button class="up" data-key="KeyW">▲</button>
-        <button class="down" data-key="KeyS">▼</button>
-        <button class="left" data-key="KeyA">◀</button>
-        <button class="right" data-key="KeyD">▶</button>
+      <div class="dpad" data-up="KeyW" data-down="KeyS" data-left="KeyA" data-right="KeyD">
+        <div class="stick"></div>
       </div>
       <div class="actions">
         <button data-key="KeyQ">Cycle</button>
@@ -113,11 +110,8 @@
       </div>
     </div>
     <div class="touch-controls p2" id="p2Controls">
-      <div class="dpad">
-        <button class="up" data-key="ArrowUp">▲</button>
-        <button class="down" data-key="ArrowDown">▼</button>
-        <button class="left" data-key="ArrowLeft">◀</button>
-        <button class="right" data-key="ArrowRight">▶</button>
+      <div class="dpad" data-up="ArrowUp" data-down="ArrowDown" data-left="ArrowLeft" data-right="ArrowRight">
+        <div class="stick"></div>
       </div>
       <div class="actions">
         <button data-key="Period">Cycle</button>

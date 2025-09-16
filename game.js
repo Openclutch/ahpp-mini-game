@@ -188,7 +188,7 @@
   }
 
   function bindTouchControls(container) {
-    container.querySelectorAll('button').forEach(btn => {
+    container.querySelectorAll('button[data-key]').forEach(btn => {
       const code = btn.dataset.key;
       const start = e => { e.preventDefault(); keys.add(code); };
       const end = () => { keys.delete(code); };
@@ -206,8 +206,134 @@
     });
   }
 
+  function setupJoystick(container) {
+    if (!container) return;
+    const mapping = {
+      up: container.dataset.up,
+      down: container.dataset.down,
+      left: container.dataset.left,
+      right: container.dataset.right,
+    };
+    const combos = [
+      [mapping.right],
+      [mapping.right, mapping.down],
+      [mapping.down],
+      [mapping.down, mapping.left],
+      [mapping.left],
+      [mapping.left, mapping.up],
+      [mapping.up],
+      [mapping.up, mapping.right],
+    ].map(arr => arr.filter(Boolean));
+    const thumb = container.querySelector('.stick');
+    const active = new Set();
+    let pointerId = null;
+
+    function setActiveCodes(codes) {
+      for (const code of Array.from(active)) {
+        if (!codes.includes(code)) {
+          active.delete(code);
+          keys.delete(code);
+        }
+      }
+      for (const code of codes) {
+        if (!active.has(code)) {
+          active.add(code);
+          keys.add(code);
+        }
+      }
+    }
+
+    function updateFromEvent(e) {
+      const rect = container.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const radius = rect.width / 2;
+      const thumbRadius = thumb ? thumb.offsetWidth / 2 : 0;
+      const maxDistance = Math.max(0, radius - thumbRadius - 4);
+      const distance = Math.hypot(dx, dy);
+      const ratio = distance > 0 ? Math.min(1, maxDistance / distance) : 0;
+      if (thumb) {
+        thumb.style.transform = `translate(${dx * ratio}px, ${dy * ratio}px)`;
+      }
+      const threshold = Math.max(8, maxDistance * 0.45);
+      if (distance < threshold) {
+        setActiveCodes([]);
+        container.classList.remove('active');
+        return;
+      }
+      let angle = Math.atan2(dy, dx);
+      if (angle < 0) angle += Math.PI * 2;
+      const segment = Math.round(angle / (Math.PI / 4)) % 8;
+      const codes = combos[segment] || [];
+      setActiveCodes(codes);
+      if (codes.length) {
+        container.classList.add('active');
+      } else {
+        container.classList.remove('active');
+      }
+    }
+
+    function reset() {
+      setActiveCodes([]);
+      container.classList.remove('active');
+      if (thumb) {
+        thumb.style.transform = 'translate(0px, 0px)';
+      }
+    }
+
+    container.addEventListener('pointerdown', e => {
+      if (pointerId != null) { e.preventDefault(); return; }
+      pointerId = e.pointerId;
+      if (typeof container.setPointerCapture === 'function') {
+        container.setPointerCapture(pointerId);
+      }
+      updateFromEvent(e);
+      e.preventDefault();
+    });
+
+    container.addEventListener('pointermove', e => {
+      if (pointerId !== e.pointerId) return;
+      updateFromEvent(e);
+      e.preventDefault();
+    });
+
+    function endInteraction(e) {
+      if (pointerId !== e.pointerId) return;
+      const id = pointerId;
+      pointerId = null;
+      if (typeof container.releasePointerCapture === 'function') {
+        if (typeof container.hasPointerCapture !== 'function' || container.hasPointerCapture(id)) {
+          container.releasePointerCapture(id);
+        }
+      }
+      reset();
+      e.preventDefault();
+    }
+
+    container.addEventListener('pointerup', endInteraction);
+    container.addEventListener('pointercancel', endInteraction);
+    container.addEventListener('lostpointercapture', () => {
+      pointerId = null;
+      reset();
+    });
+    container.addEventListener('contextmenu', e => e.preventDefault());
+    window.addEventListener('blur', () => {
+      if (pointerId != null && typeof container.releasePointerCapture === 'function') {
+        if (typeof container.hasPointerCapture !== 'function' || container.hasPointerCapture(pointerId)) {
+          container.releasePointerCapture(pointerId);
+        }
+      }
+      pointerId = null;
+      reset();
+    });
+  }
+
   bindTouchControls(p1Controls);
   bindTouchControls(p2Controls);
+  setupJoystick(p1Controls.querySelector('.dpad'));
+  setupJoystick(p2Controls.querySelector('.dpad'));
   updateTouchLayout();
 
   // Hide virtual controls if a keyboard is used

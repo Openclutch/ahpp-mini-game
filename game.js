@@ -428,6 +428,36 @@
   };
   function seedEmoji(id){ return SEED_EMOJIS[id] || '🌱'; }
 
+  const PLANT_DRAWERS = {
+    candy: drawCandyPlant,
+    carrot: drawCarrotPlant,
+    strawberry: drawStrawberryPlant,
+    blueberry: drawBlueberryPlant,
+    orangeTulip: drawOrangeTulipPlant,
+    tomato: drawTomatoPlant,
+    corn: drawCornPlant,
+    daffodil: drawDaffodilPlant,
+    watermelon: drawWatermelonPlant,
+    pumpkin: drawPumpkinPlant,
+    apple: drawApplePlant,
+    bamboo: drawBambooPlant,
+    coconut: drawCoconutPlant,
+    cactus: drawCactusPlant,
+    dragonFruit: drawDragonFruitPlant,
+    mango: drawMangoPlant,
+    grape: drawGrapePlant,
+    mushroom: drawMushroomPlant,
+    pepper: drawPepperPlant,
+    cacao: drawCacaoPlant,
+    beanstalk: drawBeanstalkPlant,
+    emberLily: drawEmberLilyPlant,
+    sugarApple: drawSugarApplePlant,
+    burningBud: drawBurningBudPlant,
+    giantPinecone: drawGiantPineconePlant,
+    elderStrawberry: drawElderStrawberryPlant,
+    romanesco: drawRomanescoPlant,
+  };
+
   function playerAction(p, who) {
     console.log('playerAction triggered', {
       who,
@@ -759,11 +789,12 @@
     if (c.dead) { ctx.fillStyle = 'rgba(40,20,10,0.65)'; ctx.fillRect(pl.x+4, pl.y+4, pl.w-8, pl.h-8); return; }
 
     let scale = 1; if (c.yield===2) scale *= 1.15;
-    if (c.kind==='candy') drawCandyPlant(pl, st, scale, !!c.mutation && c.mutation.id==='glitter');
-    else drawCarrotPlant(pl, st, scale);
+    const drawer = PLANT_DRAWERS[c.kind] || drawGenericPlant;
+    drawer(pl, st, scale, c);
   }
 
-  function drawCandyPlant(pl, st, scale, glitter){
+  function drawCandyPlant(pl, st, scale, crop){
+    const glitter = !!(crop && crop.mutation && crop.mutation.id==='glitter');
     const cx = pl.x + pl.w/2; const cy = pl.y + pl.h - 6;
     const stemH = Math.max(6, st*(pl.h-14)) * scale;
     ctx.strokeStyle = '#2c6e3f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy-stemH); ctx.stroke();
@@ -772,7 +803,7 @@
     ctx.fillStyle = '#b06bd3';
     for (let i=0;i<6;i++){ ctx.beginPath(); ctx.ellipse(bx+Math.cos(i)*r, by+Math.sin(i)*r, 6, 10, i, 0, Math.PI*2); ctx.fill(); }
     ctx.fillStyle = '#ffd1e6'; ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
-    if (glitter){ for (let i=0;i<5;i++){ ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(bx+Math.cos(i*2)*r*1.2, by+Math.sin(i*2)*r*1.2, 1, 1); } }
+    if (glitter){ drawSparkles(bx, by, r*1.2, 6); }
   }
 
   function drawCarrotPlant(pl, st, scale){
@@ -786,6 +817,993 @@
     ctx.lineTo(cx-10*scale, baseY-4);
     ctx.lineTo(cx+10*scale, baseY-4);
     ctx.closePath(); ctx.fill();
+  }
+
+  function drawSparkles(cx, cy, radius, count=6) {
+    const t = Date.now() / 250;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    for (let i=0; i<count; i++) {
+      const angle = t + (Math.PI * 2 * i / count);
+      const x = cx + Math.cos(angle) * radius;
+      const y = cy + Math.sin(angle) * radius;
+      const size = 1.2 + 0.4 * Math.sin(t + i);
+      ctx.fillRect(x, y, size, size);
+    }
+  }
+
+  function drawGenericPlant(pl, st, scale) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(6, growth*(pl.h-18)) * scale;
+    ctx.strokeStyle = '#2f8a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx, baseY - stemH);
+    ctx.stroke();
+    ctx.fillStyle = '#4caf50';
+    ctx.beginPath();
+    ctx.ellipse(cx - 6, baseY - stemH*0.6, 7, 3, -0.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 6, baseY - stemH*0.6, 7, 3, 0.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#6abe55';
+    ctx.beginPath();
+    ctx.arc(cx, baseY - stemH - 3, 3 + growth*3*scale, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawStrawberryPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(8, growth*(pl.h-18)) * scale;
+    const sway = Math.sin(Date.now()/400 + cx) * 2;
+    ctx.strokeStyle = '#2f8a3a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx + sway, baseY - stemH);
+    ctx.stroke();
+    ctx.fillStyle = '#3fa55b';
+    for (let i=0;i<3;i++){
+      const angle = -0.5 + i*0.5;
+      ctx.beginPath();
+      ctx.ellipse(cx + sway + Math.cos(angle)*6, baseY - stemH*0.7 + Math.sin(angle)*4, 7, 3, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const fruitH = 10 + growth*10*scale;
+    const fruitW = 8 + growth*8*scale;
+    const fx = cx + sway;
+    const fy = baseY - stemH + fruitH*0.2;
+    ctx.fillStyle = '#d62839';
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - fruitH/2);
+    ctx.quadraticCurveTo(fx - fruitW, fy - fruitH/4, fx - fruitW*0.9, fy + fruitH/2);
+    ctx.quadraticCurveTo(fx, fy + fruitH*0.7, fx + fruitW*0.9, fy + fruitH/2);
+    ctx.quadraticCurveTo(fx + fruitW, fy - fruitH/4, fx, fy - fruitH/2);
+    ctx.fill();
+    ctx.fillStyle = '#ffe066';
+    const seeds = 6;
+    for (let i=0;i<seeds;i++){
+      const angle = (i/seeds) * Math.PI * 2;
+      const sx = fx + Math.cos(angle) * fruitW * 0.6;
+      const sy = fy + Math.sin(angle) * fruitH * 0.5;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, 1.2, 2, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(fx, fy - fruitH*0.2, fruitW*0.9, 6);
+    }
+  }
+
+  function drawBlueberryPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const bushH = Math.max(10, growth*(pl.h-20)) * scale;
+    ctx.fillStyle = '#35663a';
+    ctx.beginPath();
+    ctx.ellipse(cx, baseY - bushH*0.5, 12*scale, bushH*0.6, 0, 0, Math.PI*2);
+    ctx.fill();
+    const berryCount = 5 + Math.floor(growth*4);
+    const t = Date.now()/500;
+    for (let i=0;i<berryCount;i++){
+      const angle = (i/berryCount) * Math.PI * 2;
+      const radius = 6 + growth*6;
+      const bx = cx + Math.cos(angle + t*0.2) * radius * 0.35;
+      const by = baseY - bushH*0.5 + Math.sin(angle + t*0.25) * radius * 0.45;
+      const size = 3 + growth*2*scale;
+      ctx.fillStyle = '#3f5bc0';
+      ctx.beginPath();
+      ctx.arc(bx, by, size, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#8aa6ff';
+      ctx.beginPath();
+      ctx.arc(bx - size*0.3, by - size*0.3, size*0.3, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - bushH*0.5, 10*scale, 5);
+    }
+  }
+
+  function drawOrangeTulipPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(8, growth*(pl.h-18)) * scale;
+    const sway = Math.sin(Date.now()/350 + cx) * 1.5 * (0.6 + growth*0.4);
+    ctx.strokeStyle = '#2f8a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx + sway, baseY - stemH);
+    ctx.stroke();
+    ctx.fillStyle = '#3fa55b';
+    ctx.beginPath(); ctx.ellipse(cx - 8, baseY - stemH*0.5, 8, 3, -0.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 8, baseY - stemH*0.5, 8, 3, 0.5, 0, Math.PI*2); ctx.fill();
+    const bloomY = baseY - stemH - 2;
+    const petal = 8 + growth*10*scale;
+    ctx.fillStyle = '#ff8a3c';
+    for (let i=0;i<4;i++){
+      const angle = i * (Math.PI/2);
+      ctx.beginPath();
+      ctx.ellipse(cx + sway + Math.cos(angle)*4, bloomY + Math.sin(angle)*4, petal*0.35, petal*0.8, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath(); ctx.arc(cx + sway, bloomY, petal*0.3, 0, Math.PI*2); ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx + sway, bloomY, petal, 6);
+    }
+  }
+
+  function drawTomatoPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(12, growth*(pl.h-16)) * scale;
+    const sway = Math.sin(Date.now()/420 + baseY) * 2;
+    ctx.strokeStyle = '#2e7d32';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx-3, baseY);
+    ctx.bezierCurveTo(cx-4, baseY - stemH*0.3, cx+sway, baseY - stemH*0.5, cx, baseY - stemH);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx+3, baseY);
+    ctx.bezierCurveTo(cx+4, baseY - stemH*0.3, cx+sway, baseY - stemH*0.7, cx+2, baseY - stemH*1.05);
+    ctx.stroke();
+    ctx.fillStyle = '#3fa55b';
+    for (let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.ellipse(cx - 10 + i*10, baseY - stemH*0.6 - i*4, 7, 3, 0.2*i, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const fruitCount = 3;
+    for (let i=0;i<fruitCount;i++){
+      const fx = cx + (i-1)*8;
+      const fy = baseY - stemH*0.45 + Math.sin(Date.now()/300 + i) * 3;
+      const size = 5 + growth*5*scale;
+      ctx.fillStyle = '#d6453d';
+      ctx.beginPath();
+      ctx.arc(fx, fy, size, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#8bc34a';
+      ctx.beginPath();
+      ctx.arc(fx, fy - size*0.7, size*0.3, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - stemH*0.4, 12*scale, 6);
+    }
+  }
+
+  function drawCornPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stalkH = Math.max(14, growth*(pl.h-12)) * scale;
+    ctx.strokeStyle = '#3b8e2f';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx, baseY - stalkH);
+    ctx.stroke();
+    ctx.fillStyle = '#3fa55b';
+    for (let i=0;i<3;i++){
+      const leafY = baseY - stalkH*(0.3 + i*0.2);
+      ctx.beginPath();
+      ctx.ellipse(cx - 10, leafY, 9, 3, -0.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx + 10, leafY - 6, 9, 3, 0.4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const earH = Math.max(10, stalkH*0.45);
+    const earY = baseY - stalkH*0.55;
+    ctx.fillStyle = '#f3d250';
+    ctx.beginPath();
+    ctx.ellipse(cx, earY, 6*scale, earH*0.4, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#d1a520';
+    ctx.lineWidth = 1;
+    for (let i=0;i<4;i++){
+      const y = earY - earH*0.3 + i*(earH*0.2);
+      ctx.beginPath();
+      ctx.moveTo(cx - 5*scale, y);
+      ctx.lineTo(cx + 5*scale, y);
+      ctx.stroke();
+    }
+    const tasselY = baseY - stalkH - 6;
+    ctx.strokeStyle = '#c9c141';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY - stalkH);
+    ctx.lineTo(cx, tasselY);
+    ctx.stroke();
+    for (let i=0;i<4;i++){
+      ctx.beginPath();
+      ctx.moveTo(cx, tasselY);
+      ctx.lineTo(cx - 6 + i*4, tasselY - 8);
+      ctx.stroke();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, earY, 10*scale, 6);
+    }
+  }
+
+  function drawDaffodilPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(10, growth*(pl.h-14)) * scale;
+    const sway = Math.sin(Date.now()/360 + cx) * 1.5;
+    ctx.strokeStyle = '#3a9a45';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx + sway, baseY - stemH);
+    ctx.stroke();
+    ctx.fillStyle = '#54c26f';
+    ctx.beginPath();
+    ctx.moveTo(cx - 6, baseY);
+    ctx.quadraticCurveTo(cx - 14, baseY - stemH*0.4, cx - 6, baseY - stemH*0.85);
+    ctx.quadraticCurveTo(cx - 4, baseY - stemH*0.65, cx - 6, baseY);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx + 6, baseY);
+    ctx.quadraticCurveTo(cx + 14, baseY - stemH*0.4, cx + 4, baseY - stemH*0.85);
+    ctx.quadraticCurveTo(cx + 2, baseY - stemH*0.65, cx + 6, baseY);
+    ctx.fill();
+    const bloomY = baseY - stemH - 2;
+    const petal = 6 + growth*6*scale;
+    ctx.fillStyle = '#ffe066';
+    for (let i=0;i<6;i++){
+      const angle = i * (Math.PI/3);
+      ctx.beginPath();
+      ctx.ellipse(cx + sway + Math.cos(angle)*petal, bloomY + Math.sin(angle)*petal, petal*0.4, petal*0.8, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffbe0b';
+    ctx.beginPath();
+    ctx.arc(cx + sway, bloomY, petal*0.5, 0, Math.PI*2);
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx + sway, bloomY, petal, 6);
+    }
+  }
+
+  function drawWatermelonPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    ctx.strokeStyle = '#2f7f3f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pl.x + 6, baseY - 6);
+    ctx.bezierCurveTo(pl.x + 10, baseY - 12, cx, baseY - 12 - growth*4, pl.x + pl.w - 6, baseY - 6);
+    ctx.stroke();
+    ctx.fillStyle = '#4caf50';
+    for (let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.ellipse(pl.x + 8 + i*10, baseY - 10, 7, 3, i*0.4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const fruitW = 12 + growth*20*scale;
+    const fruitH = 8 + growth*10*scale;
+    const fy = baseY - fruitH*0.5;
+    ctx.fillStyle = '#1b5e20';
+    ctx.beginPath();
+    ctx.ellipse(cx, fy, fruitW, fruitH, 0, Math.PI*0.1, Math.PI*1.9);
+    ctx.fill();
+    ctx.strokeStyle = '#3ddc84';
+    ctx.lineWidth = 2;
+    for (let i=-2;i<=2;i++){
+      ctx.beginPath();
+      ctx.moveTo(cx + i*fruitW*0.3, fy - fruitH*0.8);
+      ctx.lineTo(cx + i*fruitW*0.3, fy + fruitH*0.8);
+      ctx.stroke();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, fy, fruitW, 7);
+    }
+  }
+
+  function drawPumpkinPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const vineY = baseY - 10;
+    ctx.strokeStyle = '#2f7f3f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pl.x + 6, vineY);
+    ctx.bezierCurveTo(pl.x + 14, vineY - 8, cx - 6, vineY - 6, cx, vineY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, vineY);
+    ctx.bezierCurveTo(cx + 6, vineY + 4, pl.x + pl.w - 10, vineY - 4, pl.x + pl.w - 6, vineY - 2);
+    ctx.stroke();
+    const pumpW = 12 + growth*22*scale;
+    const pumpH = 8 + growth*16*scale;
+    ctx.fillStyle = '#ff8c42';
+    for (let i=-1;i<=1;i++){
+      const factor = 1 - Math.abs(i)*0.25;
+      ctx.beginPath();
+      ctx.ellipse(cx + i*pumpW*0.35, baseY - 6, pumpW*0.35*factor, pumpH*0.5, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#d95d0e';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY - pumpH*0.8);
+    ctx.lineTo(cx, baseY - pumpH - 2);
+    ctx.stroke();
+    ctx.fillStyle = '#4caf50';
+    ctx.beginPath();
+    ctx.ellipse(cx, baseY - pumpH - 4, 4, 2, 0.2, 0, Math.PI*2);
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - 6, pumpW, 6);
+    }
+  }
+
+  function drawApplePlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const trunkH = Math.max(12, growth*(pl.h-18)) * scale;
+    ctx.fillStyle = '#8d5a2b';
+    ctx.fillRect(cx - 3, baseY - trunkH, 6, trunkH);
+    const canopyR = 12 + growth*12*scale;
+    const canopyY = baseY - trunkH - canopyR*0.3;
+    ctx.fillStyle = '#3fa55b';
+    ctx.beginPath();
+    ctx.ellipse(cx, canopyY, canopyR, canopyR*0.7, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#2d7c3f';
+    ctx.beginPath();
+    ctx.ellipse(cx - canopyR*0.6, canopyY + 3, canopyR*0.6, canopyR*0.5, 0.2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + canopyR*0.6, canopyY + 1, canopyR*0.6, canopyR*0.5, -0.2, 0, Math.PI*2);
+    ctx.fill();
+    const appleSize = 2.5 + growth*2.5*scale;
+    for (let i=0;i<3;i++){
+      const ax = cx - canopyR*0.4 + i*(canopyR*0.4);
+      const ay = canopyY + Math.sin(Date.now()/500 + i) * 3;
+      ctx.fillStyle = '#e53935';
+      ctx.beginPath();
+      ctx.arc(ax, ay, appleSize, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#6ab04c';
+      ctx.beginPath();
+      ctx.arc(ax, ay - appleSize, appleSize*0.3, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, canopyY, canopyR, 7);
+    }
+  }
+
+  function drawBambooPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stalkH = Math.max(12, growth*(pl.h-10)) * scale;
+    const segments = 4;
+    const segH = stalkH / segments;
+    ctx.fillStyle = '#a5d152';
+    for (let i=0;i<segments;i++){
+      const top = baseY - segH*(i+1);
+      ctx.fillRect(cx - 4, top, 8, segH - 1);
+      ctx.fillStyle = '#97c246';
+      ctx.fillRect(cx - 4, top + segH - 2, 8, 2);
+      ctx.fillStyle = '#a5d152';
+    }
+    ctx.fillStyle = '#7cb342';
+    ctx.fillRect(cx - 5, baseY - stalkH, 10, 3);
+    ctx.strokeStyle = '#3fa55b';
+    ctx.lineWidth = 2;
+    for (let i=0;i<segments;i++){
+      const y = baseY - segH*(i+0.5);
+      const dir = i % 2 === 0 ? 1 : -1;
+      const offset = dir * (8 + growth*4);
+      ctx.beginPath();
+      ctx.moveTo(cx, y);
+      ctx.lineTo(cx + offset, y - 6);
+      ctx.stroke();
+      ctx.fillStyle = '#6dc070';
+      ctx.beginPath();
+      ctx.ellipse(cx + offset, y - 8, 8, 3, dir>0?0.4:-0.4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - stalkH*0.6, 12*scale, 6);
+    }
+  }
+
+  function drawCoconutPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const trunkH = Math.max(14, growth*(pl.h-10)) * scale;
+    ctx.fillStyle = '#9c6644';
+    ctx.beginPath();
+    ctx.moveTo(cx - 4, baseY);
+    ctx.lineTo(cx + 4, baseY);
+    ctx.lineTo(cx + 2, baseY - trunkH);
+    ctx.lineTo(cx - 2, baseY - trunkH);
+    ctx.closePath();
+    ctx.fill();
+    const topY = baseY - trunkH;
+    const leafLen = (18 + growth*10) * scale;
+    ctx.strokeStyle = '#2e8b57';
+    ctx.lineWidth = 2;
+    for (let i=0;i<5;i++){
+      const angle = -Math.PI/2 + i*(Math.PI/6) - Math.PI/6;
+      ctx.beginPath();
+      ctx.moveTo(cx, topY);
+      ctx.quadraticCurveTo(cx + Math.cos(angle)*leafLen*0.6, topY + Math.sin(angle)*leafLen*0.4, cx + Math.cos(angle)*leafLen, topY + Math.sin(angle)*leafLen);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#654321';
+    const nut = 3 + growth*3*scale;
+    ctx.beginPath(); ctx.arc(cx - 4, topY + 6, nut, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 4, topY + 4, nut*0.9, 0, Math.PI*2); ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, topY + 4, leafLen*0.4, 5);
+    }
+  }
+
+  function drawCactusPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const height = Math.max(14, growth*(pl.h-10)) * scale;
+    const bodyW = 10 * scale;
+    ctx.fillStyle = '#2f9e44';
+    ctx.beginPath();
+    ctx.moveTo(cx - bodyW, baseY);
+    ctx.lineTo(cx - bodyW, baseY - height*0.6);
+    ctx.quadraticCurveTo(cx - bodyW, baseY - height, cx, baseY - height);
+    ctx.quadraticCurveTo(cx + bodyW, baseY - height, cx + bodyW, baseY - height*0.6);
+    ctx.lineTo(cx + bodyW, baseY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx - bodyW*0.9, baseY - height*0.45);
+    ctx.quadraticCurveTo(cx - bodyW*1.6, baseY - height*0.7, cx - bodyW*1.3, baseY - height*0.2);
+    ctx.quadraticCurveTo(cx - bodyW*1.1, baseY - height*0.05, cx - bodyW*0.6, baseY - height*0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx + bodyW*0.9, baseY - height*0.55);
+    ctx.quadraticCurveTo(cx + bodyW*1.5, baseY - height*0.8, cx + bodyW*1.2, baseY - height*0.3);
+    ctx.quadraticCurveTo(cx + bodyW, baseY - height*0.1, cx + bodyW*0.6, baseY - height*0.25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    for (let i=0;i<5;i++){
+      ctx.beginPath();
+      ctx.moveTo(cx - bodyW + i*bodyW*0.4, baseY - height + 4);
+      ctx.lineTo(cx - bodyW + i*bodyW*0.4, baseY);
+      ctx.stroke();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - height*0.4, bodyW*1.2, 5);
+    }
+  }
+
+  function drawDragonFruitPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(10, growth*(pl.h-18)) * scale;
+    ctx.fillStyle = '#2c7a3b';
+    ctx.beginPath();
+    ctx.moveTo(cx - 3, baseY);
+    ctx.lineTo(cx - 3, baseY - stemH);
+    ctx.lineTo(cx + 3, baseY - stemH);
+    ctx.lineTo(cx + 3, baseY);
+    ctx.closePath();
+    ctx.fill();
+    const fruitH = 12 + growth*12*scale;
+    const fruitW = 8 + growth*8*scale;
+    const fy = baseY - stemH - fruitH*0.4;
+    ctx.fillStyle = '#d81b60';
+    ctx.beginPath();
+    ctx.ellipse(cx, fy, fruitW, fruitH, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#8bc34a';
+    ctx.lineWidth = 2;
+    for (let i=0;i<6;i++){
+      const angle = i * (Math.PI/3);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle)*fruitW*0.7, fy + Math.sin(angle)*fruitH*0.7);
+      ctx.lineTo(cx + Math.cos(angle)*fruitW*1.1, fy + Math.sin(angle)*fruitH*1.1);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#6ab04c';
+    for (let i=0;i<4;i++){
+      const angle = i*(Math.PI/2) + Math.PI/4;
+      ctx.beginPath();
+      ctx.ellipse(cx + Math.cos(angle)*fruitW*0.35, fy - fruitH*0.4 + Math.sin(angle)*fruitH*0.6, 3, 6, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, fy, fruitW*1.1, 7);
+    }
+  }
+
+  function drawMangoPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const trunkH = Math.max(10, growth*(pl.h-16)) * scale;
+    ctx.fillStyle = '#8d5a2b';
+    ctx.fillRect(cx - 2, baseY - trunkH, 4, trunkH);
+    const canopyR = 10 + growth*14*scale;
+    const canopyY = baseY - trunkH - canopyR*0.2;
+    ctx.fillStyle = '#2e7d32';
+    ctx.beginPath();
+    ctx.ellipse(cx, canopyY, canopyR, canopyR*0.7, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#3fa55b';
+    ctx.beginPath();
+    ctx.ellipse(cx - canopyR*0.5, canopyY + 2, canopyR*0.6, canopyR*0.5, -0.3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + canopyR*0.5, canopyY + 2, canopyR*0.6, canopyR*0.5, 0.3, 0, Math.PI*2);
+    ctx.fill();
+    const fruitCount = 2 + Math.round(growth);
+    ctx.fillStyle = '#ffb347';
+    for (let i=0;i<fruitCount;i++){
+      const angle = (i/(fruitCount)) * Math.PI - Math.PI/2;
+      const fx = cx + Math.cos(angle) * canopyR * 0.5;
+      const fy = canopyY + Math.sin(angle) * canopyR * 0.6 + 4;
+      const size = 3 + growth*3*scale;
+      ctx.beginPath();
+      ctx.ellipse(fx, fy, size*0.7, size, 0.2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#f0932b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(fx, fy - size);
+      ctx.lineTo(fx, fy - size - 3);
+      ctx.stroke();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, canopyY, canopyR, 6);
+    }
+  }
+
+  function drawGrapePlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const trellis = Math.max(10, growth*(pl.h-18)) * scale;
+    ctx.strokeStyle = '#8d5a2b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, baseY);
+    ctx.lineTo(cx + 12, baseY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, baseY - trellis*0.6);
+    ctx.lineTo(cx + 12, baseY - trellis*0.6);
+    ctx.stroke();
+    ctx.strokeStyle = '#3f8f46';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.bezierCurveTo(cx - 6, baseY - trellis*0.3, cx + 4, baseY - trellis*0.6, cx - 2, baseY - trellis);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - 6, baseY - trellis*0.4);
+    ctx.bezierCurveTo(cx - 12, baseY - trellis*0.7, cx + 6, baseY - trellis*0.6, cx + 2, baseY - trellis*1.05);
+    ctx.stroke();
+    const clusterR = 4 + growth*6*scale;
+    const clusterX = cx;
+    const clusterY = baseY - trellis*0.5;
+    ctx.fillStyle = '#7b2cbf';
+    const berries = 8;
+    for (let i=0;i<berries;i++){
+      const angle = (i/berries) * Math.PI * 2;
+      const bx = clusterX + Math.cos(angle) * clusterR * 0.6;
+      const by = clusterY + Math.sin(angle) * clusterR * 0.8;
+      const size = 2 + growth*2*scale * (0.8 + 0.2*Math.sin(i));
+      ctx.beginPath();
+      ctx.arc(bx, by, size, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#b794f4';
+    ctx.beginPath();
+    ctx.arc(clusterX, clusterY - clusterR*0.4, clusterR*0.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#3fa55b';
+    ctx.beginPath();
+    ctx.ellipse(clusterX - clusterR, clusterY - clusterR, 6, 3, -0.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(clusterX + clusterR, clusterY - clusterR*0.6, 6, 3, 0.4, 0, Math.PI*2);
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(clusterX, clusterY, clusterR*1.4, 6);
+    }
+  }
+
+  function drawMushroomPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stalkH = Math.max(6, growth*(pl.h-22)) * scale;
+    ctx.fillStyle = '#f3e5ab';
+    ctx.beginPath();
+    ctx.moveTo(cx - 4, baseY);
+    ctx.lineTo(cx + 4, baseY);
+    ctx.lineTo(cx + 3, baseY - stalkH);
+    ctx.lineTo(cx - 3, baseY - stalkH);
+    ctx.closePath();
+    ctx.fill();
+    const capW = 14 + growth*14*scale;
+    const capH = 8 + growth*6*scale;
+    const capY = baseY - stalkH;
+    ctx.fillStyle = '#d95d5d';
+    ctx.beginPath();
+    ctx.ellipse(cx, capY, capW, capH, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = '#f5d6a0';
+    ctx.beginPath();
+    ctx.ellipse(cx, capY - capH*0.2, capW*0.6, capH*0.5, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#fff8dc';
+    for (let i=0;i<5;i++){
+      ctx.beginPath();
+      ctx.arc(cx - capW*0.6 + i*capW*0.3, capY - capH*0.4, 2, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, capY - capH*0.3, capW, 5);
+    }
+  }
+
+  function drawPepperPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(10, growth*(pl.h-18)) * scale;
+    const sway = Math.sin(Date.now()/320 + cx) * 2;
+    ctx.strokeStyle = '#2f8a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx + sway, baseY - stemH);
+    ctx.stroke();
+    ctx.fillStyle = '#3fa55b';
+    ctx.beginPath(); ctx.ellipse(cx - 6, baseY - stemH*0.6, 7, 3, -0.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 6, baseY - stemH*0.4, 7, 3, 0.5, 0, Math.PI*2); ctx.fill();
+    const pepperH = 10 + growth*10*scale;
+    const pepperW = 5 + growth*4*scale;
+    const fx = cx + sway;
+    const fy = baseY - stemH + pepperH*0.1;
+    ctx.fillStyle = '#e5383b';
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - pepperH/2);
+    ctx.bezierCurveTo(fx - pepperW, fy - pepperH/2, fx - pepperW, fy + pepperH/2, fx, fy + pepperH/2);
+    ctx.bezierCurveTo(fx + pepperW, fy + pepperH/2, fx + pepperW, fy - pepperH/2, fx, fy - pepperH/2);
+    ctx.fill();
+    ctx.fillStyle = '#3fa55b';
+    ctx.beginPath();
+    ctx.arc(fx, fy - pepperH/2, 3, 0, Math.PI*2);
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(fx, fy, pepperH, 5);
+    }
+  }
+
+  function drawCacaoPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const trunkH = Math.max(14, growth*(pl.h-16)) * scale;
+    ctx.fillStyle = '#7b4b2a';
+    ctx.fillRect(cx - 3, baseY - trunkH, 6, trunkH);
+    const canopyY = baseY - trunkH + 6;
+    ctx.fillStyle = '#2e7d32';
+    ctx.beginPath();
+    ctx.ellipse(cx, canopyY - 8, 16*scale, 10*scale, 0, 0, Math.PI*2);
+    ctx.fill();
+    const podCount = 3;
+    ctx.fillStyle = '#c27c59';
+    for (let i=0;i<podCount;i++){
+      const angle = -Math.PI/4 + i*(Math.PI/4);
+      const px = cx + Math.cos(angle)*8;
+      const py = canopyY - 2 + Math.sin(angle)*6;
+      const podL = 6 + growth*4*scale;
+      ctx.beginPath();
+      ctx.ellipse(px, py, podL*0.4, podL*0.9, angle, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#8e4d2c';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px - Math.cos(angle)*podL*0.4, py - Math.sin(angle)*podL*0.4);
+      ctx.lineTo(px + Math.cos(angle)*podL*0.4, py + Math.sin(angle)*podL*0.4);
+      ctx.stroke();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, canopyY - 4, 14*scale, 6);
+    }
+  }
+
+  function drawBeanstalkPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const height = Math.max(16, growth*(pl.h-8)) * scale;
+    const segments = 6;
+    ctx.strokeStyle = '#4caf50';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    for (let i=1;i<=segments;i++){
+      const y = baseY - height * (i/segments);
+      const offset = Math.sin(i/segments * Math.PI * 1.5 + Date.now()/600) * 8;
+      ctx.lineTo(cx + offset, y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = '#6fcf6f';
+    for (let i=0;i<segments;i++){
+      const y = baseY - height*(i/segments);
+      const offset = Math.sin(i*0.6 + Date.now()/600) * 8;
+      ctx.beginPath();
+      ctx.ellipse(cx + offset, y - height/(segments*2), 9, 4, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - height*0.5, height*0.4, 7);
+    }
+  }
+
+  function drawEmberLilyPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(10, growth*(pl.h-18)) * scale;
+    ctx.strokeStyle = '#2f8a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx, baseY - stemH);
+    ctx.stroke();
+    const bloomY = baseY - stemH - 2;
+    const petalL = 8 + growth*10*scale;
+    const flicker = 0.6 + 0.4*Math.abs(Math.sin(Date.now()/300));
+    ctx.fillStyle = `rgba(255,99,71,${0.75 + 0.2*Math.sin(Date.now()/400)})`;
+    for (let i=0;i<5;i++){
+      const angle = -Math.PI/2 + i*(Math.PI*2/5);
+      ctx.beginPath();
+      ctx.moveTo(cx, bloomY);
+      ctx.quadraticCurveTo(cx + Math.cos(angle)*petalL*0.3, bloomY + Math.sin(angle)*petalL*0.3, cx + Math.cos(angle)*petalL*flicker, bloomY + Math.sin(angle)*petalL*flicker);
+      ctx.lineTo(cx, bloomY);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffde7d';
+    ctx.beginPath();
+    ctx.arc(cx, bloomY + 1, 3 + growth*2*scale, 0, Math.PI*2);
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, bloomY, petalL, 7);
+    }
+  }
+
+  function drawSugarApplePlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(12, growth*(pl.h-18)) * scale;
+    ctx.fillStyle = '#8d5a2b';
+    ctx.fillRect(cx - 2, baseY - stemH, 4, stemH);
+    const leafY = baseY - stemH + 4;
+    ctx.fillStyle = '#3fa55b';
+    for (let i=0;i<4;i++){
+      const angle = -Math.PI/4 + i*(Math.PI/6);
+      ctx.beginPath();
+      ctx.ellipse(cx + Math.cos(angle)*8, leafY + Math.sin(angle)*6, 7, 3, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const fruitR = 6 + growth*8*scale;
+    const fy = baseY - stemH + fruitR;
+    ctx.fillStyle = '#74c69d';
+    ctx.beginPath();
+    ctx.ellipse(cx, fy, fruitR, fruitR*0.9, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#52b788';
+    ctx.lineWidth = 1;
+    for (let i=0;i<5;i++){
+      const angle = i * (Math.PI*2/5);
+      ctx.beginPath();
+      ctx.moveTo(cx, fy);
+      ctx.lineTo(cx + Math.cos(angle)*fruitR*0.9, fy + Math.sin(angle)*fruitR*0.9);
+      ctx.stroke();
+    }
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, fy, fruitR*1.1, 6);
+    }
+  }
+
+  function drawBurningBudPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(8, growth*(pl.h-18)) * scale;
+    ctx.strokeStyle = '#914616';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx, baseY - stemH);
+    ctx.stroke();
+    const flameH = 12 + growth*14*scale;
+    const fx = cx;
+    const fy = baseY - stemH;
+    const flicker = 0.6 + 0.4*Math.sin(Date.now()/200);
+    ctx.fillStyle = 'rgba(255,87,34,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - flameH*flicker);
+    ctx.quadraticCurveTo(fx - 8*scale, fy - flameH*0.2, fx, fy + flameH*0.1);
+    ctx.quadraticCurveTo(fx + 8*scale, fy - flameH*0.2, fx, fy - flameH*flicker);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,195,0,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - flameH*flicker*0.7);
+    ctx.quadraticCurveTo(fx - 4*scale, fy - flameH*0.1, fx, fy + flameH*0.05);
+    ctx.quadraticCurveTo(fx + 4*scale, fy - flameH*0.1, fx, fy - flameH*flicker*0.7);
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(fx, fy - flameH*0.4, flameH*0.6, 6);
+    }
+  }
+
+  function drawGiantPineconePlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const trunkH = Math.max(10, growth*(pl.h-16)) * scale;
+    ctx.fillStyle = '#7b4b2a';
+    ctx.fillRect(cx - 2, baseY - trunkH, 4, trunkH);
+    const coneH = 16 + growth*16*scale;
+    const coneW = 10 + growth*12*scale;
+    const topY = baseY - trunkH - coneH*0.3;
+    ctx.fillStyle = '#9c6644';
+    const layers = 6;
+    for (let i=0;i<layers;i++){
+      const level = topY + i*(coneH/layers);
+      const w = coneW * (1 - i/(layers+1));
+      ctx.beginPath();
+      ctx.ellipse(cx, level, w, coneH/9, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#5e3c2e';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, topY - coneH*0.2);
+    ctx.lineTo(cx, baseY - trunkH + coneH*0.8);
+    ctx.stroke();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, topY + coneH*0.3, coneW, 6);
+    }
+  }
+
+  function drawElderStrawberryPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const stemH = Math.max(10, growth*(pl.h-20)) * scale;
+    const sway = Math.sin(Date.now()/420 + cx) * 2.5;
+    ctx.strokeStyle = '#2f8a3a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY);
+    ctx.lineTo(cx + sway, baseY - stemH);
+    ctx.stroke();
+    ctx.fillStyle = '#4caf50';
+    for (let i=0;i<4;i++){
+      const angle = -0.8 + i*0.5;
+      ctx.beginPath();
+      ctx.ellipse(cx + sway + Math.cos(angle)*8, baseY - stemH*0.7 + Math.sin(angle)*4, 8, 3, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const fruitH = 16 + growth*16*scale;
+    const fruitW = 12 + growth*12*scale;
+    const fx = cx + sway;
+    const fy = baseY - stemH + fruitH*0.1;
+    ctx.fillStyle = '#c1121f';
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - fruitH/2);
+    ctx.quadraticCurveTo(fx - fruitW, fy - fruitH/3, fx - fruitW*0.9, fy + fruitH/2);
+    ctx.quadraticCurveTo(fx, fy + fruitH*0.7, fx + fruitW*0.9, fy + fruitH/2);
+    ctx.quadraticCurveTo(fx + fruitW, fy - fruitH/3, fx, fy - fruitH/2);
+    ctx.fill();
+    ctx.fillStyle = '#ffe066';
+    const seeds = 10;
+    for (let i=0;i<seeds;i++){
+      const angle = i*(Math.PI*2/seeds);
+      const sx = fx + Math.cos(angle)*fruitW*0.6;
+      const sy = fy + Math.sin(angle)*fruitH*0.5;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, 1.3, 2.6, angle, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(fx, fy, fruitW*0.9, fruitH*0.8, 0, 0, Math.PI*2);
+    ctx.fill();
+    drawSparkles(fx, fy - fruitH*0.3, fruitW*0.9, 7);
+  }
+
+  function drawRomanescoPlant(pl, st, scale, crop) {
+    const growth = Math.min(1, st);
+    const cx = pl.x + pl.w/2;
+    const baseY = pl.y + pl.h - 6;
+    const baseW = 14 + growth*12*scale;
+    ctx.fillStyle = '#3d9a4f';
+    ctx.beginPath();
+    ctx.ellipse(cx, baseY - 4, baseW, baseW*0.4, 0, 0, Math.PI*2);
+    ctx.fill();
+    const levels = 5;
+    for (let i=0;i<levels;i++){
+      const radius = baseW * (1 - i*0.18);
+      const y = baseY - 6 - i*radius*0.35;
+      const points = Math.max(3, 5 - Math.floor(i/1.2));
+      for (let j=0;j<points;j++){
+        const angle = (j/points) * Math.PI*2 + i*0.2;
+        const baseX = cx + Math.cos(angle) * radius * 0.4;
+        const peakY = y - radius*0.45;
+        ctx.fillStyle = `rgba(133,187,101,${0.7 + 0.05*i})`;
+        ctx.beginPath();
+        ctx.moveTo(baseX, y);
+        ctx.lineTo(baseX + Math.cos(angle+0.3)*radius*0.2, peakY);
+        ctx.lineTo(baseX + Math.cos(angle-0.3)*radius*0.2, peakY);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.fillStyle = '#c5f277';
+    ctx.beginPath();
+    ctx.moveTo(cx, baseY - 6 - baseW*0.6);
+    ctx.lineTo(cx - baseW*0.1, baseY - 6 - baseW*0.4);
+    ctx.lineTo(cx + baseW*0.1, baseY - 6 - baseW*0.4);
+    ctx.closePath();
+    ctx.fill();
+    if (crop?.mutation?.id === 'glitter') {
+      drawSparkles(cx, baseY - 6 - baseW*0.4, baseW*0.8, 6);
+    }
   }
 
   function drawPlayer(p, color) {

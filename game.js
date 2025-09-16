@@ -816,11 +816,24 @@
     ctx.fillText('🌾', p.x + p.w - 6, p.y + p.h + 2);
 
     // Selected seed bubble
+    const bubbleWidth = p.w + 8;
+    const bubbleHeight = Math.round(p.h * 0.6);
+    const bubbleX = p.x - 4;
+    const bubbleY = p.y - bubbleHeight - 12;
     ctx.fillStyle = '#0007';
-    ctx.fillRect(p.x - 2, p.y - 20, p.w + 4, 16);
+    ctx.fillRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+
+    const prevFont = ctx.font;
+    const prevAlign = ctx.textAlign;
+    const prevBaseline = ctx.textBaseline;
     ctx.fillStyle = '#fff';
-    ctx.font = '12px sans-serif';
-    ctx.fillText(seedEmoji(p.selected), p.x + p.w / 2 - 5, p.y - 8);
+    ctx.font = `${Math.round(r * 2)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(seedEmoji(p.selected), bubbleX + bubbleWidth / 2, bubbleY + bubbleHeight / 2);
+    ctx.font = prevFont;
+    ctx.textAlign = prevAlign;
+    ctx.textBaseline = prevBaseline;
   }
 
   function drawPet(p) {

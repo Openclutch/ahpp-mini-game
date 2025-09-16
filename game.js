@@ -1,10 +1,17 @@
 (() => {
   // ---------- CONFIG ----------
   const CROPS = {
-    candy: { name: 'Candy Blossom', growMs: 60000, sell: 6 }, // 1 min, sells for 6¢
-    carrot: { name: 'Carrot', growMs: 600000, sell: 3000 }    // 10 min, sells for 3000¢
+    candy: { name: 'Candy Blossom', growMs: 60000, sell: 6 }, // 1 min, sells for ¢6.00
+    carrot: { name: 'Carrot', growMs: 600000, sell: 3000 }    // 10 min, sells for ¢3,000.00
   };
+  const CURRENCY_SYMBOL = '¢';
+  function formatCurrency(value) {
+    const amount = Number(value ?? 0);
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
+    return `${CURRENCY_SYMBOL}${safeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
   const REPAIR_COST = 10; // cents
+  const DEFAULT_SEED = 'candy';
   // PETS (one active perk per player)
   const PETS = [
     { id:'bee',    name:'Honey Bee',  emoji:'🐝', priceMult:1.10 },
@@ -75,8 +82,8 @@
     priceMult: 1,
     growthMult: 1,
     plots: [],
-    p1: { x: 220, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
-    p2: { x: 1060, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:'candy', pet:null, pets:[] },
+    p1: { x: 220, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:DEFAULT_SEED, pet:null, pets:[] },
+    p2: { x: 1060, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:DEFAULT_SEED, pet:null, pets:[] },
     p2Active: false,
     shopOpen:null, sellOpen:false,
     activeEvent:null, eventUntil:0,
@@ -108,8 +115,8 @@
     if (state.p1.money == null) state.p1.money = 10;
     if (state.p2.money == null) state.p2.money = 10;
 
-    if (state.p1.selected == null) state.p1.selected = 'candy';
-    if (state.p2.selected == null) state.p2.selected = 'candy';
+    if (state.p1.selected == null) state.p1.selected = DEFAULT_SEED;
+    if (state.p2.selected == null) state.p2.selected = DEFAULT_SEED;
     return true;
   }
 
@@ -123,6 +130,16 @@
     if (state.p2.invSeeds[s.id] == null) state.p2.invSeeds[s.id] = 0;
     if (state.p1.bag[s.id] == null) state.p1.bag[s.id] = 0;
     if (state.p2.bag[s.id] == null) state.p2.bag[s.id] = 0;
+  }
+
+  for (const player of [state.p1, state.p2]) {
+    for (const key of Object.keys(player.invSeeds)) {
+      if (!CROPS[key]) delete player.invSeeds[key];
+    }
+    for (const key of Object.keys(player.bag)) {
+      if (!CROPS[key]) delete player.bag[key];
+    }
+    if (!CROPS[player.selected]) player.selected = DEFAULT_SEED;
   }
 
   function save() {
@@ -599,7 +616,7 @@
     }
     if (inside(p.x,p.y,p.w,p.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
       const sold = sellAll(p);
-      if (sold>0) { log(`${who} sold harvest for ¢${sold}.`); state.sellOpen = true; state.shopOpen=null; }
+      if (sold>0) { log(`${who} sold harvest for ${formatCurrency(sold)}.`); state.sellOpen = true; state.shopOpen=null; }
       else { log(`${who} has nothing to sell.`); state.sellOpen=true; state.shopOpen=null; }
       return;
     }
@@ -634,8 +651,8 @@
     }
 
     if (plot.crop.dead) {
-      if (p.money >= REPAIR_COST) { p.money -= REPAIR_COST; plot.crop = null; log(`${who} fixed the plot for ¢${REPAIR_COST}.`); save(); }
-      else { log(`${who} needs ¢${REPAIR_COST} to fix this plot.`); }
+      if (p.money >= REPAIR_COST) { p.money -= REPAIR_COST; plot.crop = null; log(`${who} fixed the plot for ${formatCurrency(REPAIR_COST)}.`); save(); }
+      else { log(`${who} needs ${formatCurrency(REPAIR_COST)} to fix this plot.`); }
       return;
     }
 
@@ -653,7 +670,7 @@
   function showTooltip(p, pl) {
     let txt = 'Growing…';
     if (pl.crop && pl.crop.dead) {
-      txt = `Rotten. Press Action to fix for ¢${REPAIR_COST}.`;
+      txt = `Rotten. Press Action to fix for ${formatCurrency(REPAIR_COST)}.`;
     } else if (pl.crop) {
       const c = pl.crop; const st = Math.min(1, plantStage(c));
       const secs = Math.max(0, Math.ceil((1-st) * c.growMs / (state.growthMult*1000)));
@@ -723,7 +740,7 @@
       const row=document.createElement('div');
       row.className='row';
       const name=document.createElement('span'); name.textContent=seedEmoji(s.id)+" "+s.name;
-      const price=document.createElement('span'); price.textContent=`¢${s.sheckles}`;
+      const price=document.createElement('span'); price.textContent=formatCurrency(s.sheckles);
       row.append(name, price); seedListEl.appendChild(row);
       const actions=document.createElement('div'); actions.className='row';
       if (seedStock.has(s.id)){
@@ -744,7 +761,7 @@
     if (state.shopOpen !== who || !inside(target.x,target.y,target.w,target.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
       log(`${who} must be at the Seed Shop to buy seeds.`); return;
     }
-    if (target.money < seed.sheckles) { log(`${who} can’t afford ${seed.name} (¢${seed.sheckles}).`); return; }
+    if (target.money < seed.sheckles) { log(`${who} can’t afford ${seed.name} (${formatCurrency(seed.sheckles)}).`); return; }
     target.money -= seed.sheckles;
     target.invSeeds[id] = (target.invSeeds[id]||0) + 1;
     log(`${who} bought 1 × ${seed.name} seed.`);
@@ -784,7 +801,7 @@
       p.pet = {id:pet.id, x:p.x-16, y:p.y-16};
       log(`${who} received a pet: ${pet.name}! Perk applied.`);
     } else {
-      p.money += 100; log(`${who} already has all pets. Awarded ¢100 instead.`);
+      p.money += 100; log(`${who} already has all pets. Awarded ${formatCurrency(100)} instead.`);
     }
     save();
   }
@@ -849,7 +866,7 @@
     if (state.p2Active) drawPet(state.p2);
 
     // HUD
-    p1moneyEl.textContent = `P1 Money: ¢${state.p1.money}`;
+    p1moneyEl.textContent = `P1 Money: ${formatCurrency(state.p1.money)}`;
     const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
     const petName1 = matchPet1 ? matchPet1.name : '—';
     const invEntries1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0);
@@ -858,7 +875,7 @@
     const sel1 = CROPS[state.p1.selected]?.name || state.p1.selected;
     p1hud.textContent = `P1 Seeds: ${inv1} | Bag: ${bag1} | Pet: ${petName1} | Selected: ${sel1}`;
     if (state.p2Active) {
-      p2moneyEl.textContent = `P2 Money: ¢${state.p2.money}`;
+      p2moneyEl.textContent = `P2 Money: ${formatCurrency(state.p2.money)}`;
       const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
       const petName2 = matchPet2 ? matchPet2.name : '—';
       const invEntries2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0);
@@ -2038,7 +2055,7 @@
 
   if (!localStorage.getItem(SAVE_KEY)) {
     log('Welcome! Buy seeds at the Seed Shop (top-left).');
-    log('Plant on your OWN plots. If a plant rots, fix the plot for ¢10.');
+    log(`Plant on your OWN plots. If a plant rots, fix the plot for ${formatCurrency(REPAIR_COST)}.`);
     log('Growth persists from timestamps. Use Save/Load or Export/Import to back up progress.');
   } else {
     log('Save loaded from previous session.');

@@ -20,11 +20,11 @@
 
     /* Overlay windows */
     .window { position:absolute; top:10px; left:10px; display:flex; gap:10px; }
-    .panel { background:#ffffffdd; border:2px solid #333; border-radius:8px; padding:10px; width:190px; }
+    .panel { background:#ffffffdd; border:2px solid #333; border-radius:8px; padding:10px; width:190px; display:flex; flex-direction:column; max-height:min(78vh, 620px); }
     .panel h3 { margin:0 0 6px 0; font-size:16px; }
     .panel .row { display:flex; align-items:center; justify-content:space-between; gap:6px; margin:6px 0; }
       .panel button { padding:6px 8px; border-radius:6px; border:1px solid #222; background:#e8f3ff; cursor:pointer; }
-      .seed-list { max-height:150px; overflow-y:auto; }
+      .seed-list { flex:1 1 auto; max-height:min(60vh, 540px); overflow-y:auto; }
 
     /* Event feed (starts OFF‑SCREEN) */
     #events { position:absolute; right:-380px; top:10px; width:340px; max-width:48vw; background:#ffffffd9; border:2px solid #333; border-radius:8px; padding:8px 10px; transition:right .18s ease-out; }
@@ -41,20 +41,21 @@
     footer code { background:#0f1b23; color:#b3e6ff; padding:2px 6px; border-radius:6px; }
 
     /* Touch controls */
-    .touch-controls { position:absolute; bottom:10%; display:flex; gap:12px; }
-    .touch-controls button { touch-action:none; user-select:none; }
-    #p1Controls { left:10px; flex-direction:row; }
-    #p2Controls { right:10px; flex-direction:row-reverse; }
-    .dpad { position:relative; width:100px; height:100px; }
-    .dpad button { position:absolute; width:40px; height:40px; background:#ffffffaa; border:1px solid #333; border-radius:6px; }
-    .dpad .up { top:0; left:30px; }
-    .dpad .down { bottom:0; left:30px; }
-    .dpad .left { left:0; top:30px; }
-    .dpad .right { right:0; top:30px; }
-    .actions { display:flex; flex-direction:column; gap:10px; }
-    #p1Controls .actions { margin-left:10px; }
-    #p2Controls .actions { margin-right:10px; }
-    .actions button { width:60px; height:40px; background:#ffffffaa; border:1px solid #333; border-radius:6px; }
+    .touch-controls { position:absolute; bottom:clamp(20px, 8vh, 96px); display:flex; align-items:center; gap:24px; z-index:10; }
+    .touch-controls button { touch-action:none; user-select:none; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; padding:0; }
+    #p1Controls, #p2Controls { flex-direction:row; align-items:center; }
+    #p1Controls { left:16px; right:auto; }
+    #p2Controls { right:16px; left:auto; flex-direction:row-reverse; }
+    body.single-player #p1Controls { left:auto; right:16px; }
+    .dpad { position:relative; width:120px; height:120px; }
+    .dpad button { position:absolute; width:56px; height:56px; background:#ffffffd0; border:1px solid #333; border-radius:12px; font-size:20px; }
+    .dpad .up { top:0; left:50%; transform:translate(-50%, 0); }
+    .dpad .down { bottom:0; left:50%; transform:translate(-50%, 0); }
+    .dpad .left { left:0; top:50%; transform:translate(0, -50%); }
+    .dpad .right { right:0; top:50%; transform:translate(0, -50%); }
+    .actions { display:flex; flex-direction:column; gap:16px; }
+    .actions button { width:84px; height:56px; background:#ffffffd0; border:1px solid #333; border-radius:12px; }
+    body.single-player #p1Controls .actions { align-items:flex-end; }
     .p2 { display:none; }
   </style>
 </head>

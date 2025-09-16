@@ -14,11 +14,16 @@
   const DEFAULT_SEED = 'candy';
   // PETS (one active perk per player)
   const PETS = [
-    { id:'bee',    name:'Honey Bee',  emoji:'🐝', priceMult:1.10 },
-    { id:'bunny',  name:'Bunny',      emoji:'🐰', speed:+0.4 },
-    { id:'sprout', name:'Sprout',     emoji:'🌱', plantGrowth:1.10 },
-    { id:'robot',  name:'Robot',      emoji:'🤖', randomMutation:true },
+    { id:'bee',    name:'Honey Bee',  emoji:'🐝', priceMult:1.10, perk:'Sell price +10%' },
+    { id:'bunny',  name:'Bunny',      emoji:'🐰', speed:+0.4,      perk:'Movement speed boost' },
+    { id:'sprout', name:'Sprout',     emoji:'🌱', plantGrowth:1.10, perk:'Plants grow 10% faster' },
+    { id:'robot',  name:'Robot',      emoji:'🤖', randomMutation:true, perk:'Chance for random crop mutations' },
   ];
+
+  function describePet(petDef) {
+    if (!petDef) return '—';
+    return petDef.perk ? `${petDef.name} (${petDef.perk})` : petDef.name;
+  }
 
   const SEED_CATALOG = [
     { id:'candy', name:'Candy Blossom', harvest:'Multiple', sheckles:2, robux:0 },
@@ -799,7 +804,7 @@
       const pet = pool[Math.floor(Math.random()*pool.length)];
       p.pets.push({id:pet.id});
       p.pet = {id:pet.id, x:p.x-16, y:p.y-16};
-      log(`${who} received a pet: ${pet.name}! Perk applied.`);
+      log(`${who} received a pet: ${describePet(pet)}.`);
     } else {
       p.money += 100; log(`${who} already has all pets. Awarded ${formatCurrency(100)} instead.`);
     }
@@ -868,7 +873,7 @@
     // HUD
     p1moneyEl.textContent = `P1 Money: ${formatCurrency(state.p1.money)}`;
     const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
-    const petName1 = matchPet1 ? matchPet1.name : '—';
+    const petName1 = describePet(matchPet1);
     const invEntries1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0);
     const inv1 = invEntries1.map(([k,v],i)=>`${i+1}:${k}(${v})`).join(', ') || '—';
     const bag1 = Object.entries(state.p1.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
@@ -877,7 +882,7 @@
     if (state.p2Active) {
       p2moneyEl.textContent = `P2 Money: ${formatCurrency(state.p2.money)}`;
       const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
-      const petName2 = matchPet2 ? matchPet2.name : '—';
+      const petName2 = describePet(matchPet2);
       const invEntries2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0);
       const inv2 = invEntries2.map(([k,v],i)=>`${i+1}:${k}(${v})`).join(', ') || '—';
       const bag2 = Object.entries(state.p2.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';

@@ -32,8 +32,8 @@
     { id:'blueberry', name:'Blueberry', harvest:'Multiple', sheckles:400, robux:49 },
     { id:'orangeTulip', name:'Orange Tulip', harvest:'Single', sheckles:600, robux:14 },
     { id:'tomato', name:'Tomato', harvest:'Multiple', sheckles:800, robux:79 },
-    { id:'corn', name:'Corn', harvest:'Multiple', sheckles:1300, robux:135 },
     { id:'daffodil', name:'Daffodil', harvest:'Single', sheckles:1000, robux:19 },
+    { id:'corn', name:'Corn', harvest:'Multiple', sheckles:1300, robux:135 },
     { id:'watermelon', name:'Watermelon', harvest:'Single', sheckles:2500, robux:195 },
     { id:'pumpkin', name:'Pumpkin', harvest:'Single', sheckles:3000, robux:210 },
     { id:'apple', name:'Apple', harvest:'Multiple', sheckles:3250, robux:375 },
@@ -42,8 +42,8 @@
     { id:'cactus', name:'Cactus', harvest:'Multiple', sheckles:15000, robux:497 },
     { id:'dragonFruit', name:'Dragon Fruit', harvest:'Multiple', sheckles:50000, robux:597 },
     { id:'mango', name:'Mango', harvest:'Multiple', sheckles:100000, robux:580 },
-    { id:'grape', name:'Grape', harvest:'Multiple', sheckles:850000, robux:599 },
     { id:'mushroom', name:'Mushroom', harvest:'Single', sheckles:150000, robux:249 },
+    { id:'grape', name:'Grape', harvest:'Multiple', sheckles:850000, robux:599 },
     { id:'pepper', name:'Pepper', harvest:'Multiple', sheckles:1000000, robux:629 },
     { id:'cacao', name:'Cacao', harvest:'Multiple', sheckles:2500000, robux:679 },
     { id:'beanstalk', name:'Beanstalk', harvest:'Multiple', sheckles:10000000, robux:715 },
@@ -53,12 +53,29 @@
     { id:'giantPinecone', name:'Giant Pinecone', harvest:'Multiple', sheckles:55000000, robux:929 },
     { id:'elderStrawberry', name:'Elder Strawberry', harvest:'Multiple', sheckles:70000000, robux:957 },
     { id:'romanesco', name:'Romanesco', harvest:'Multiple', sheckles:88000000, robux:987 },
-  ];
-  // Provide basic crop stats for seeds missing from CROPS so they can be planted
-  for (const s of SEED_CATALOG) {
-    if (!CROPS[s.id]) {
-      CROPS[s.id] = { name: s.name, growMs: 600000, sell: s.sheckles * 100 };
+  ].sort((a, b) => a.sheckles - b.sheckles);
+
+  const seedCosts = SEED_CATALOG.map(seed => seed.sheckles).filter(cost => cost > 0);
+  const minSeedCost = seedCosts.length ? Math.min(...seedCosts) : 0;
+  const maxSeedCost = seedCosts.length ? Math.max(...seedCosts) : 0;
+  const baseGrowMs = CROPS[DEFAULT_SEED].growMs;
+  const existingMaxGrowMs = Math.max(...Object.values(CROPS).map(crop => crop.growMs || baseGrowMs));
+  const targetMaxGrowMs = Math.max(baseGrowMs, Math.round(existingMaxGrowMs / 2));
+  const costLogSpan = (minSeedCost > 0 && maxSeedCost > minSeedCost) ? Math.log(maxSeedCost / minSeedCost) : 0;
+
+  // Provide basic crop stats for seeds missing from CROPS so they can be planted, and scale growth times.
+  for (const seed of SEED_CATALOG) {
+    const crop = CROPS[seed.id] || { name: seed.name, sell: seed.sheckles * 100 };
+    let ratio = 0;
+    if (costLogSpan && seed.sheckles > 0 && seed.sheckles !== minSeedCost) {
+      ratio = Math.log(seed.sheckles / minSeedCost) / costLogSpan;
     }
+    const smoothGrow = baseGrowMs + (targetMaxGrowMs - baseGrowMs) * Math.min(1, Math.max(0, ratio));
+    const growMs = Math.round(smoothGrow / 1000) * 1000;
+    crop.growMs = Math.min(targetMaxGrowMs, Math.max(baseGrowMs, growMs));
+    crop.name = crop.name || seed.name;
+    if (crop.sell == null) crop.sell = seed.sheckles * 100;
+    CROPS[seed.id] = crop;
   }
   const seedStock = new Set();
 

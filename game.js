@@ -1,18 +1,36 @@
 (() => {
   // ---------- CONFIG ----------
+  const RETRO = {
+    teal: '#2BAF90',
+    deepTeal: '#176B5A',
+    mint: '#A1D4B1',
+    softMint: '#CBE8D2',
+    gold: '#F1A512',
+    paleGold: '#FCE2B6',
+    orange: '#DD4111',
+    sunburst: '#F77A3B',
+    berry: '#8C0027',
+    deepBerry: '#4E0B1D',
+    midnight: '#2B0F1A',
+    plum: '#471020',
+    shadow: '#360C1B',
+    sand: '#F9E4C1',
+    cream: '#FFF4D6',
+  };
+
   const MODS = {
-    nitro:        { name: 'Cold Air Intake',          installMs: 60000,  payout: 900,   cost: 350,  icon: '🌬️', palette: ['#89c2d9', '#1e6091', '#0b132b'] },
-    neon:         { name: 'Performance Exhaust',      installMs: 75000,  payout: 1200,  cost: 520,  icon: '💨', palette: ['#f8961e', '#7f5539', '#141414'] },
-    driftTires:   { name: 'Tuned Headers',            installMs: 90000,  payout: 1900,  cost: 900,  icon: '🔧', palette: ['#ff7b00', '#ffcb77', '#2f2f2f'] },
-    suspension:   { name: 'High-Flow Fuel System',    installMs: 120000, payout: 2800,  cost: 1500, icon: '⛽', palette: ['#8ac926', '#1982c4', '#14213d'] },
-    sound:        { name: 'ECU Tune',                 installMs: 150000, payout: 3600,  cost: 2100, icon: '💾', palette: ['#00f5d4', '#ff4f00', '#0b132b'] },
-    wrap:         { name: 'Coilover Suspension',      installMs: 180000, payout: 4700,  cost: 2600, icon: '🛞', palette: ['#06d6a0', '#26547c', '#1b1b1b'] },
-    turbo:        { name: 'Big Brake Kit',            installMs: 240000, payout: 6800,  cost: 4000, icon: '🛑', palette: ['#ef233c', '#ff9f1c', '#1d1d1d'] },
-    aero:         { name: 'Carbon Fiber Body Kit',    installMs: 300000, payout: 9400,  cost: 6200, icon: '🪶', palette: ['#adb5bd', '#343a40', '#0f0f0f'] },
-    ecu:          { name: 'Stage 2 Turbocharger',     installMs: 360000, payout: 12600, cost: 8300, icon: '🌀', palette: ['#48cae4', '#ffbe0b', '#03071e'] },
-    supercharger: { name: 'Front-Mount Intercooler',  installMs: 420000, payout: 17100, cost: 12000,icon: '❄️', palette: ['#caf0f8', '#00b4d8', '#023e8a'] },
-    driftAI:      { name: 'Wet Nitrous Kit',          installMs: 480000, payout: 22800, cost: 18000,icon: '🧨', palette: ['#f94144', '#f8961e', '#1a1a1a'] },
-    rocketFuel:   { name: 'Race-Spec Engine Swap',    installMs: 540000, payout: 29600, cost: 25000,icon: '⚙️', palette: ['#80ffdb', '#ff9f1c', '#1d1b1b'] },
+    nitro:        { name: 'Cold Air Intake',          installMs: 60000,  payout: 900,   cost: 350,  icon: '🌬️', palette: [RETRO.teal, RETRO.softMint, RETRO.deepTeal] },
+    neon:         { name: 'Performance Exhaust',      installMs: 75000,  payout: 1200,  cost: 520,  icon: '💨', palette: [RETRO.gold, RETRO.paleGold, RETRO.berry] },
+    driftTires:   { name: 'Tuned Headers',            installMs: 90000,  payout: 1900,  cost: 900,  icon: '🔧', palette: [RETRO.sunburst, RETRO.gold, RETRO.shadow] },
+    suspension:   { name: 'High-Flow Fuel System',    installMs: 120000, payout: 2800,  cost: 1500, icon: '⛽', palette: [RETRO.mint, RETRO.teal, RETRO.deepBerry] },
+    sound:        { name: 'ECU Tune',                 installMs: 150000, payout: 3600,  cost: 2100, icon: '💾', palette: [RETRO.berry, RETRO.orange, RETRO.midnight] },
+    wrap:         { name: 'Coilover Suspension',      installMs: 180000, payout: 4700,  cost: 2600, icon: '🛞', palette: [RETRO.orange, RETRO.sunburst, RETRO.shadow] },
+    turbo:        { name: 'Big Brake Kit',            installMs: 240000, payout: 6800,  cost: 4000, icon: '🛑', palette: [RETRO.gold, RETRO.teal, RETRO.deepBerry] },
+    aero:         { name: 'Carbon Fiber Body Kit',    installMs: 300000, payout: 9400,  cost: 6200, icon: '🪶', palette: [RETRO.mint, RETRO.paleGold, RETRO.shadow] },
+    ecu:          { name: 'Stage 2 Turbocharger',     installMs: 360000, payout: 12600, cost: 8300, icon: '🌀', palette: [RETRO.teal, RETRO.gold, RETRO.midnight] },
+    supercharger: { name: 'Front-Mount Intercooler',  installMs: 420000, payout: 17100, cost: 12000,icon: '❄️', palette: [RETRO.mint, RETRO.softMint, RETRO.deepTeal] },
+    driftAI:      { name: 'Wet Nitrous Kit',          installMs: 480000, payout: 22800, cost: 18000,icon: '🧨', palette: [RETRO.orange, RETRO.sunburst, RETRO.berry] },
+    rocketFuel:   { name: 'Race-Spec Engine Swap',    installMs: 540000, payout: 29600, cost: 25000,icon: '⚙️', palette: [RETRO.gold, RETRO.orange, RETRO.midnight] },
   };
 
   const CREDIT_SYMBOL = '$';
@@ -981,15 +999,15 @@
     const c = document.createElement('canvas');
     c.width = 64; c.height = 64;
     const g = c.getContext('2d');
-    g.fillStyle = '#0f1015';
+    g.fillStyle = RETRO.midnight;
     g.fillRect(0, 0, 64, 64);
     for (let i = 0; i < 180; i++) {
       const alpha = 0.1 + Math.random() * 0.2;
-      g.fillStyle = `rgba(255,255,255,${alpha})`;
+      g.fillStyle = `rgba(249, 226, 182, ${alpha})`;
       g.fillRect(Math.random() * 64, Math.random() * 64, 1, 1);
     }
     for (let i = 0; i < 160; i++) {
-      g.fillStyle = 'rgba(20,20,20,0.6)';
+      g.fillStyle = 'rgba(140, 0, 39, 0.45)';
       g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2);
     }
     return g.createPattern(c, 'repeat');
@@ -999,14 +1017,14 @@
     const c = document.createElement('canvas');
     c.width = 48; c.height = 48;
     const g = c.getContext('2d');
-    g.fillStyle = '#1d1f2f';
+    g.fillStyle = RETRO.plum;
     g.fillRect(0, 0, 48, 48);
-    g.fillStyle = '#3a3e5a';
+    g.fillStyle = RETRO.berry;
     for (let i = 0; i < 6; i++) {
       g.fillRect(0, i * 8, 48, 2);
     }
     g.globalAlpha = 0.25;
-    g.fillStyle = '#7f88ff';
+    g.fillStyle = 'rgba(241, 165, 18, 0.6)';
     g.fillRect(0, 0, 48, 3);
     g.fillRect(0, 45, 48, 3);
     g.globalAlpha = 1;
@@ -1017,9 +1035,9 @@
     const c = document.createElement('canvas');
     c.width = 128; c.height = 128;
     const g = c.getContext('2d');
-    g.fillStyle = 'rgba(255, 0, 120, 0.08)';
+    g.fillStyle = 'rgba(241, 165, 18, 0.08)';
     g.fillRect(0, 0, 128, 128);
-    g.strokeStyle = 'rgba(0, 255, 255, 0.15)';
+    g.strokeStyle = 'rgba(43, 175, 144, 0.16)';
     g.lineWidth = 2;
     for (let i = 0; i <= 128; i += 16) {
       g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 128); g.stroke();
@@ -1052,26 +1070,27 @@
     ctx.restore();
 
     // road divider
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillStyle = 'rgba(249, 228, 193, 0.16)';
     for (let i = 0; i < cv.width; i += 40) {
       ctx.fillRect(i, WORLD.h / 2 - 4, 24, 8);
     }
 
-    drawStation(STATIONS.parts, 'Parts Vendor', '#ff4f9f', '🔧');
-    drawStation(STATIONS.race, 'Race Terminal', '#00e5ff', '🏁');
+    drawStation(STATIONS.parts, 'Parts Vendor', RETRO.gold, '🔧');
+    drawStation(STATIONS.race, 'Race Terminal', RETRO.teal, '🏁');
 
     for (const garage of GARAGES) {
       const isP1 = garage.owner === 'P1';
       ctx.save();
-      ctx.shadowColor = isP1 ? '#00f5ff88' : '#ff2d7588';
+      const glow = isP1 ? RETRO.teal : RETRO.orange;
+      ctx.shadowColor = `${glow}88`;
       ctx.shadowBlur = 20;
-      ctx.strokeStyle = isP1 ? '#00f5ff' : '#ff2d75';
+      ctx.strokeStyle = glow;
       ctx.lineWidth = 4;
       ctx.strokeRect(garage.x, garage.y, garage.w, garage.h);
       ctx.restore();
-      ctx.fillStyle = 'rgba(12, 14, 28, 0.75)';
+      ctx.fillStyle = 'rgba(71, 16, 32, 0.78)';
       ctx.fillRect(garage.x, garage.y, garage.w, garage.h);
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillStyle = 'rgba(249,228,193,0.16)';
       ctx.font = 'bold 18px "Courier New", monospace';
       const label = isP1 ? 'Garage' : `${garage.owner} Garage`;
       ctx.fillText(label, garage.x + 12, garage.y + 28);
@@ -1085,27 +1104,27 @@
       ctx.save();
       ctx.globalAlpha = 0.55;
       const gradient = ctx.createRadialGradient(ch.x, ch.y, 10, ch.x, ch.y, ch.r);
-      gradient.addColorStop(0, 'rgba(0,255,255,0.6)');
-      gradient.addColorStop(1, 'rgba(255,0,150,0)');
+      gradient.addColorStop(0, 'rgba(241,165,18,0.6)');
+      gradient.addColorStop(1, 'rgba(43,175,144,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
-      ctx.strokeStyle = '#00f5ff';
+      ctx.strokeStyle = RETRO.teal;
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r, 0, Math.PI * 2); ctx.stroke();
       const p = Math.min(1, ch.progress / ch.goal);
       ctx.beginPath();
       ctx.moveTo(ch.x, ch.y);
-      ctx.fillStyle = 'rgba(255, 20, 147, 0.6)';
+      ctx.fillStyle = 'rgba(221, 65, 17, 0.6)';
       ctx.arc(ch.x, ch.y, ch.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = '#d1f7ff';
+      ctx.fillStyle = RETRO.sand;
       ctx.font = '16px "Courier New", monospace';
       ctx.fillText(`Spotlight: ${ch.progress}/${ch.goal} (${rem}s)`, ch.x - 100, ch.y - ch.r - 12);
     }
 
-    drawPlayer(state.p1, '#00f5ff');
+    drawPlayer(state.p1, RETRO.teal);
     drawCrewMember(state.p1);
 
     p1moneyEl.textContent = `Credits: ${formatCredits(state.p1.credits)}`;
@@ -1128,7 +1147,7 @@
     ctx.save();
     ctx.shadowColor = color + '55';
     ctx.shadowBlur = 18;
-    ctx.fillStyle = 'rgba(10, 12, 24, 0.85)';
+    ctx.fillStyle = 'rgba(53, 13, 25, 0.85)';
     ctx.fillRect(st.x, st.y, st.w, st.h);
     ctx.strokeStyle = color;
     ctx.lineWidth = 4;
@@ -1139,10 +1158,10 @@
     ctx.font = 'bold 18px "Courier New", monospace';
     ctx.fillStyle = color;
     ctx.fillText(icon, st.x + 12, st.y + 28);
-    ctx.fillStyle = '#f0f6ff';
+    ctx.fillStyle = RETRO.cream;
     ctx.fillText(label, st.x + 44, st.y + 28);
     ctx.font = '12px "Courier New", monospace';
-    ctx.fillStyle = 'rgba(225, 235, 255, 0.7)';
+    ctx.fillStyle = 'rgba(252, 226, 182, 0.7)';
     ctx.fillText('Action to interact', st.x + 12, st.y + st.h - 16);
     ctx.restore();
   }
@@ -1152,16 +1171,16 @@
     ctx.translate(bay.x, bay.y);
     ctx.fillStyle = patterns.metal;
     ctx.fillRect(0, 0, bay.w, bay.h);
-    ctx.strokeStyle = bay.owner === 'P1' ? 'rgba(0,245,255,0.7)' : 'rgba(255,45,117,0.7)';
+    ctx.strokeStyle = bay.owner === 'P1' ? 'rgba(43,175,144,0.7)' : 'rgba(221,65,17,0.7)';
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, bay.w, bay.h);
 
     if (!bay.build) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.strokeStyle = 'rgba(249,228,193,0.18)';
       ctx.setLineDash([6, 6]);
       ctx.strokeRect(6, 6, bay.w - 12, bay.h - 12);
       ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillStyle = 'rgba(161,212,177,0.12)';
       ctx.fillRect(8, bay.h - 28, bay.w - 16, 18);
     } else {
       drawBuild(bay, bay.build);
@@ -1171,23 +1190,23 @@
 
   function drawBuild(bay, build) {
     const progress = Math.min(1, buildProgress(build));
-    const def = MODS[build.kind] || { palette: ['#ff4f9f', '#ffe066', '#111'], name: build.kind };
-    const palette = def.palette || ['#ff4f9f', '#ffe066', '#111'];
-    const [body, accent, shadow] = [palette[0], palette[1] || '#ffe066', palette[2] || '#0b0b0b'];
+    const def = MODS[build.kind] || { palette: [RETRO.orange, RETRO.gold, RETRO.shadow], name: build.kind };
+    const palette = def.palette || [RETRO.orange, RETRO.gold, RETRO.shadow];
+    const [body, accent, shadow] = [palette[0], palette[1] || RETRO.gold, palette[2] || RETRO.shadow];
     const x = 8;
     const y = 10;
     const w = bay.w - 16;
     const h = bay.h - 32;
     const liftY = bay.h - 28;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillStyle = 'rgba(35, 8, 18, 0.55)';
     ctx.fillRect(x - 4, liftY + 18, w + 8, 6);
 
-    ctx.fillStyle = 'rgba(20, 26, 52, 0.85)';
+    ctx.fillStyle = 'rgba(71, 16, 32, 0.88)';
     ctx.fillRect(x, liftY, w, 18);
-    ctx.fillStyle = '#1f293a';
+    ctx.fillStyle = RETRO.plum;
     ctx.fillRect(x + 6, liftY + 4, w - 12, 6);
-    ctx.fillStyle = '#162235';
+    ctx.fillStyle = RETRO.shadow;
     ctx.fillRect(x + 6, liftY + 10, w - 12, 6);
 
     const carHeight = h * 0.6;
@@ -1198,22 +1217,22 @@
     ctx.fillRect(x, carY, w, carHeight);
     ctx.fillStyle = accent;
     ctx.fillRect(x + 6, carY + 6, w - 12, carHeight / 2);
-    ctx.fillStyle = '#0d0d17';
+    ctx.fillStyle = RETRO.midnight;
     ctx.fillRect(x + 10, carY + carHeight / 2 - 6, w - 20, carHeight / 3);
-    ctx.fillStyle = '#a5f3ff';
+    ctx.fillStyle = RETRO.mint;
     ctx.fillRect(x + 12, carY + carHeight / 2 - 2, w - 24, carHeight / 5);
 
-    ctx.fillStyle = '#10131f';
+    ctx.fillStyle = RETRO.shadow;
     ctx.fillRect(x + 4, carY + carHeight - 8, w - 8, 6);
-    ctx.fillStyle = '#999';
+    ctx.fillStyle = '#C78F7D';
     ctx.fillRect(x + 8, carY + carHeight - 6, w - 16, 4);
 
-    const headlightColor = progress >= 1 ? '#fffbe6' : '#2bff88';
+    const headlightColor = progress >= 1 ? RETRO.cream : RETRO.teal;
     ctx.fillStyle = headlightColor;
     ctx.fillRect(x + 10, carY + 4, 10, 6);
     ctx.fillRect(x + w - 20, carY + 4, 10, 6);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillStyle = 'rgba(249,228,193,0.16)';
     ctx.fillRect(x, carY - 8, w * progress, 4);
 
     if (build.tuning) {
@@ -1221,9 +1240,9 @@
     }
 
     if (build.dead) {
-      ctx.fillStyle = 'rgba(255,0,70,0.4)';
+      ctx.fillStyle = 'rgba(221,65,17,0.35)';
       ctx.fillRect(0, 0, bay.w, bay.h);
-      ctx.strokeStyle = '#ff2255';
+      ctx.strokeStyle = RETRO.orange;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(6, 6); ctx.lineTo(bay.w - 6, bay.h - 6);
@@ -1231,11 +1250,11 @@
       ctx.stroke();
     }
 
-    ctx.fillStyle = 'rgba(15, 20, 32, 0.9)';
+    ctx.fillStyle = 'rgba(53, 13, 25, 0.9)';
     ctx.fillRect(x, bay.h - 24, w, 14);
-    ctx.fillStyle = '#66f7ff';
+    ctx.fillStyle = RETRO.teal;
     ctx.fillRect(x + 2, bay.h - 22, (w - 4) * progress, 6);
-    ctx.fillStyle = '#0b132b';
+    ctx.fillStyle = RETRO.shadow;
     ctx.fillRect(x + 2, bay.h - 14, w - 4, 2);
   }
 
@@ -1246,9 +1265,9 @@
       const r = radius * (0.5 + Math.random() * 0.3);
       const x = cx + Math.cos(angle) * r;
       const y = cy + Math.sin(angle) * r;
-      ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+      ctx.fillStyle = 'rgba(43, 175, 144, 0.7)';
       ctx.fillRect(x - 1, y - 1, 2, 2);
-      ctx.fillStyle = 'rgba(255, 20, 147, 0.6)';
+      ctx.fillStyle = 'rgba(241, 165, 18, 0.65)';
       ctx.fillRect(x, y, 1, 1);
     }
   }
@@ -1259,7 +1278,7 @@
     const w = p.w;
     const h = p.h;
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fillStyle = 'rgba(35, 8, 18, 0.55)';
     ctx.beginPath();
     ctx.ellipse(x + w / 2, y + h - 4, w / 2, 6, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -1267,13 +1286,13 @@
     const centerX = x + w / 2;
     const baseY = y + h;
 
-    const coverall = '#1f3c88';
-    const coverallHighlight = '#2d51c0';
-    const trim = '#172554';
-    const glove = '#1e293b';
+    const coverall = RETRO.teal;
+    const coverallHighlight = RETRO.mint;
+    const trim = RETRO.shadow;
+    const glove = RETRO.deepBerry;
     const skin = '#f6c6a5';
-    const hat = '#0f172a';
-    const steel = '#c7d7ff';
+    const hat = RETRO.berry;
+    const steel = RETRO.gold;
 
     const legWidth = 10;
     const legHeight = 16;
@@ -1301,7 +1320,7 @@
     ctx.fillRect(centerX - 1, torsoY + 2, 2, torsoH - 4);
     ctx.fillStyle = trim;
     ctx.fillRect(torsoX, torsoY + torsoH - 6, torsoW, 6);
-    ctx.fillStyle = '#facc15';
+    ctx.fillStyle = RETRO.gold;
     ctx.fillRect(centerX - 4, torsoY + torsoH - 5, 8, 4);
 
     ctx.fillStyle = coverall;
@@ -1335,7 +1354,7 @@
     ctx.fillStyle = neon;
     ctx.fillRect(centerX - 4, headCenterY - headRadius - 6, 8, 2);
 
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = RETRO.shadow;
     ctx.fillRect(centerX - 5, headCenterY - 2, 3, 2);
     ctx.fillRect(centerX + 2, headCenterY - 2, 3, 2);
     ctx.fillRect(centerX - 4, headCenterY + 3, 8, 2);
@@ -1346,7 +1365,7 @@
     ctx.fillRect(wrenchX, wrenchY, 3, 18);
     ctx.fillRect(wrenchX - 3, wrenchY - 2, 9, 4);
     ctx.fillRect(wrenchX - 3, wrenchY + 16, 9, 4);
-    ctx.fillStyle = '#101526';
+    ctx.fillStyle = RETRO.shadow;
     ctx.fillRect(wrenchX - 1, wrenchY - 1, 2, 2);
     ctx.fillRect(wrenchX - 1, wrenchY + 17, 2, 2);
 
@@ -1357,14 +1376,14 @@
     // selected mod bubble
     const bubbleX = x + w / 2;
     const bubbleY = y - 18;
-    ctx.fillStyle = 'rgba(10, 12, 24, 0.85)';
+    ctx.fillStyle = 'rgba(53, 13, 25, 0.85)';
     const bubbleW = 32;
     const bubbleH = 18;
     ctx.fillRect(bubbleX - bubbleW / 2, bubbleY - bubbleH / 2, bubbleW, bubbleH);
     ctx.strokeStyle = neon;
     ctx.lineWidth = 2;
     ctx.strokeRect(bubbleX - bubbleW / 2, bubbleY - bubbleH / 2, bubbleW, bubbleH);
-    ctx.fillStyle = '#d1f7ff';
+    ctx.fillStyle = RETRO.sand;
     ctx.font = '14px "Courier New", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1379,14 +1398,14 @@
     if (!crew) return;
     const x = p.crewMember.x;
     const y = p.crewMember.y;
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillStyle = 'rgba(35, 8, 18, 0.5)';
     ctx.fillRect(x, y, 24, 10);
-    ctx.fillStyle = 'rgba(15, 18, 34, 0.9)';
+    ctx.fillStyle = 'rgba(71, 16, 32, 0.92)';
     ctx.fillRect(x, y - 20, 24, 24);
-    ctx.strokeStyle = 'rgba(0, 245, 255, 0.6)';
+    ctx.strokeStyle = 'rgba(241, 165, 18, 0.6)';
     ctx.strokeRect(x, y - 20, 24, 24);
     ctx.font = '18px "Courier New", monospace';
-    ctx.fillStyle = '#f8faff';
+    ctx.fillStyle = RETRO.cream;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(crew.emoji, x + 12, y - 8);

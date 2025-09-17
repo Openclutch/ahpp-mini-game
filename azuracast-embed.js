@@ -211,7 +211,7 @@
     const toggle = document.createElement('button');
     toggle.id = TOGGLE_ID;
     toggle.type = 'button';
-    toggle.textContent = 'Play Neon Drift Garage';
+    toggle.textContent = 'Play AHPP Underground Manager';
     toggle.setAttribute('aria-controls', OVERLAY_ID);
     toggle.setAttribute('aria-expanded', 'false');
 

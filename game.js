@@ -107,6 +107,16 @@
 
   state.hints = normalizeHints(state.hints);
 
+  function hydrateBuild(build) {
+    if (!build || typeof build !== 'object') return null;
+    if (!MODS[build.kind]) return null;
+    const installMs = Math.max(1, Math.round(build.installMs || MODS[build.kind].installMs || baseInstall));
+    let progressMs = Number(build.progressMs);
+    if (!Number.isFinite(progressMs) || progressMs < 0) progressMs = 0;
+    if (progressMs > installMs) progressMs = installMs;
+    return { ...build, installMs, progressMs };
+  }
+
   function migrateLegacy() {
     if (localStorage.getItem(SAVE_KEY)) return;
     for (const key of LEGACY_KEYS) {
@@ -128,6 +138,7 @@
                   kind: pl.crop.kind,
                   plantedAt: pl.crop.plantedAt,
                   installMs: pl.crop.growMs,
+                  progressMs: Math.max(0, Math.min(Number(pl.crop.progressMs) || 0, pl.crop.growMs || 0)),
                   yield: pl.crop.yield,
                   payoutMult: pl.crop.sellMult,
                   rotChance: pl.crop.rotChance,
@@ -167,7 +178,11 @@
     const savedBays = Array.isArray(saved.bays) ? saved.bays : state.bays;
     state.bays = savedBays
       .filter(bay => bay && bay.owner !== 'P2')
-      .map(bay => ({ ...bay, owner: bay.owner || 'P1' }));
+      .map(bay => ({
+        ...bay,
+        owner: bay.owner || 'P1',
+        build: hydrateBuild(bay.build),
+      }));
     Object.assign(state.p1, saved.p1 || {});
     state.p1.crewMember = null;
     state.p1.crew = state.p1.crew || [];
@@ -756,6 +771,7 @@
       kind,
       plantedAt: Date.now(),
       installMs: MODS[kind].installMs,
+      progressMs: 0,
       yield: 1,
       payoutMult: 1,
       rotChance: 0,
@@ -783,15 +799,37 @@
     return base;
   }
 
+  const ROT_OVERHEAT_RATE_PER_SEC = 0.048;
+
+  function advanceBuilds(deltaMs) {
+    if (!Number.isFinite(deltaMs) || deltaMs <= 0) return;
+    const bays = activeBays();
+    if (!Array.isArray(bays) || bays.length === 0) return;
+    const installSpeed = state.installMult || 0;
+    for (const bay of bays) {
+      const build = bay?.build;
+      if (!build || build.dead) continue;
+      const total = Math.max(1, Number(build.installMs) || 0);
+      if (!Number.isFinite(build.progressMs) || build.progressMs < 0) build.progressMs = 0;
+      if (installSpeed > 0) {
+        build.progressMs = Math.min(total, build.progressMs + deltaMs * installSpeed);
+      }
+      if (!build.dead && build.rotChance && build.progressMs >= total * 0.5) {
+        const dtSec = deltaMs / 1000;
+        const chance = 1 - Math.exp(-ROT_OVERHEAT_RATE_PER_SEC * dtSec);
+        if (chance > 0 && Math.random() < chance) {
+          build.dead = true;
+          log('A build overheated and stalled.');
+        }
+      }
+    }
+  }
+
   function buildProgress(build) {
     if (!build) return 0;
-    if (!build.dead && build.rotChance && Math.random() < 0.0008) {
-      const progress = (Date.now() - build.plantedAt) / (build.installMs / state.installMult);
-      if (progress > 0.5) { build.dead = true; log('A build overheated and stalled.'); }
-    }
-    const elapsed = Date.now() - build.plantedAt;
-    const adjusted = build.installMs / state.installMult;
-    return Math.min(1, elapsed / adjusted);
+    if (!Number.isFinite(build.progressMs)) build.progressMs = 0;
+    const total = Math.max(1, build.installMs || 1);
+    return Math.min(1, Math.max(0, build.progressMs) / total);
   }
 
   function payoutOf(kind, builder) {
@@ -1343,13 +1381,30 @@
 
   }
 
+  const nowMs = () => (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+  let lastFrameTime = nowMs();
+
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        lastFrameTime = nowMs();
+      }
+    });
+  }
+
   function loop() {
+    const now = nowMs();
+    const delta = Math.max(0, Math.min(now - lastFrameTime, 250));
+    lastFrameTime = now;
+    if (!(typeof document !== 'undefined' && document.hidden)) {
+      advanceBuilds(delta);
+    }
     update();
     draw();
     requestAnimationFrame(loop);
   }
 
-  loop();
+  requestAnimationFrame(loop);
 
   log('Welcome to Neon Drift Garage! Buy kits at the Parts Vendor in the plaza.');
   log('Install mods in your bays, then cash out at the Race Terminal in the plaza.');

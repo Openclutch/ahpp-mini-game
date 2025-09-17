@@ -15,7 +15,7 @@
     rocketFuel:   { name: 'Rocket Fuel Mix',      installMs: 540000, payout: 29600, cost: 25000,icon: '🚀', palette: ['#ff7b00', '#ff006e', '#050505'] },
   };
 
-  const CREDIT_SYMBOL = '₵';
+  const CREDIT_SYMBOL = '$';
   function formatCredits(value) {
     const amount = Number(value ?? 0);
     const safeAmount = Number.isFinite(amount) ? amount : 0;
@@ -89,7 +89,7 @@
     payoutMult: 1,
     installMult: 1,
     bays: [],
-    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1200, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
+    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1000, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
     shopOpen: null,
     raceOpen: false,
     activeEvent: null,
@@ -164,7 +164,7 @@
     state.shopOpen = null;
     state.raceOpen = false;
 
-    if (state.p1.credits == null) state.p1.credits = 1200;
+    if (state.p1.credits == null) state.p1.credits = 1000;
 
     if (!state.p1.inventory) state.p1.inventory = {};
     if (!state.p1.stash) state.p1.stash = {};

@@ -1,5 +1,4 @@
-# Neon Drift Garage
-
+# AHPP Underground Manager
 AHPP Underground Manager is a fast arcade-inspired single-player browser game. Build a retro street racing garage, install car mods, and bank cash to expand your operation. Everything runs in the browser with no external assets — all visuals are drawn procedurally on a `<canvas>` element.
 
 ## How to Play

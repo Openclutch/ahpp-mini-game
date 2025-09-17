@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Neon Drift Duo — Retro Street Racing Garage</title>
+  <title>Neon Drift Garage — Retro Street Racing Garage</title>
   <style>
     html, body {
       height: 100%;
@@ -110,27 +110,20 @@
     .touch-controls { position:absolute; bottom:clamp(20px, 8vh, 96px); display:flex; align-items:center; gap:24px; z-index:10; }
     .touch-controls button { touch-action:none; user-select:none; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0; color:#9fdcff; background:rgba(8,18,40,0.85); border:1px solid rgba(99,231,255,0.4); border-radius:12px; width:84px; height:56px; box-shadow:0 0 12px rgba(99,231,255,0.3); }
     .touch-controls button:active { box-shadow:0 0 16px rgba(255,45,117,0.4); border-color:rgba(255,45,117,0.6); color:#fff; }
-    #p1Controls, #p2Controls { flex-direction:row; align-items:center; }
-    #p1Controls { left:16px; right:auto; }
-    #p2Controls { right:16px; left:auto; flex-direction:row-reverse; }
-    body.single-player #p1Controls { left:auto; right:16px; }
+    #p1Controls { flex-direction:row; align-items:center; left:16px; right:auto; }
     .dpad { position:relative; width:120px; height:120px; border-radius:50%; background:rgba(8,18,40,0.9); border:1px solid rgba(99,231,255,0.35); box-shadow:inset 0 0 18px rgba(0,255,255,0.25); display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
     .dpad::before, .dpad::after { content:""; position:absolute; background:rgba(99,231,255,0.15); }
     .dpad::before { width:70%; height:2px; }
     .dpad::after { width:2px; height:70%; }
     .dpad .stick { width:60px; height:60px; border-radius:50%; background:#0d162e; border:1px solid rgba(99,231,255,0.4); box-shadow:0 3px 10px rgba(0,0,0,0.4); transition:transform .05s ease-out; pointer-events:none; }
     .dpad.active .stick { box-shadow:0 4px 12px rgba(255,45,117,0.4); }
-    body.single-player #p1Controls .actions { align-items:flex-end; }
-    .p2 { display:none; }
   </style>
 </head>
 <body>
 <div id="wrap">
   <header>
-    <div class="pill" id="p1money">P1 Credits: ₵0</div>
-    <div class="pill p2" id="p2money">P2 Credits: ₵0</div>
-    <div class="pill" id="p1hud">P1 Parts: — | Builds: —</div>
-    <div class="pill p2" id="p2hud">P2 Parts: — | Builds: —</div>
+    <div class="pill" id="p1money">Credits: ₵0</div>
+    <div class="pill" id="p1hud">Parts: — | Builds: —</div>
     <button id="toggleEvents" title="Toggle Street Feed (H)">Street Feed</button>
     <div class="savebar">
       <button id="btnSave" title="Save to browser (Autosaves too)">Save</button>
@@ -139,9 +132,8 @@
       <button id="btnImport" title="Import save file">Import</button>
       <label for="fileImport" class="sr-only">Import save file</label>
       <input id="fileImport" type="file" accept="application/json" title="Import save file" />
-      <button id="addP2" title="Enable second player">Drop-in P2</button>
     </div>
-    <div class="hint">Neon builds persist even when you log off. Overheated bays must be cleared by the owner for ₵250. Fill the spotlight in the plaza to recruit rare crew.</div>
+    <div class="hint">Neon builds persist even when you log off. Overheated bays must be cleared for ₵250. Fill the spotlight in the plaza to recruit rare crew.</div>
   </header>
   <div id="gameArea">
     <canvas id="game" width="1280" height="720"></canvas>
@@ -150,7 +142,7 @@
       <div class="panel" id="shopPanel">
         <h3>Parts Vendor</h3>
         <div id="modList" class="mod-list"></div>
-        <div class="panel-note">Stand at the vendor & press <b>Action</b> (P1 <code>E</code>, P2 <code>/</code>) to toggle this UI.</div>
+        <div class="panel-note">Stand at the vendor & press <b>Action</b> (<code>E</code>) to toggle this UI.</div>
       </div>
       <div class="panel" id="sellPanel">
         <h3>Race Terminal</h3>
@@ -174,27 +166,17 @@
         <button data-key="KeyE">Wrench</button>
       </div>
     </div>
-    <div class="touch-controls p2" id="p2Controls">
-      <div class="dpad" data-up="ArrowUp" data-down="ArrowDown" data-left="ArrowLeft" data-right="ArrowRight">
-        <div class="stick"></div>
-      </div>
-      <div class="actions">
-        <button data-key="Period">Swap</button>
-        <button data-key="Slash">Wrench</button>
-      </div>
-    </div>
   </div>
   <footer>
     <div>
-      <b>Controls:</b> P1 uses <code>WASD</code> to roll, <code>1–0</code> selects kits, <code>Q</code> swaps kit, <code>E</code> works a bay. Drop in P2 with the button above — P2 drives with <code>Arrows</code>, selects with <code>Numpad1–0</code>, swaps with <code>.</code>, and wrenches with <code>/</code>. Press <code>H</code> to toggle the Street Feed.
+      <b>Controls:</b> Use <code>WASD</code> to roll, <code>1–0</code> to select kits, <code>Q</code> to swap kits, and <code>E</code> to work a bay. Press <code>H</code> to toggle the Street Feed.
     </div>
     <div>
-      Install mods in your own bays. If a build overheats, clear it for ₵250. Hype the plaza spotlight together to recruit legendary crew with powerful perks.
+      Install mods in your own bays. If a build overheats, clear it for ₵250. Hype the plaza spotlight to recruit legendary crew with powerful perks.
     </div>
   </footer>
 </div>
 
-<script src="network.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

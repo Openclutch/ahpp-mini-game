@@ -90,8 +90,6 @@
     installMult: 1,
     bays: [],
     p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1200, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
-    p2: { x: 1060, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1200, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
-    p2Active: false,
     shopOpen: null,
     raceOpen: false,
     activeEvent: null,
@@ -156,25 +154,39 @@
     if (!saved) return false;
     state.payoutMult = saved.payoutMult ?? state.payoutMult;
     state.installMult = saved.installMult ?? state.installMult;
-    state.bays = Array.isArray(saved.bays) ? saved.bays : state.bays;
+    const savedBays = Array.isArray(saved.bays) ? saved.bays : state.bays;
+    state.bays = savedBays
+      .filter(bay => bay && bay.owner !== 'P2')
+      .map(bay => ({ ...bay, owner: bay.owner || 'P1' }));
     Object.assign(state.p1, saved.p1 || {});
-    Object.assign(state.p2, saved.p2 || {});
     state.p1.crewMember = null;
     state.p1.crew = state.p1.crew || [];
-    state.p2.crewMember = null;
-    state.p2.crew = state.p2.crew || [];
     state.shopOpen = null;
     state.raceOpen = false;
 
     if (state.p1.credits == null) state.p1.credits = 1200;
-    if (state.p2.credits == null) state.p2.credits = 1200;
 
     if (!state.p1.inventory) state.p1.inventory = {};
-    if (!state.p2.inventory) state.p2.inventory = {};
     if (!state.p1.stash) state.p1.stash = {};
-    if (!state.p2.stash) state.p2.stash = {};
     if (state.p1.selected == null) state.p1.selected = DEFAULT_MOD;
-    if (state.p2.selected == null) state.p2.selected = DEFAULT_MOD;
+
+    if (saved.p2) {
+      const addToMap = (target, source) => {
+        if (!source || typeof source !== 'object') return;
+        for (const [key, value] of Object.entries(source)) {
+          if (!MODS[key]) continue;
+          const amount = Number(value) || 0;
+          if (!Number.isFinite(amount) || amount <= 0) continue;
+          target[key] = (target[key] || 0) + amount;
+        }
+      };
+      const extraCredits = Number(saved.p2.credits);
+      if (Number.isFinite(extraCredits) && extraCredits > 0) {
+        state.p1.credits += extraCredits;
+      }
+      addToMap(state.p1.inventory, saved.p2.inventory);
+      addToMap(state.p1.stash, saved.p2.stash);
+    }
     return true;
   }
 
@@ -187,12 +199,10 @@
 
   for (const mod of MOD_CATALOG) {
     if (state.p1.inventory[mod.id] == null) state.p1.inventory[mod.id] = 0;
-    if (state.p2.inventory[mod.id] == null) state.p2.inventory[mod.id] = 0;
     if (state.p1.stash[mod.id] == null) state.p1.stash[mod.id] = 0;
-    if (state.p2.stash[mod.id] == null) state.p2.stash[mod.id] = 0;
   }
 
-  for (const player of [state.p1, state.p2]) {
+  for (const player of [state.p1]) {
     for (const key of Object.keys(player.inventory)) {
       if (!MODS[key]) delete player.inventory[key];
     }
@@ -208,7 +218,6 @@
       installMult: state.installMult,
       bays: state.bays,
       p1: { credits: state.p1.credits, inventory: state.p1.inventory, stash: state.p1.stash, selected: state.p1.selected },
-      p2: { credits: state.p2.credits, inventory: state.p2.inventory, stash: state.p2.stash, selected: state.p2.selected },
     }));
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
@@ -217,9 +226,7 @@
   window.addEventListener('beforeunload', save);
   // ---------- DOM ----------
   const p1moneyEl = document.getElementById('p1money');
-  const p2moneyEl = document.getElementById('p2money');
   const p1hud = document.getElementById('p1hud');
-  const p2hud = document.getElementById('p2hud');
   const feed = document.getElementById('feed');
   const tooltip = document.getElementById('tooltip');
   const eventsPanel = document.getElementById('events');
@@ -229,38 +236,22 @@
   const btnExport = document.getElementById('btnExport');
   const btnImport = document.getElementById('btnImport');
   const fileImport = document.getElementById('fileImport');
-  const addP2Btn = document.getElementById('addP2');
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
   const modListEl = document.getElementById('modList');
   const p1Controls = document.getElementById('p1Controls');
-  const p2Controls = document.getElementById('p2Controls');
 
   console.log('DOM elements loaded', {
     p1moneyEl,
-    p2moneyEl,
     p1hud,
-    p2hud,
     shopPanel,
     sellPanel,
     modListEl,
   });
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-
-  function updateTouchLayout() {
-    document.body.classList.toggle('single-player', !state.p2Active);
-  }
-
-  function enableP2() {
-    if (state.p2Active) return;
-    state.p2Active = true;
-    document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
-    addP2Btn.style.display = 'none';
-    if (!state.bays.some(bay => bay.owner === 'P2')) { addGarageBays('P2'); save(); }
-    updateTouchLayout();
-  }
   function bindTouchControls(container) {
+    if (!container) return;
     container.querySelectorAll('button[data-key]').forEach(btn => {
       const code = btn.dataset.key;
       const start = e => { e.preventDefault(); keys.add(code); };
@@ -404,34 +395,13 @@
   }
 
   bindTouchControls(p1Controls);
-  bindTouchControls(p2Controls);
-  setupJoystick(p1Controls.querySelector('.dpad'));
-  setupJoystick(p2Controls.querySelector('.dpad'));
-  updateTouchLayout();
+  if (p1Controls) {
+    setupJoystick(p1Controls.querySelector('.dpad'));
+  }
 
   window.addEventListener('keydown', () => {
-    p1Controls.style.display = 'none';
-    p2Controls.style.display = 'none';
+    if (p1Controls) p1Controls.style.display = 'none';
   }, { once: true });
-
-  addP2Btn.onclick = () => {
-    if (net) net.disconnect();
-    enableP2();
-  };
-
-  let net = null;
-  if (window.Network) {
-    net = new Network(msg => {
-      if (msg.type === 'state') {
-        Object.assign(state.p2, { x: msg.x, y: msg.y, selected: msg.selected });
-        if (!state.p2Active) enableP2();
-      } else if (msg.type === 'action') {
-        playerAction(state.p2, 'P2');
-      } else if (msg.type === 'cycle') {
-        cycleMod(state.p2);
-      }
-    });
-  }
   function log(msg) {
     const d = document.createElement('div');
     d.className = 'evt';
@@ -483,7 +453,6 @@
 
   const GARAGES = [
     { x: 80, y: 230, w: 320, h: 360, cols: 5, rows: 4, owner: 'P1' },
-    { x: WORLD.w - 400, y: 230, w: 320, h: 360, cols: 5, rows: 4, owner: 'P2' },
   ];
 
   function addGarageBays(owner) {
@@ -507,26 +476,23 @@
 
   if (!state.bays || !state.bays.length) {
     addGarageBays('P1');
-    if (state.p2Active) addGarageBays('P2');
   }
 
   function activeBays() {
-    return state.p2Active ? state.bays : state.bays.filter(b => b.owner !== 'P2');
+    return state.bays;
   }
 
   for (const bay of state.bays) {
-    if (!bay.owner) bay.owner = (bay.x < WORLD.w / 2 ? 'P1' : 'P2');
+    if (!bay.owner) bay.owner = 'P1';
   }
   // ---------- INPUT ----------
   const keys = new Set();
   window.addEventListener('keydown', e => {
     keys.add(e.code);
-    if (net) net.handleKey(e.code, true);
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
   });
   window.addEventListener('keyup', e => {
     keys.delete(e.code);
-    if (net) net.handleKey(e.code, false);
   });
 
   console.log('Touch support detected:', isTouch);
@@ -584,7 +550,12 @@
   }
   function dist(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return Math.hypot(dx, dy); }
 
-  function playerByName(name) { return name === 'P1' ? state.p1 : state.p2; }
+  function playerByName(name) {
+    if (name && name !== 'P1') {
+      console.warn('Unknown player requested, defaulting to P1:', name);
+    }
+    return state.p1;
+  }
 
   function cycleMod(p) {
     const available = Object.keys(p.inventory).filter(id => p.inventory[id] > 0);
@@ -614,20 +585,20 @@
     if (inside(p.x, p.y, p.w, p.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
       state.shopOpen = state.shopOpen === who ? null : who;
       state.raceOpen = false;
-      log(`${who} toggled the Parts Vendor.`);
+      log('You toggled the Parts Vendor.');
       if (state.shopOpen) { generateModStock(); renderPartsShop(); }
       return;
     }
     if (inside(p.x, p.y, p.w, p.h, STATIONS.race.x, STATIONS.race.y, STATIONS.race.w, STATIONS.race.h)) {
       const sold = sellAll(p);
-      if (sold > 0) { log(`${who} banked ${formatCredits(sold)} in race winnings.`); state.raceOpen = true; state.shopOpen = null; }
-      else { log(`${who} has no completed builds to race.`); state.raceOpen = true; state.shopOpen = null; }
+      if (sold > 0) { log(`You banked ${formatCredits(sold)} in race winnings.`); state.raceOpen = true; state.shopOpen = null; }
+      else { log('You have no completed builds to race.'); state.raceOpen = true; state.shopOpen = null; }
       return;
     }
 
     if (state.challenge && Date.now() < state.challenge.endsAt && dist(p.x + p.w / 2, p.y + p.h / 2, state.challenge.x, state.challenge.y) < state.challenge.r) {
       state.challenge.progress += 1;
-      log(`${who} revs the crowd (${state.challenge.progress}/${state.challenge.goal}).`);
+      log(`You rev the crowd (${state.challenge.progress}/${state.challenge.goal}).`);
       if (state.challenge.progress >= state.challenge.goal) {
         awardCrew(p, who);
         state.challenge.endsAt = 0;
@@ -639,7 +610,7 @@
     const bay = activeBays().find(pl => inside(p.x, p.y, p.w, p.h, pl.x, pl.y, pl.w, pl.h));
     if (!bay) return;
 
-    if (bay.owner !== who) { log(`${who} can't use that bay — it belongs to ${bay.owner}.`); return; }
+    if (bay.owner !== who) { log(`You can't use that bay — it belongs to ${bay.owner}.`); return; }
 
     if (!bay.build) {
       const kind = p.selected;
@@ -647,10 +618,10 @@
       if (mod && p.inventory[kind] > 0) {
         p.inventory[kind]--;
         bay.build = createBuild(kind, p);
-        log(`${who} started installing ${mod.name}${bay.build.tuning ? ` (${bay.build.tuning.label})` : ''}.`);
+        log(`You started installing ${mod.name}${bay.build.tuning ? ` (${bay.build.tuning.label})` : ''}.`);
         save();
       } else {
-        log(`${who} has no ${mod ? mod.name + ' ' : ''}kits. Grab them at the Parts Vendor.`);
+        log(`You have no ${mod ? mod.name + ' ' : ''}kits. Grab them at the Parts Vendor.`);
       }
       return;
     }
@@ -659,10 +630,10 @@
       if (p.credits >= REPAIR_COST) {
         p.credits -= REPAIR_COST;
         bay.build = null;
-        log(`${who} cleared the bay for ${formatCredits(REPAIR_COST)}.`);
+        log(`You cleared the bay for ${formatCredits(REPAIR_COST)}.`);
         save();
       } else {
-        log(`${who} needs ${formatCredits(REPAIR_COST)} to clear this bay.`);
+        log(`You need ${formatCredits(REPAIR_COST)} to clear this bay.`);
       }
       return;
     }
@@ -671,11 +642,11 @@
     if (progress >= 1) {
       const yieldCount = bay.build.yield || 1;
       p.stash[bay.build.kind] = (p.stash[bay.build.kind] || 0) + yieldCount;
-      log(`${who} finished ${yieldCount} × ${MODS[bay.build.kind].name}.`);
+      log(`You finished ${yieldCount} × ${MODS[bay.build.kind].name}.`);
       if (bay.build.extraLoot) {
         const bonus = bay.build.extraLoot;
         p.stash[bonus.kind] = (p.stash[bonus.kind] || 0) + bonus.qty;
-        log(`Bonus drop! ${who} scored ${bonus.qty} × ${MODS[bonus.kind].name}.`);
+        log(`Bonus drop! You scored ${bonus.qty} × ${MODS[bonus.kind].name}.`);
       }
       bay.build = null;
       save();
@@ -791,15 +762,10 @@
       const actions = document.createElement('div');
       actions.className = 'row';
       if (modStock.has(mod.id)) {
-        const b1 = document.createElement('button');
-        b1.textContent = 'Buy P1';
-        b1.onclick = () => buyMod('P1', mod.id);
-        actions.appendChild(b1);
-        const b2 = document.createElement('button');
-        b2.textContent = 'Buy P2';
-        b2.className = 'p2';
-        b2.onclick = () => buyMod('P2', mod.id);
-        actions.appendChild(b2);
+        const buyBtn = document.createElement('button');
+        buyBtn.textContent = 'Buy';
+        buyBtn.onclick = () => buyMod(mod.id);
+        actions.appendChild(buyBtn);
       } else {
         const sold = document.createElement('span');
         sold.textContent = 'Sold out';
@@ -807,24 +773,23 @@
       }
       modListEl.appendChild(actions);
     }
-    if (state.p2Active) document.querySelectorAll('#modList .p2').forEach(el => el.classList.remove('p2'));
   }
 
-  function buyMod(who, id) {
+  function buyMod(id) {
     const modData = MOD_CATALOG.find(m => m.id === id);
-    const target = playerByName(who);
     if (!modData || !modStock.has(id)) { log('Part not available.'); return; }
-    if (state.shopOpen !== who || !inside(target.x, target.y, target.w, target.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
-      log(`${who} must be at the Parts Vendor to buy kits.`);
+    const target = state.p1;
+    if (state.shopOpen !== 'P1' || !inside(target.x, target.y, target.w, target.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
+      log('You must be at the Parts Vendor to buy kits.');
       return;
     }
     if (target.credits < modData.cost) {
-      log(`${who} can’t afford ${modData.name} (${formatCredits(modData.cost)}).`);
+      log(`You can’t afford ${modData.name} (${formatCredits(modData.cost)}).`);
       return;
     }
     target.credits -= modData.cost;
     target.inventory[id] = (target.inventory[id] || 0) + 1;
-    log(`${who} bought ${modData.name}.`);
+    log(`You bought ${modData.name}.`);
     save();
   }
   function maybeStartStreetEvent() {
@@ -862,10 +827,10 @@
       const crew = pool[Math.floor(Math.random() * pool.length)];
       p.crew.push({ id: crew.id });
       p.crewMember = { id: crew.id, x: p.x - 16, y: p.y - 16 };
-      log(`${who} recruited ${describeCrew(crew)}.`);
+      log(`You recruited ${describeCrew(crew)}.`);
     } else {
       p.credits += 800;
-      log(`${who} already has the full crew. Awarded ${formatCredits(800)} instead.`);
+      log(`You already have the full crew. Awarded ${formatCredits(800)} instead.`);
     }
     save();
   }
@@ -955,11 +920,11 @@
     drawStation(STATIONS.race, 'Race Terminal', '#00e5ff', '🏁');
 
     for (const garage of GARAGES) {
-      if (garage.owner === 'P2' && !state.p2Active) continue;
+      const isP1 = garage.owner === 'P1';
       ctx.save();
-      ctx.shadowColor = garage.owner === 'P1' ? '#00f5ff88' : '#ff2d7588';
+      ctx.shadowColor = isP1 ? '#00f5ff88' : '#ff2d7588';
       ctx.shadowBlur = 20;
-      ctx.strokeStyle = garage.owner === 'P1' ? '#00f5ff' : '#ff2d75';
+      ctx.strokeStyle = isP1 ? '#00f5ff' : '#ff2d75';
       ctx.lineWidth = 4;
       ctx.strokeRect(garage.x, garage.y, garage.w, garage.h);
       ctx.restore();
@@ -967,7 +932,8 @@
       ctx.fillRect(garage.x, garage.y, garage.w, garage.h);
       ctx.fillStyle = 'rgba(255,255,255,0.12)';
       ctx.font = 'bold 18px "Courier New", monospace';
-      ctx.fillText(`${garage.owner} Garage`, garage.x + 12, garage.y + 28);
+      const label = isP1 ? 'Garage' : `${garage.owner} Garage`;
+      ctx.fillText(label, garage.x + 12, garage.y + 28);
     }
 
     for (const bay of activeBays()) drawBay(bay);
@@ -999,33 +965,19 @@
     }
 
     drawPlayer(state.p1, '#00f5ff');
-    if (state.p2Active) drawPlayer(state.p2, '#ff2d75');
     drawCrewMember(state.p1);
-    if (state.p2Active) drawCrewMember(state.p2);
 
-    p1moneyEl.textContent = `P1 Credits: ${formatCredits(state.p1.credits)}`;
+    p1moneyEl.textContent = `Credits: ${formatCredits(state.p1.credits)}`;
     const crew1 = state.p1.crewMember ? CREW.find(c => c.id === state.p1.crewMember.id) : null;
     const inv1 = Object.entries(state.p1.inventory).filter(([, v]) => v > 0).map(([k, v], i) => `${i + 1}:${k}(${v})`).join(', ') || '—';
     const stash1 = Object.entries(state.p1.stash).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}`).join(', ') || '—';
     const sel1 = MODS[state.p1.selected]?.name || state.p1.selected;
-    p1hud.textContent = `P1 Parts: ${inv1} | Builds Ready: ${stash1} | Crew: ${describeCrew(crew1)} | Selected: ${sel1}`;
-
-    if (state.p2Active) {
-      p2moneyEl.textContent = `P2 Credits: ${formatCredits(state.p2.credits)}`;
-      const crew2 = state.p2.crewMember ? CREW.find(c => c.id === state.p2.crewMember.id) : null;
-      const inv2 = Object.entries(state.p2.inventory).filter(([, v]) => v > 0).map(([k, v], i) => `${i + 1}:${k}(${v})`).join(', ') || '—';
-      const stash2 = Object.entries(state.p2.stash).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}`).join(', ') || '—';
-      const sel2 = MODS[state.p2.selected]?.name || state.p2.selected;
-      p2hud.textContent = `P2 Parts: ${inv2} | Builds Ready: ${stash2} | Crew: ${describeCrew(crew2)} | Selected: ${sel2}`;
-    }
+    p1hud.textContent = `Parts: ${inv1} | Builds Ready: ${stash1} | Crew: ${describeCrew(crew1)} | Selected: ${sel1}`;
 
     if (!draw._lastLog || Date.now() - draw._lastLog > 1000) {
       const logData = {
         p1: { credits: state.p1.credits, stash: { ...state.p1.stash }, inventory: { ...state.p1.inventory } },
       };
-      if (state.p2Active) {
-        logData.p2 = { credits: state.p2.credits, stash: { ...state.p2.stash }, inventory: { ...state.p2.inventory } };
-      }
       console.log('HUD state', logData);
       draw._lastLog = Date.now();
     }
@@ -1225,15 +1177,10 @@
     ctx.textBaseline = 'alphabetic';
   }
   const NUMBER_KEYS = ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','Digit0'];
-  const NUMPAD_KEYS = ['Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','Numpad0'];
 
   function update() {
     movePlayer(state.p1, 'KeyW', 'KeyA', 'KeyS', 'KeyD');
     moveCrew(state.p1);
-    if (state.p2Active) {
-      movePlayer(state.p2, 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight');
-      moveCrew(state.p2);
-    }
 
     maybeStartStreetEvent();
     maybeSpawnChallenge();
@@ -1242,15 +1189,6 @@
     if (justPressed('KeyQ')) cycleMod(state.p1);
     NUMBER_KEYS.forEach((code, idx) => { if (justPressed(code)) selectModByIndex(state.p1, idx); });
 
-    if (state.p2Active) {
-      if (justPressed('Slash')) playerAction(state.p2, 'P2');
-      if (justPressed('Period')) cycleMod(state.p2);
-      NUMPAD_KEYS.forEach((code, idx) => { if (justPressed(code)) selectModByIndex(state.p2, idx); });
-    }
-
-    if (net) {
-      net.sendState({ x: state.p1.x, y: state.p1.y, selected: state.p1.selected });
-    }
   }
 
   function loop() {

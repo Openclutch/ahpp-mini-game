@@ -1159,24 +1159,100 @@
     const w = p.w;
     const h = p.h;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(x - 4, y + h - 8, w + 8, 8);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h - 4, w / 2, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    ctx.fillStyle = '#0b1120';
-    ctx.fillRect(x, y, w, h);
+    const centerX = x + w / 2;
+    const baseY = y + h;
+
+    const coverall = '#1f3c88';
+    const coverallHighlight = '#2d51c0';
+    const trim = '#172554';
+    const glove = '#1e293b';
+    const skin = '#f6c6a5';
+    const hat = '#0f172a';
+    const steel = '#c7d7ff';
+
+    const legWidth = 10;
+    const legHeight = 16;
+    const legY = baseY - legHeight;
+    ctx.fillStyle = coverallHighlight;
+    ctx.fillRect(centerX - legWidth - 2, legY, legWidth, legHeight);
+    ctx.fillRect(centerX + 2, legY, legWidth, legHeight);
+    ctx.fillStyle = coverall;
+    ctx.fillRect(centerX - legWidth - 2, legY + 4, legWidth, legHeight - 6);
+    ctx.fillRect(centerX + 2, legY + 4, legWidth, legHeight - 6);
+    ctx.fillStyle = trim;
+    ctx.fillRect(centerX - legWidth - 2, baseY - 4, legWidth, 4);
+    ctx.fillRect(centerX + 2, baseY - 4, legWidth, 4);
+
+    const torsoW = w - 18;
+    const torsoH = 20;
+    const torsoX = centerX - torsoW / 2;
+    const torsoY = y + 14;
+    ctx.fillStyle = coverallHighlight;
+    ctx.fillRect(torsoX, torsoY, torsoW, torsoH);
+    ctx.fillStyle = coverall;
+    ctx.fillRect(torsoX, torsoY + 4, torsoW, torsoH - 6);
+
     ctx.fillStyle = neon;
-    ctx.fillRect(x + 4, y + 4, w - 8, h - 12);
-    ctx.fillStyle = '#121212';
-    ctx.fillRect(x + 6, y + h - 12, w - 12, 10);
-    ctx.fillStyle = '#d9faff';
-    ctx.fillRect(x + 6, y + 6, w - 12, 8);
+    ctx.fillRect(centerX - 1, torsoY + 2, 2, torsoH - 4);
+    ctx.fillStyle = trim;
+    ctx.fillRect(torsoX, torsoY + torsoH - 6, torsoW, 6);
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(centerX - 4, torsoY + torsoH - 5, 8, 4);
 
-    ctx.fillStyle = '#0bf0ff';
-    ctx.fillRect(x + 2, y + h - 10, 6, 6);
-    ctx.fillRect(x + w - 8, y + h - 10, 6, 6);
+    ctx.fillStyle = coverall;
+    ctx.fillRect(torsoX + 4, torsoY + 6, 8, 8);
+    ctx.fillStyle = neon;
+    ctx.fillRect(torsoX + 6, torsoY + 8, 4, 2);
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-    ctx.fillRect(x + 4, y + 2, w - 8, 4);
+    const armWidth = 6;
+    const armHeight = 16;
+    const armY = torsoY + 2;
+    ctx.fillStyle = coverallHighlight;
+    ctx.fillRect(torsoX - armWidth + 1, armY, armWidth, armHeight);
+    ctx.fillRect(torsoX + torsoW - 1, armY, armWidth, armHeight);
+    ctx.fillStyle = coverall;
+    ctx.fillRect(torsoX - armWidth + 1, armY + 3, armWidth, armHeight - 6);
+    ctx.fillRect(torsoX + torsoW - 1, armY + 3, armWidth, armHeight - 6);
+    ctx.fillStyle = glove;
+    ctx.fillRect(torsoX - armWidth + 1, armY + armHeight - 4, armWidth, 4);
+    ctx.fillRect(torsoX + torsoW - 1, armY + armHeight - 4, armWidth, 4);
+
+    const headRadius = 8;
+    const headCenterY = torsoY - headRadius + 2;
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(centerX, headCenterY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = hat;
+    ctx.fillRect(centerX - headRadius - 4, headCenterY - headRadius - 2, headRadius * 2 + 8, 4);
+    ctx.fillRect(centerX - headRadius + 1, headCenterY - headRadius - 8, headRadius * 2 - 2, 6);
+    ctx.fillStyle = neon;
+    ctx.fillRect(centerX - 4, headCenterY - headRadius - 6, 8, 2);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(centerX - 5, headCenterY - 2, 3, 2);
+    ctx.fillRect(centerX + 2, headCenterY - 2, 3, 2);
+    ctx.fillRect(centerX - 4, headCenterY + 3, 8, 2);
+
+    const wrenchX = torsoX + torsoW + 4;
+    const wrenchY = armY + 2;
+    ctx.fillStyle = steel;
+    ctx.fillRect(wrenchX, wrenchY, 3, 18);
+    ctx.fillRect(wrenchX - 3, wrenchY - 2, 9, 4);
+    ctx.fillRect(wrenchX - 3, wrenchY + 16, 9, 4);
+    ctx.fillStyle = '#101526';
+    ctx.fillRect(wrenchX - 1, wrenchY - 1, 2, 2);
+    ctx.fillRect(wrenchX - 1, wrenchY + 17, 2, 2);
+
+    ctx.fillStyle = neon;
+    ctx.fillRect(torsoX + 2, armY + 4, 2, 8);
+    ctx.fillRect(torsoX + torsoW - 4, armY + 4, 2, 8);
 
     // selected mod bubble
     const bubbleX = x + w / 2;

@@ -95,7 +95,17 @@
     activeEvent: null,
     eventUntil: 0,
     challenge: null,
+    hints: { parts: true, race: true },
   };
+
+  function normalizeHints(hints) {
+    return {
+      parts: hints?.parts !== false,
+      race: hints?.race !== false,
+    };
+  }
+
+  state.hints = normalizeHints(state.hints);
 
   function migrateLegacy() {
     if (localStorage.getItem(SAVE_KEY)) return;
@@ -163,6 +173,7 @@
     state.p1.crew = state.p1.crew || [];
     state.shopOpen = null;
     state.raceOpen = false;
+    state.hints = normalizeHints(saved.hints);
 
     if (state.p1.credits == null) state.p1.credits = 1000;
 
@@ -217,6 +228,7 @@
       payoutMult: state.payoutMult,
       installMult: state.installMult,
       bays: state.bays,
+      hints: state.hints,
       p1: { credits: state.p1.credits, inventory: state.p1.inventory, stash: state.p1.stash, selected: state.p1.selected },
     }));
     console.log('Saving game state', minimal);
@@ -238,6 +250,8 @@
   const fileImport = document.getElementById('fileImport');
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
+  const partsHelp = document.getElementById('partsHelp');
+  const raceHelp = document.getElementById('sellInfo');
   const modListEl = document.getElementById('modList');
   const p1Controls = document.getElementById('p1Controls');
 
@@ -246,8 +260,25 @@
     p1hud,
     shopPanel,
     sellPanel,
+    partsHelp,
+    raceHelp,
     modListEl,
   });
+
+  function updateHelpVisibility() {
+    if (partsHelp) partsHelp.hidden = !state.hints?.parts;
+    if (raceHelp) raceHelp.hidden = !state.hints?.race;
+  }
+
+  function dismissHint(kind) {
+    if (!state.hints) state.hints = normalizeHints();
+    if (state.hints[kind] === false) return;
+    state.hints[kind] = false;
+    updateHelpVisibility();
+    save();
+  }
+
+  updateHelpVisibility();
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   function bindTouchControls(container) {
@@ -414,6 +445,7 @@
   btnLoad.onclick = () => {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
     if (!applySavedState(saved)) { log('No garage save found.'); return; }
+    updateHelpVisibility();
     save();
     log('Garage save loaded.');
   };
@@ -435,6 +467,7 @@
       const txt = await file.text();
       const data = JSON.parse(txt);
       applySavedState(data);
+      updateHelpVisibility();
       save();
       log('Imported garage data.');
     } catch {
@@ -627,6 +660,7 @@
       state.shopOpen = state.shopOpen === who ? null : who;
       state.raceOpen = false;
       log('You toggled the Parts Vendor.');
+      dismissHint('parts');
       if (state.shopOpen) { generateModStock(); renderPartsShop(); }
       return;
     }
@@ -634,6 +668,7 @@
       const sold = sellAll(p);
       if (sold > 0) { log(`You banked ${formatCredits(sold)} in race winnings.`); state.raceOpen = true; state.shopOpen = null; }
       else { log('You have no completed builds to race.'); state.raceOpen = true; state.shopOpen = null; }
+      dismissHint('race');
       return;
     }
 

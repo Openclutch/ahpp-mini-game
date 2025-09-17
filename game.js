@@ -1,18 +1,18 @@
 (() => {
   // ---------- CONFIG ----------
   const MODS = {
-    nitro:        { name: 'Nitro Injectors',      installMs: 60000,  payout: 900,   cost: 350,  icon: '🧨', palette: ['#ff3864', '#ffc857', '#2b2d42'] },
-    neon:         { name: 'Neon Ground FX',       installMs: 75000,  payout: 1200,  cost: 520,  icon: '💡', palette: ['#7c3aed', '#ff9e00', '#1b1b3a'] },
-    driftTires:   { name: 'Drift Tire Set',       installMs: 90000,  payout: 1900,  cost: 900,  icon: '🏁', palette: ['#ff5400', '#ffee32', '#1a1a1a'] },
-    suspension:   { name: 'Air Suspension',       installMs: 120000, payout: 2800,  cost: 1500, icon: '🛠️', palette: ['#00b4d8', '#ff4d6d', '#1f1f1f'] },
-    sound:        { name: 'Bassline Sound',       installMs: 150000, payout: 3600,  cost: 2100, icon: '🎶', palette: ['#ff6b6b', '#ffd166', '#111827'] },
-    wrap:         { name: 'Retro Wrap',           installMs: 180000, payout: 4700,  cost: 2600, icon: '🎨', palette: ['#06d6a0', '#ef476f', '#073b4c'] },
-    turbo:        { name: 'Twin Turbo Kit',       installMs: 240000, payout: 6800,  cost: 4000, icon: '🌀', palette: ['#48cae4', '#ffbe0b', '#03071e'] },
-    aero:         { name: 'Aero Body Kit',        installMs: 300000, payout: 9400,  cost: 6200, icon: '🪙', palette: ['#ffd500', '#ff6f91', '#1a1c2c'] },
-    ecu:          { name: 'ECU Remap',            installMs: 360000, payout: 12600, cost: 8300, icon: '💾', palette: ['#00f5d4', '#ff4f00', '#0b132b'] },
-    supercharger: { name: 'Supercharger',         installMs: 420000, payout: 17100, cost: 12000,icon: '⚙️', palette: ['#80ffdb', '#ff9f1c', '#1d1b1b'] },
-    driftAI:      { name: 'Auto-Drift AI',        installMs: 480000, payout: 22800, cost: 18000,icon: '🤖', palette: ['#72efdd', '#ff006e', '#03045e'] },
-    rocketFuel:   { name: 'Rocket Fuel Mix',      installMs: 540000, payout: 29600, cost: 25000,icon: '🚀', palette: ['#ff7b00', '#ff006e', '#050505'] },
+    nitro:        { name: 'Cold Air Intake',          installMs: 60000,  payout: 900,   cost: 350,  icon: '🌬️', palette: ['#89c2d9', '#1e6091', '#0b132b'] },
+    neon:         { name: 'Performance Exhaust',      installMs: 75000,  payout: 1200,  cost: 520,  icon: '💨', palette: ['#f8961e', '#7f5539', '#141414'] },
+    driftTires:   { name: 'Tuned Headers',            installMs: 90000,  payout: 1900,  cost: 900,  icon: '🔧', palette: ['#ff7b00', '#ffcb77', '#2f2f2f'] },
+    suspension:   { name: 'High-Flow Fuel System',    installMs: 120000, payout: 2800,  cost: 1500, icon: '⛽', palette: ['#8ac926', '#1982c4', '#14213d'] },
+    sound:        { name: 'ECU Tune',                 installMs: 150000, payout: 3600,  cost: 2100, icon: '💾', palette: ['#00f5d4', '#ff4f00', '#0b132b'] },
+    wrap:         { name: 'Coilover Suspension',      installMs: 180000, payout: 4700,  cost: 2600, icon: '🛞', palette: ['#06d6a0', '#26547c', '#1b1b1b'] },
+    turbo:        { name: 'Big Brake Kit',            installMs: 240000, payout: 6800,  cost: 4000, icon: '🛑', palette: ['#ef233c', '#ff9f1c', '#1d1d1d'] },
+    aero:         { name: 'Carbon Fiber Body Kit',    installMs: 300000, payout: 9400,  cost: 6200, icon: '🪶', palette: ['#adb5bd', '#343a40', '#0f0f0f'] },
+    ecu:          { name: 'Stage 2 Turbocharger',     installMs: 360000, payout: 12600, cost: 8300, icon: '🌀', palette: ['#48cae4', '#ffbe0b', '#03071e'] },
+    supercharger: { name: 'Front-Mount Intercooler',  installMs: 420000, payout: 17100, cost: 12000,icon: '❄️', palette: ['#caf0f8', '#00b4d8', '#023e8a'] },
+    driftAI:      { name: 'Wet Nitrous Kit',          installMs: 480000, payout: 22800, cost: 18000,icon: '🧨', palette: ['#f94144', '#f8961e', '#1a1a1a'] },
+    rocketFuel:   { name: 'Race-Spec Engine Swap',    installMs: 540000, payout: 29600, cost: 25000,icon: '⚙️', palette: ['#80ffdb', '#ff9f1c', '#1d1b1b'] },
   };
 
   const CREDIT_SYMBOL = '$';

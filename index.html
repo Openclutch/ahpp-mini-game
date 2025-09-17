@@ -3,58 +3,123 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Garden Duo — 2D Co‑op Browser Game</title>
+  <title>Neon Drift Duo — Retro Street Racing Garage</title>
   <style>
-    html, body { height: 100%; margin: 0; overflow:hidden; background:#dfeee3; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #1a1740 0%, #050510 70%);
+      font-family: 'Courier New', monospace;
+      color: #d8f6ff;
+      letter-spacing: 0.03em;
+    }
     #wrap { display:flex; flex-direction:column; height:100%; }
-    header { background:#20303c; color:#fff; padding:8px 12px; font-weight:600; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    header .pill { background:#2f4656; padding:4px 8px; border-radius:999px; font-weight:600; }
-    header .hint { opacity:.9; font-weight:400; }
-    header button { border:1px solid #1a2730; background:#2f4656; color:#e8f6ff; border-radius:999px; padding:4px 10px; cursor:pointer; }
+    header {
+      background: linear-gradient(135deg, #141631, #0b0d1d 60%, #1b2640 100%);
+      color:#f2fbff;
+      padding:10px 14px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      box-shadow:0 0 24px rgba(0,255,255,0.18);
+      border-bottom:1px solid rgba(0,255,255,0.2);
+    }
+    header .pill {
+      background: rgba(15, 30, 60, 0.8);
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(0,255,255,0.3);
+      box-shadow:0 0 10px rgba(0,255,255,0.25);
+    }
+    header .hint {
+      opacity:.9;
+      font-weight:400;
+      color:#9fdcff;
+      flex-basis:100%;
+      margin-top:4px;
+    }
+    header button {
+      border:1px solid rgba(0,255,255,0.35);
+      background: rgba(8,18,40,0.85);
+      color:#aff6ff;
+      border-radius:999px;
+      padding:6px 14px;
+      cursor:pointer;
+      text-transform:uppercase;
+      font-weight:700;
+      box-shadow:0 0 12px rgba(0,255,255,0.25);
+    }
+    header button:hover { color:#fff; border-color:rgba(255,45,117,0.6); box-shadow:0 0 16px rgba(255,45,117,0.35); }
     header .savebar { display:flex; gap:8px; align-items:center; margin-left:auto; }
     header .savebar input[type=file]{ display:none; }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-    #gameArea { position:relative; flex:1; }
-    canvas { width:100%; height:100%; display:block; image-rendering: pixelated; }
+    #gameArea { position:relative; flex:1; background:#050510; }
+    canvas { width:100%; height:100%; display:block; image-rendering: pixelated; background:#04040a; }
 
-    /* Overlay windows */
-    .window { position:absolute; top:10px; left:10px; display:flex; gap:10px; }
-    .panel { background:#ffffffdd; border:2px solid #333; border-radius:8px; padding:10px; width:190px; display:flex; flex-direction:column; max-height:min(78vh, 620px); }
-    .panel h3 { margin:0 0 6px 0; font-size:16px; }
-    .panel .row { display:flex; align-items:center; justify-content:space-between; gap:6px; margin:6px 0; }
-      .panel button { padding:6px 8px; border-radius:6px; border:1px solid #222; background:#e8f3ff; cursor:pointer; }
-      .seed-list { flex:1 1 auto; max-height:min(60vh, 540px); overflow-y:auto; }
+    .window { position:absolute; top:14px; left:14px; display:flex; gap:14px; }
+    .panel {
+      background: rgba(8, 16, 36, 0.85);
+      border:1px solid rgba(0,255,255,0.25);
+      border-radius:10px;
+      padding:12px;
+      width:210px;
+      display:flex;
+      flex-direction:column;
+      max-height:min(78vh, 620px);
+      box-shadow:0 0 18px rgba(0,255,255,0.2);
+    }
+    .panel h3 { margin:0 0 10px 0; font-size:17px; color:#63e7ff; text-transform:uppercase; letter-spacing:0.12em; }
+    .panel .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; }
+    .panel button {
+      padding:6px 10px;
+      border-radius:6px;
+      border:1px solid rgba(99,231,255,0.5);
+      background: rgba(5, 12, 30, 0.85);
+      color:#8fe8ff;
+      cursor:pointer;
+      box-shadow:0 0 10px rgba(99,231,255,0.28);
+    }
+    .panel button:hover { color:#fff; border-color:rgba(255,82,148,0.6); box-shadow:0 0 14px rgba(255,82,148,0.4); }
+    .mod-list { flex:1 1 auto; max-height:min(60vh, 540px); overflow-y:auto; font-size:13px; }
+    .panel-note { font-size:12px; opacity:0.75; margin-top:8px; }
 
-    /* Event feed (starts OFF‑SCREEN) */
-    #events { position:absolute; right:-380px; top:10px; width:340px; max-width:48vw; background:#ffffffd9; border:2px solid #333; border-radius:8px; padding:8px 10px; transition:right .18s ease-out; }
-    #events.open { right:10px; }
-    #events h3 { margin:0 0 6px 0; font-size:16px; }
+    #events { position:absolute; right:-380px; top:14px; width:340px; max-width:48vw; background:rgba(8,16,36,0.9); border:1px solid rgba(0,255,255,0.25); border-radius:10px; padding:10px 14px; transition:right .18s ease-out; box-shadow:0 0 20px rgba(0,255,255,0.2); }
+    #events.open { right:14px; }
+    #events h3 { margin:0 0 8px 0; font-size:17px; color:#63e7ff; text-transform:uppercase; letter-spacing:0.12em; }
     #feed { max-height:40vh; overflow:auto; font-size:13px; line-height:1.3; }
-    .evt { padding:4px 0; border-bottom:1px dashed #ccc; }
+    .evt { padding:4px 0; border-bottom:1px dashed rgba(99,231,255,0.3); }
 
-    /* Tooltip */
-    #tooltip { position:absolute; pointer-events:none; background:#111; color:#fff; padding:4px 6px; border-radius:4px; font-size:12px; transform:translate(-50%, -140%); opacity:0; transition:opacity .08s; white-space:nowrap; }
+    #tooltip { position:absolute; pointer-events:none; background:rgba(5,12,30,0.9); color:#aff6ff; padding:6px 8px; border-radius:4px; font-size:12px; transform:translate(-50%, -140%); opacity:0; transition:opacity .08s; white-space:nowrap; border:1px solid rgba(99,231,255,0.5); box-shadow:0 0 8px rgba(99,231,255,0.4); }
 
-    /* Footer help */
-    footer { background:#20303c; color:#cfe3ff; padding:6px 10px; font-size:14px; display:flex; justify-conte-between; gap:10px; flex-wrap:wrap; }
-    footer code { background:#0f1b23; color:#b3e6ff; padding:2px 6px; border-radius:6px; }
+    footer {
+      background: linear-gradient(135deg, rgba(8,12,32,0.95), rgba(8,18,44,0.95));
+      color:#9fdcff;
+      padding:10px 14px;
+      font-size:14px;
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      border-top:1px solid rgba(0,255,255,0.2);
+    }
+    footer code { background:#071026; color:#8fe8ff; padding:2px 6px; border-radius:6px; }
 
-    /* Touch controls */
     .touch-controls { position:absolute; bottom:clamp(20px, 8vh, 96px); display:flex; align-items:center; gap:24px; z-index:10; }
-    .touch-controls button { touch-action:none; user-select:none; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; padding:0; }
+    .touch-controls button { touch-action:none; user-select:none; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0; color:#9fdcff; background:rgba(8,18,40,0.85); border:1px solid rgba(99,231,255,0.4); border-radius:12px; width:84px; height:56px; box-shadow:0 0 12px rgba(99,231,255,0.3); }
+    .touch-controls button:active { box-shadow:0 0 16px rgba(255,45,117,0.4); border-color:rgba(255,45,117,0.6); color:#fff; }
     #p1Controls, #p2Controls { flex-direction:row; align-items:center; }
     #p1Controls { left:16px; right:auto; }
     #p2Controls { right:16px; left:auto; flex-direction:row-reverse; }
     body.single-player #p1Controls { left:auto; right:16px; }
-    .dpad { position:relative; width:120px; height:120px; border-radius:50%; background:#ffffffd0; border:1px solid #333; box-shadow:inset 0 0 12px #00000018; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
-    .dpad::before, .dpad::after { content:""; position:absolute; background:#1b2b38; opacity:.08; }
+    .dpad { position:relative; width:120px; height:120px; border-radius:50%; background:rgba(8,18,40,0.9); border:1px solid rgba(99,231,255,0.35); box-shadow:inset 0 0 18px rgba(0,255,255,0.25); display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
+    .dpad::before, .dpad::after { content:""; position:absolute; background:rgba(99,231,255,0.15); }
     .dpad::before { width:70%; height:2px; }
     .dpad::after { width:2px; height:70%; }
-    .dpad .stick { width:60px; height:60px; border-radius:50%; background:#f8fbff; border:1px solid #333; box-shadow:0 3px 6px #00000033; transition:transform .05s ease-out; pointer-events:none; }
-    .dpad.active .stick { box-shadow:0 4px 12px #00000055; }
-    .actions { display:flex; flex-direction:column; gap:16px; }
-    .actions button { width:84px; height:56px; background:#ffffffd0; border:1px solid #333; border-radius:12px; }
+    .dpad .stick { width:60px; height:60px; border-radius:50%; background:#0d162e; border:1px solid rgba(99,231,255,0.4); box-shadow:0 3px 10px rgba(0,0,0,0.4); transition:transform .05s ease-out; pointer-events:none; }
+    .dpad.active .stick { box-shadow:0 4px 12px rgba(255,45,117,0.4); }
     body.single-player #p1Controls .actions { align-items:flex-end; }
     .p2 { display:none; }
   </style>
@@ -62,11 +127,11 @@
 <body>
 <div id="wrap">
   <header>
-    <div class="pill" id="p1money">P1 Money: ¢0.00</div>
-    <div class="pill p2" id="p2money">P2 Money: ¢0.00</div>
-    <div class="pill" id="p1hud">P1 Seeds: — | Bag: —</div>
-    <div class="pill p2" id="p2hud">P2 Seeds: — | Bag: —</div>
-    <button id="toggleEvents" title="Toggle Events (H)">Events</button>
+    <div class="pill" id="p1money">P1 Credits: ₵0</div>
+    <div class="pill p2" id="p2money">P2 Credits: ₵0</div>
+    <div class="pill" id="p1hud">P1 Parts: — | Builds: —</div>
+    <div class="pill p2" id="p2hud">P2 Parts: — | Builds: —</div>
+    <button id="toggleEvents" title="Toggle Street Feed (H)">Street Feed</button>
     <div class="savebar">
       <button id="btnSave" title="Save to browser (Autosaves too)">Save</button>
       <button id="btnLoad" title="Load from browser">Load</button>
@@ -74,27 +139,27 @@
       <button id="btnImport" title="Import save file">Import</button>
       <label for="fileImport" class="sr-only">Import save file</label>
       <input id="fileImport" type="file" accept="application/json" title="Import save file" />
-      <button id="addP2" title="Enable second player">Add Player 2</button>
+      <button id="addP2" title="Enable second player">Drop-in P2</button>
     </div>
-    <div class="hint">Growth persists via timestamps. Rotten plants must be <b>fixed</b> by the plot owner for ¢10.00. A random <b>Center Challenge</b> can grant pets with perks.</div>
+    <div class="hint">Neon builds persist even when you log off. Overheated bays must be cleared by the owner for ₵250. Fill the spotlight in the plaza to recruit rare crew.</div>
   </header>
   <div id="gameArea">
     <canvas id="game" width="1280" height="720"></canvas>
 
     <div class="window" id="vendors">
       <div class="panel" id="shopPanel">
-        <h3>Seed Shop</h3>
-        <div id="seedList" class="seed-list"></div>
-        <div style="font-size:12px;opacity:.8;">Stand in the shop & press your <b>Action</b> key (P1:<code>E</code>, P2:<code>/</code>) to toggle this UI.</div>
+        <h3>Parts Vendor</h3>
+        <div id="modList" class="mod-list"></div>
+        <div class="panel-note">Stand at the vendor & press <b>Action</b> (P1 <code>E</code>, P2 <code>/</code>) to toggle this UI.</div>
       </div>
       <div class="panel" id="sellPanel">
-        <h3>Sell Harvest</h3>
-        <div id="sellInfo" style="font-size:13px;">Stand at the Sell booth and press Action to sell everything in your bag.</div>
+        <h3>Race Terminal</h3>
+        <div id="sellInfo" style="font-size:13px;">Park at the terminal & press Action to bank every finished build in your stash.</div>
       </div>
     </div>
 
     <div id="events">
-      <h3>Events</h3>
+      <h3>Street Feed</h3>
       <div id="feed"></div>
     </div>
 
@@ -105,8 +170,8 @@
         <div class="stick"></div>
       </div>
       <div class="actions">
-        <button data-key="KeyQ">Cycle</button>
-        <button data-key="KeyE">Action</button>
+        <button data-key="KeyQ">Swap</button>
+        <button data-key="KeyE">Wrench</button>
       </div>
     </div>
     <div class="touch-controls p2" id="p2Controls">
@@ -114,18 +179,17 @@
         <div class="stick"></div>
       </div>
       <div class="actions">
-        <button data-key="Period">Cycle</button>
-        <button data-key="Slash">Action</button>
+        <button data-key="Period">Swap</button>
+        <button data-key="Slash">Wrench</button>
       </div>
     </div>
   </div>
   <footer>
     <div>
-      <b>Controls:</b> P1 <code>WASD</code> move, <code>1–0</code> select seed, <code>Q</code> cycle seed, <code>E</code> action.
-      Enable P2 via the top-right button; P2 uses <code>Arrows</code> move, <code>Numpad1–0</code> select seed, <code>.</code> cycle seed, <code>/</code> action. <b>H</b> toggles Events panel.
+      <b>Controls:</b> P1 uses <code>WASD</code> to roll, <code>1–0</code> selects kits, <code>Q</code> swaps kit, <code>E</code> works a bay. Drop in P2 with the button above — P2 drives with <code>Arrows</code>, selects with <code>Numpad1–0</code>, swaps with <code>.</code>, and wrenches with <code>/</code>. Press <code>H</code> to toggle the Street Feed.
     </div>
     <div>
-      Plant on your own plots. If a plant rots, the owner can fix the plot for ¢10.00. Complete center challenges to earn pets (perks!).
+      Install mods in your own bays. If a build overheats, clear it for ₵250. Hype the plaza spotlight together to recruit legendary crew with powerful perks.
     </div>
   </footer>
 </div>

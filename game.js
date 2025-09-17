@@ -1,184 +1,220 @@
 (() => {
   // ---------- CONFIG ----------
-  const CROPS = {
-    candy: { name: 'Candy Blossom', growMs: 60000, sell: 6 }, // 1 min, sells for ¢6.00
-    carrot: { name: 'Carrot', growMs: 600000, sell: 3000 }    // 10 min, sells for ¢3,000.00
+  const MODS = {
+    nitro:        { name: 'Nitro Injectors',      installMs: 60000,  payout: 900,   cost: 350,  icon: '🧨', palette: ['#ff3864', '#ffc857', '#2b2d42'] },
+    neon:         { name: 'Neon Ground FX',       installMs: 75000,  payout: 1200,  cost: 520,  icon: '💡', palette: ['#7c3aed', '#ff9e00', '#1b1b3a'] },
+    driftTires:   { name: 'Drift Tire Set',       installMs: 90000,  payout: 1900,  cost: 900,  icon: '🏁', palette: ['#ff5400', '#ffee32', '#1a1a1a'] },
+    suspension:   { name: 'Air Suspension',       installMs: 120000, payout: 2800,  cost: 1500, icon: '🛠️', palette: ['#00b4d8', '#ff4d6d', '#1f1f1f'] },
+    sound:        { name: 'Bassline Sound',       installMs: 150000, payout: 3600,  cost: 2100, icon: '🎶', palette: ['#ff6b6b', '#ffd166', '#111827'] },
+    wrap:         { name: 'Retro Wrap',           installMs: 180000, payout: 4700,  cost: 2600, icon: '🎨', palette: ['#06d6a0', '#ef476f', '#073b4c'] },
+    turbo:        { name: 'Twin Turbo Kit',       installMs: 240000, payout: 6800,  cost: 4000, icon: '🌀', palette: ['#48cae4', '#ffbe0b', '#03071e'] },
+    aero:         { name: 'Aero Body Kit',        installMs: 300000, payout: 9400,  cost: 6200, icon: '🪙', palette: ['#ffd500', '#ff6f91', '#1a1c2c'] },
+    ecu:          { name: 'ECU Remap',            installMs: 360000, payout: 12600, cost: 8300, icon: '💾', palette: ['#00f5d4', '#ff4f00', '#0b132b'] },
+    supercharger: { name: 'Supercharger',         installMs: 420000, payout: 17100, cost: 12000,icon: '⚙️', palette: ['#80ffdb', '#ff9f1c', '#1d1b1b'] },
+    driftAI:      { name: 'Auto-Drift AI',        installMs: 480000, payout: 22800, cost: 18000,icon: '🤖', palette: ['#72efdd', '#ff006e', '#03045e'] },
+    rocketFuel:   { name: 'Rocket Fuel Mix',      installMs: 540000, payout: 29600, cost: 25000,icon: '🚀', palette: ['#ff7b00', '#ff006e', '#050505'] },
   };
-  const CURRENCY_SYMBOL = '¢';
-  function formatCurrency(value) {
+
+  const CREDIT_SYMBOL = '₵';
+  function formatCredits(value) {
     const amount = Number(value ?? 0);
     const safeAmount = Number.isFinite(amount) ? amount : 0;
-    return `${CURRENCY_SYMBOL}${safeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${CREDIT_SYMBOL}${safeAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   }
-  const REPAIR_COST = 10; // cents
-  const DEFAULT_SEED = 'candy';
-  // PETS (one active perk per player)
-  const PETS = [
-    { id:'bee',    name:'Honey Bee',  emoji:'🐝', priceMult:1.10, perk:'Sell price +10%' },
-    { id:'bunny',  name:'Bunny',      emoji:'🐰', speed:+0.4,      perk:'Movement speed boost' },
-    { id:'sprout', name:'Sprout',     emoji:'🌱', plantGrowth:1.10, perk:'Plants grow 10% faster' },
-    { id:'robot',  name:'Robot',      emoji:'🤖', randomMutation:true, perk:'Chance for random crop mutations' },
+
+  const REPAIR_COST = 250;
+  const DEFAULT_MOD = 'nitro';
+
+  const CREW = [
+    { id: 'mechanic', name: 'Ace Mechanic', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },
+    { id: 'driver',   name: 'Ghost Driver', emoji: '👻', speed: 0.6,        perk: 'Movement speed boost' },
+    { id: 'tuner',    name: 'Chip Tuner',   emoji: '💾', installSpeed: 1.15, perk: 'Install time -15%' },
+    { id: 'spotter',  name: 'Street Spotter', emoji: '👀', randomBonus: true, perk: 'Chance for bonus builds' },
   ];
 
-  function describePet(petDef) {
-    if (!petDef) return '—';
-    return petDef.perk ? `${petDef.name} (${petDef.perk})` : petDef.name;
+  function describeCrew(member) {
+    if (!member) return '—';
+    return member.perk ? `${member.name} (${member.perk})` : member.name;
   }
 
-  const SEED_CATALOG = [
-    { id:'candy', name:'Candy Blossom', harvest:'Multiple', sheckles:2, robux:0 },
-    { id:'carrot', name:'Carrot', harvest:'Single', sheckles:10, robux:7 },
-    { id:'strawberry', name:'Strawberry', harvest:'Multiple', sheckles:50, robux:21 },
-    { id:'blueberry', name:'Blueberry', harvest:'Multiple', sheckles:400, robux:49 },
-    { id:'orangeTulip', name:'Orange Tulip', harvest:'Single', sheckles:600, robux:14 },
-    { id:'tomato', name:'Tomato', harvest:'Multiple', sheckles:800, robux:79 },
-    { id:'daffodil', name:'Daffodil', harvest:'Single', sheckles:1000, robux:19 },
-    { id:'corn', name:'Corn', harvest:'Multiple', sheckles:1300, robux:135 },
-    { id:'watermelon', name:'Watermelon', harvest:'Single', sheckles:2500, robux:195 },
-    { id:'pumpkin', name:'Pumpkin', harvest:'Single', sheckles:3000, robux:210 },
-    { id:'apple', name:'Apple', harvest:'Multiple', sheckles:3250, robux:375 },
-    { id:'bamboo', name:'Bamboo', harvest:'Single', sheckles:4000, robux:99 },
-    { id:'coconut', name:'Coconut', harvest:'Multiple', sheckles:6000, robux:435 },
-    { id:'cactus', name:'Cactus', harvest:'Multiple', sheckles:15000, robux:497 },
-    { id:'dragonFruit', name:'Dragon Fruit', harvest:'Multiple', sheckles:50000, robux:597 },
-    { id:'mango', name:'Mango', harvest:'Multiple', sheckles:100000, robux:580 },
-    { id:'mushroom', name:'Mushroom', harvest:'Single', sheckles:150000, robux:249 },
-    { id:'grape', name:'Grape', harvest:'Multiple', sheckles:850000, robux:599 },
-    { id:'pepper', name:'Pepper', harvest:'Multiple', sheckles:1000000, robux:629 },
-    { id:'cacao', name:'Cacao', harvest:'Multiple', sheckles:2500000, robux:679 },
-    { id:'beanstalk', name:'Beanstalk', harvest:'Multiple', sheckles:10000000, robux:715 },
-    { id:'emberLily', name:'Ember Lily', harvest:'Multiple', sheckles:15000000, robux:779 },
-    { id:'sugarApple', name:'Sugar Apple', harvest:'Multiple', sheckles:25000000, robux:819 },
-    { id:'burningBud', name:'Burning Bud', harvest:'Multiple', sheckles:40000000, robux:915 },
-    { id:'giantPinecone', name:'Giant Pinecone', harvest:'Multiple', sheckles:55000000, robux:929 },
-    { id:'elderStrawberry', name:'Elder Strawberry', harvest:'Multiple', sheckles:70000000, robux:957 },
-    { id:'romanesco', name:'Romanesco', harvest:'Multiple', sheckles:88000000, robux:987 },
-  ].sort((a, b) => a.sheckles - b.sheckles);
+  const MOD_CATALOG = Object.entries(MODS).map(([id, mod]) => ({
+    id,
+    name: mod.name,
+    cost: mod.cost,
+    payout: mod.payout,
+    icon: mod.icon,
+  })).sort((a, b) => a.cost - b.cost);
 
-  const seedCosts = SEED_CATALOG.map(seed => seed.sheckles).filter(cost => cost > 0);
-  const minSeedCost = seedCosts.length ? Math.min(...seedCosts) : 0;
-  const maxSeedCost = seedCosts.length ? Math.max(...seedCosts) : 0;
-  const baseGrowMs = CROPS[DEFAULT_SEED].growMs;
-  const existingMaxGrowMs = Math.max(...Object.values(CROPS).map(crop => crop.growMs || baseGrowMs));
-  const targetMaxGrowMs = Math.max(baseGrowMs, Math.round(existingMaxGrowMs / 2));
-  const costLogSpan = (minSeedCost > 0 && maxSeedCost > minSeedCost) ? Math.log(maxSeedCost / minSeedCost) : 0;
+  const costValues = MOD_CATALOG.map(mod => mod.cost);
+  const minCost = costValues.length ? Math.min(...costValues) : 0;
+  const maxCost = costValues.length ? Math.max(...costValues) : 0;
+  const baseInstall = MODS[DEFAULT_MOD].installMs;
+  const maxInstall = Math.max(...Object.values(MODS).map(mod => mod.installMs || baseInstall));
+  const targetMaxInstall = Math.max(baseInstall, Math.round(maxInstall * 0.75));
+  const costLogSpan = (minCost > 0 && maxCost > minCost) ? Math.log(maxCost / minCost) : 0;
 
-  // Provide basic crop stats for seeds missing from CROPS so they can be planted, and scale growth times.
-  for (const seed of SEED_CATALOG) {
-    const crop = CROPS[seed.id] || { name: seed.name, sell: seed.sheckles * 100 };
+  for (const entry of MOD_CATALOG) {
+    const mod = MODS[entry.id];
     let ratio = 0;
-    if (costLogSpan && seed.sheckles > 0 && seed.sheckles !== minSeedCost) {
-      ratio = Math.log(seed.sheckles / minSeedCost) / costLogSpan;
+    if (costLogSpan && entry.cost > minCost) {
+      ratio = Math.log(entry.cost / minCost) / costLogSpan;
     }
-    const smoothGrow = baseGrowMs + (targetMaxGrowMs - baseGrowMs) * Math.min(1, Math.max(0, ratio));
-    const growMs = Math.round(smoothGrow / 1000) * 1000;
-    crop.growMs = Math.min(targetMaxGrowMs, Math.max(baseGrowMs, growMs));
-    crop.name = crop.name || seed.name;
-    if (crop.sell == null) crop.sell = seed.sheckles * 100;
-    CROPS[seed.id] = crop;
+    const smooth = baseInstall + (targetMaxInstall - baseInstall) * Math.min(1, Math.max(0, ratio));
+    const installMs = Math.round(smooth / 1000) * 1000;
+    mod.installMs = Math.min(targetMaxInstall, Math.max(baseInstall, installMs));
+    mod.name = mod.name || entry.name;
+    if (mod.payout == null) mod.payout = entry.cost * 2;
   }
-  const seedStock = new Set();
 
-  // Stable save key + migrate from legacy
-  const SAVE_KEY = 'garden-duo-main';
-  const LEGACY_KEYS = ['garden-duo-v1','garden-duo-v2','garden-duo-v3'];
+  const modStock = new Set();
 
-  // Plant mutation effects
-  const MUTATIONS = [
-    { id:'swift',   label:'Swift Growth', effect:p=>p.growMs*=0.7 },
-    { id:'giant',   label:'Giant Yield',  effect:p=>p.yield=2 },
-    { id:'glitter', label:'Glitter Value',effect:p=>p.sellMult=2 },
-    { id:'rot',     label:'Rot-Prone',    effect:p=>p.rotChance=0.25 },
+  const SAVE_KEY = 'neon-drift-main';
+  const LEGACY_KEYS = ['garden-duo-main', 'garden-duo-v3'];
+
+  const TUNINGS = [
+    { id: 'precision', label: 'Precision Tune', effect: build => build.installMs *= 0.75 },
+    { id: 'bigOrder',  label: 'Big Order',      effect: build => build.payoutMult = 1.8 },
+    { id: 'flashsale', label: 'Flash Sale',     effect: build => build.rotChance = 0.25 },
+    { id: 'double',    label: 'Twin Setup',     effect: build => build.yield = 2 },
   ];
 
-  // World events
-  const WORLD_EVENTS = [
-    { id:'rain',   label:'Rain! Growth +50% for 30s',  dur:30000, apply:s=>{s.growthMult*=1.5;} },
-    { id:'drought',label:'Heatwave! Growth -30% for 30s', dur:30000, apply:s=>{s.growthMult*=0.7;} },
-    { id:'boom',   label:'Market Boom! Prices +50% for 30s', dur:30000, apply:s=>{s.priceMult*=1.5;} },
-    { id:'slump',  label:'Market Slump! Prices -30% for 30s', dur:30000, apply:s=>{s.priceMult*=0.7;} },
+  const STREET_EVENTS = [
+    { id: 'midnightRush', label: 'Midnight Rush! Install speed +40% for 30s', dur: 30000, apply: s => { s.installMult *= 1.4; } },
+    { id: 'rainstorm',    label: 'Rainstorm! Install speed -25% for 30s',     dur: 30000, apply: s => { s.installMult *= 0.75; } },
+    { id: 'jackpot',      label: 'High Roller! Race payouts +50% for 30s',   dur: 30000, apply: s => { s.payoutMult *= 1.5; } },
+    { id: 'crackdown',    label: 'Police Crackdown! Payouts -30% for 30s',   dur: 30000, apply: s => { s.payoutMult *= 0.7; } },
   ];
-
   // ---------- STATE ----------
   const state = {
-    priceMult: 1,
-    growthMult: 1,
-    plots: [],
-    p1: { x: 220, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:DEFAULT_SEED, pet:null, pets:[] },
-    p2: { x: 1060, y: 450, w:40, h:40, speedBase:2.4, money:10, invSeeds:{}, bag:{}, selected:DEFAULT_SEED, pet:null, pets:[] },
+    payoutMult: 1,
+    installMult: 1,
+    bays: [],
+    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1200, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
+    p2: { x: 1060, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1200, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
     p2Active: false,
-    shopOpen:null, sellOpen:false,
-    activeEvent:null, eventUntil:0,
-    // Center challenge
-    challenge:null,
+    shopOpen: null,
+    raceOpen: false,
+    activeEvent: null,
+    eventUntil: 0,
+    challenge: null,
   };
 
-  // ---------- SAVE/LOAD ----------
-  function migrateLegacy(){
+  function migrateLegacy() {
     if (localStorage.getItem(SAVE_KEY)) return;
-    for (const k of LEGACY_KEYS){ const v = localStorage.getItem(k); if (v){ localStorage.setItem(SAVE_KEY, v); console.info('Migrated save from', k); break; } }
+    for (const key of LEGACY_KEYS) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        try {
+          const parsed = JSON.parse(value);
+          if (parsed && typeof parsed === 'object') {
+            const converted = {
+              payoutMult: parsed.priceMult ?? 1,
+              installMult: parsed.growthMult ?? 1,
+              bays: Array.isArray(parsed.plots) ? parsed.plots.map(pl => ({
+                x: pl.x,
+                y: pl.y,
+                w: pl.w,
+                h: pl.h,
+                owner: pl.owner,
+                build: pl.crop ? {
+                  kind: pl.crop.kind,
+                  plantedAt: pl.crop.plantedAt,
+                  installMs: pl.crop.growMs,
+                  yield: pl.crop.yield,
+                  payoutMult: pl.crop.sellMult,
+                  rotChance: pl.crop.rotChance,
+                  tuning: pl.crop.mutation,
+                  dead: pl.crop.dead,
+                } : null,
+              })) : [],
+              p1: parsed.p1 ? {
+                credits: parsed.p1.money ?? 0,
+                inventory: parsed.p1.invSeeds ?? {},
+                stash: parsed.p1.bag ?? {},
+                selected: parsed.p1.selected ?? DEFAULT_MOD,
+              } : undefined,
+              p2: parsed.p2 ? {
+                credits: parsed.p2.money ?? 0,
+                inventory: parsed.p2.invSeeds ?? {},
+                stash: parsed.p2.bag ?? {},
+                selected: parsed.p2.selected ?? DEFAULT_MOD,
+              } : undefined,
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(converted));
+            console.info('Migrated legacy save from', key);
+            break;
+          }
+        } catch (err) {
+          console.warn('Failed to migrate legacy save', err);
+        }
+      }
+    }
   }
   migrateLegacy();
 
   function applySavedState(saved) {
     if (!saved) return false;
-    state.priceMult = saved.priceMult ?? state.priceMult;
-    state.growthMult = saved.growthMult ?? state.growthMult;
-    state.plots = Array.isArray(saved.plots) ? saved.plots : state.plots;
+    state.payoutMult = saved.payoutMult ?? state.payoutMult;
+    state.installMult = saved.installMult ?? state.installMult;
+    state.bays = Array.isArray(saved.bays) ? saved.bays : state.bays;
     Object.assign(state.p1, saved.p1 || {});
     Object.assign(state.p2, saved.p2 || {});
-    state.p1.pet = null;
-    state.p2.pet = null;
-    state.p1.pets = [];
-    state.p2.pets = [];
+    state.p1.crewMember = null;
+    state.p1.crew = state.p1.crew || [];
+    state.p2.crewMember = null;
+    state.p2.crew = state.p2.crew || [];
     state.shopOpen = null;
-    state.sellOpen = false;
+    state.raceOpen = false;
 
-    if (state.p1.money == null) state.p1.money = 10;
-    if (state.p2.money == null) state.p2.money = 10;
+    if (state.p1.credits == null) state.p1.credits = 1200;
+    if (state.p2.credits == null) state.p2.credits = 1200;
 
-    if (state.p1.selected == null) state.p1.selected = DEFAULT_SEED;
-    if (state.p2.selected == null) state.p2.selected = DEFAULT_SEED;
+    if (!state.p1.inventory) state.p1.inventory = {};
+    if (!state.p2.inventory) state.p2.inventory = {};
+    if (!state.p1.stash) state.p1.stash = {};
+    if (!state.p2.stash) state.p2.stash = {};
+    if (state.p1.selected == null) state.p1.selected = DEFAULT_MOD;
+    if (state.p2.selected == null) state.p2.selected = DEFAULT_MOD;
     return true;
   }
 
   try {
-    const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
     if (applySavedState(saved)) save();
-  } catch {}
+  } catch (err) {
+    console.warn('Failed to load save', err);
+  }
 
-  for (const s of SEED_CATALOG) {
-    if (state.p1.invSeeds[s.id] == null) state.p1.invSeeds[s.id] = 0;
-    if (state.p2.invSeeds[s.id] == null) state.p2.invSeeds[s.id] = 0;
-    if (state.p1.bag[s.id] == null) state.p1.bag[s.id] = 0;
-    if (state.p2.bag[s.id] == null) state.p2.bag[s.id] = 0;
+  for (const mod of MOD_CATALOG) {
+    if (state.p1.inventory[mod.id] == null) state.p1.inventory[mod.id] = 0;
+    if (state.p2.inventory[mod.id] == null) state.p2.inventory[mod.id] = 0;
+    if (state.p1.stash[mod.id] == null) state.p1.stash[mod.id] = 0;
+    if (state.p2.stash[mod.id] == null) state.p2.stash[mod.id] = 0;
   }
 
   for (const player of [state.p1, state.p2]) {
-    for (const key of Object.keys(player.invSeeds)) {
-      if (!CROPS[key]) delete player.invSeeds[key];
+    for (const key of Object.keys(player.inventory)) {
+      if (!MODS[key]) delete player.inventory[key];
     }
-    for (const key of Object.keys(player.bag)) {
-      if (!CROPS[key]) delete player.bag[key];
+    for (const key of Object.keys(player.stash)) {
+      if (!MODS[key]) delete player.stash[key];
     }
-    if (!CROPS[player.selected]) player.selected = DEFAULT_SEED;
+    if (!MODS[player.selected]) player.selected = DEFAULT_MOD;
   }
 
   function save() {
     const minimal = JSON.parse(JSON.stringify({
-      priceMult: state.priceMult,
-      growthMult: state.growthMult,
-      plots: state.plots,
-      p1: { money:state.p1.money, invSeeds:state.p1.invSeeds, bag:state.p1.bag, selected:state.p1.selected },
-      p2: { money:state.p2.money, invSeeds:state.p2.invSeeds, bag:state.p2.bag, selected:state.p2.selected },
+      payoutMult: state.payoutMult,
+      installMult: state.installMult,
+      bays: state.bays,
+      p1: { credits: state.p1.credits, inventory: state.p1.inventory, stash: state.p1.stash, selected: state.p1.selected },
+      p2: { credits: state.p2.credits, inventory: state.p2.inventory, stash: state.p2.stash, selected: state.p2.selected },
     }));
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
   }
-  // Autosave + on close
   setInterval(save, 10000);
   window.addEventListener('beforeunload', save);
-
   // ---------- DOM ----------
   const p1moneyEl = document.getElementById('p1money');
   const p2moneyEl = document.getElementById('p2money');
@@ -196,11 +232,10 @@
   const addP2Btn = document.getElementById('addP2');
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
-  const seedListEl = document.getElementById('seedList');
+  const modListEl = document.getElementById('modList');
   const p1Controls = document.getElementById('p1Controls');
   const p2Controls = document.getElementById('p2Controls');
 
-  // Basic debug logging so we can inspect whether key elements were found
   console.log('DOM elements loaded', {
     p1moneyEl,
     p2moneyEl,
@@ -208,7 +243,7 @@
     p2hud,
     shopPanel,
     sellPanel,
-    seedListEl,
+    modListEl,
   });
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -222,10 +257,9 @@
     state.p2Active = true;
     document.querySelectorAll('.p2').forEach(el => el.classList.remove('p2'));
     addP2Btn.style.display = 'none';
-    if (!state.plots.some(pl => pl.owner === 'P2')) { addGardenPlots('P2'); save(); }
+    if (!state.bays.some(bay => bay.owner === 'P2')) { addGarageBays('P2'); save(); }
     updateTouchLayout();
   }
-
   function bindTouchControls(container) {
     container.querySelectorAll('button[data-key]').forEach(btn => {
       const code = btn.dataset.key;
@@ -375,7 +409,6 @@
   setupJoystick(p2Controls.querySelector('.dpad'));
   updateTouchLayout();
 
-  // Hide virtual controls if a keyboard is used
   window.addEventListener('keydown', () => {
     p1Controls.style.display = 'none';
     p2Controls.style.display = 'none';
@@ -395,139 +428,145 @@
       } else if (msg.type === 'action') {
         playerAction(state.p2, 'P2');
       } else if (msg.type === 'cycle') {
-        cycleSeed(state.p2);
+        cycleMod(state.p2);
       }
     });
   }
-
   function log(msg) {
     const d = document.createElement('div');
-    d.className='evt'; d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    d.className = 'evt';
+    d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
     feed.prepend(d);
-    while (feed.childElementCount>60) feed.lastChild.remove();
+    while (feed.childElementCount > 60) feed.lastChild.remove();
   }
 
-  // Manual save/load/export/import
-  btnSave.onclick = () => { save(); log('Game saved to browser.'); };
+  btnSave.onclick = () => { save(); log('Garage data saved to browser.'); };
   btnLoad.onclick = () => {
-    const saved = JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
-    if (!applySavedState(saved)) { log('No browser save found.'); return; }
+    const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+    if (!applySavedState(saved)) { log('No garage save found.'); return; }
     save();
-    log('Save loaded from browser.');
+    log('Garage save loaded.');
   };
   btnExport.onclick = () => {
     save();
-    const blob = new Blob([localStorage.getItem(SAVE_KEY)||'{}'], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'garden_duo_save.json'; a.click(); URL.revokeObjectURL(a.href);
-    log('Exported save file.');
+    const blob = new Blob([localStorage.getItem(SAVE_KEY) || '{}'], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'neon_drift_save.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    log('Exported garage data.');
   };
   btnImport.onclick = () => fileImport.click();
-  fileImport.onchange = async (e) => {
-    const f = e.target.files[0]; if (!f) return;
+  fileImport.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
     try {
-      const txt = await f.text();
+      const txt = await file.text();
       const data = JSON.parse(txt);
       applySavedState(data);
       save();
-      log('Imported save file.');
+      log('Imported garage data.');
     } catch {
-      log('Failed to import save.');
+      log('Failed to import data.');
     }
   };
-
   // ---------- WORLD LAYOUT ----------
   const cv = document.getElementById('game');
   const ctx = cv.getContext('2d');
   const WORLD = { w: cv.width, h: cv.height };
 
-  const VENDORS = {
-    shop: { x: 20, y: 20, w: 160, h: 120 },
-    sell: { x: 200, y: 20, w: 160, h: 120 },
+  const STATIONS = {
+    parts: { x: 40, y: 40, w: 220, h: 140 },
+    race: { x: WORLD.w - 260, y: 40, w: 220, h: 140 },
   };
 
-  const GARDENS = [
-    { x: 40,  y: 220, w: 320, h: 360, cols:5, rows:4, owner:'P1' },
-    { x: WORLD.w-360, y: 220, w: 320, h: 360, cols:5, rows:4, owner:'P2' },
+  const GARAGES = [
+    { x: 80, y: 230, w: 320, h: 360, cols: 5, rows: 4, owner: 'P1' },
+    { x: WORLD.w - 400, y: 230, w: 320, h: 360, cols: 5, rows: 4, owner: 'P2' },
   ];
 
-  function addGardenPlots(owner){
-    const g = GARDENS.find(g=>g.owner===owner); if (!g) return;
+  function addGarageBays(owner) {
+    const g = GARAGES.find(g => g.owner === owner);
+    if (!g) return;
     const cellW = Math.floor(g.w / g.cols);
     const cellH = Math.floor(g.h / g.rows);
-    for (let r=0;r<g.rows;r++) for (let c=0;c<g.cols;c++) {
-      state.plots.push({
-        x: g.x + c*cellW + 6,
-        y: g.y + r*cellH + 6,
-        w: cellW - 12,
-        h: cellH - 12,
-        owner,
-        crop:null,
-      });
+    for (let r = 0; r < g.rows; r++) {
+      for (let c = 0; c < g.cols; c++) {
+        state.bays.push({
+          x: g.x + c * cellW + 6,
+          y: g.y + r * cellH + 6,
+          w: cellW - 12,
+          h: cellH - 12,
+          owner,
+          build: null,
+        });
+      }
     }
   }
 
-  if (!state.plots || !state.plots.length) {
-    addGardenPlots('P1');
-    if (state.p2Active) addGardenPlots('P2');
+  if (!state.bays || !state.bays.length) {
+    addGarageBays('P1');
+    if (state.p2Active) addGarageBays('P2');
   }
 
-  function activePlots(){
-    return state.p2Active ? state.plots : state.plots.filter(pl=>pl.owner!=='P2');
+  function activeBays() {
+    return state.p2Active ? state.bays : state.bays.filter(b => b.owner !== 'P2');
   }
 
-  for (const pl of state.plots) { if (!pl.owner) pl.owner = (pl.x < WORLD.w/2 ? 'P1' : 'P2'); }
-
+  for (const bay of state.bays) {
+    if (!bay.owner) bay.owner = (bay.x < WORLD.w / 2 ? 'P1' : 'P2');
+  }
   // ---------- INPUT ----------
   const keys = new Set();
-  window.addEventListener('keydown', e=>{
+  window.addEventListener('keydown', e => {
     keys.add(e.code);
     if (net) net.handleKey(e.code, true);
-    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
   });
-  window.addEventListener('keyup', e=>{
+  window.addEventListener('keyup', e => {
     keys.delete(e.code);
     if (net) net.handleKey(e.code, false);
   });
 
-  // Touch controls
   console.log('Touch support detected:', isTouch);
   if (isTouch) {
-    console.log('Touch mode enabled – pointer interactions will trigger player actions');
+    console.log('Touch mode enabled – pointer interactions will trigger actions');
     cv.addEventListener('pointerdown', e => {
       const rect = cv.getBoundingClientRect();
       const x = (e.clientX - rect.left) * cv.width / rect.width;
       const y = (e.clientY - rect.top) * cv.height / rect.height;
-      const plot = activePlots().find(pl => inside(x, y, 0, 0, pl.x, pl.y, pl.w, pl.h));
-      if (!plot) return;
-      const p = playerByName(plot.owner);
+      const bay = activeBays().find(pl => inside(x, y, 0, 0, pl.x, pl.y, pl.w, pl.h));
+      if (!bay) return;
+      const p = playerByName(bay.owner);
       const oldX = p.x, oldY = p.y;
-      p.x = plot.x; p.y = plot.y;
-      playerAction(p, plot.owner);
+      p.x = bay.x; p.y = bay.y;
+      playerAction(p, bay.owner);
       p.x = oldX; p.y = oldY;
     });
   } else {
-    console.log('Keyboard mode enabled – using WASD/Arrow keys for movement');
+    console.log('Keyboard mode enabled – use WASD/Arrows to move');
   }
 
   function movePlayer(p, up, left, down, right) {
-    const pet = p.pet ? PETS.find(x=>x.id===p.pet.id) : null;
-    const sp = p.speedBase + (pet?.speed || 0);
-    if (keys.has(up)) p.y -= sp;
-    if (keys.has(down)) p.y += sp;
-    if (keys.has(left)) p.x -= sp;
-    if (keys.has(right)) p.x += sp;
-    p.x = Math.max(0, Math.min(WORLD.w-p.w, p.x));
-    p.y = Math.max(0, Math.min(WORLD.h-p.h, p.y));
+    const crew = p.crewMember ? CREW.find(x => x.id === p.crewMember.id) : null;
+    const speed = p.speedBase + (crew?.speed || 0);
+    if (keys.has(up)) p.y -= speed;
+    if (keys.has(down)) p.y += speed;
+    if (keys.has(left)) p.x -= speed;
+    if (keys.has(right)) p.x += speed;
+    p.x = Math.max(0, Math.min(WORLD.w - p.w, p.x));
+    p.y = Math.max(0, Math.min(WORLD.h - p.h, p.y));
   }
 
-  function movePet(p) {
-    if (!p.pet) return;
+  function moveCrew(p) {
+    if (!p.crewMember) return;
     const targetX = p.x - p.w * 0.8;
     const targetY = p.y - p.h * 0.8;
-    if (p.pet.x == null) p.pet.x = targetX;
-    if (p.pet.y == null) p.pet.y = targetY;
-    p.pet.x += (targetX - p.pet.x) * 0.05;
-    p.pet.y += (targetY - p.pet.y) * 0.05;
+    if (p.crewMember.x == null) p.crewMember.x = targetX;
+    if (p.crewMember.y == null) p.crewMember.y = targetY;
+    p.crewMember.x += (targetX - p.crewMember.x) * 0.05;
+    p.crewMember.y += (targetY - p.crewMember.y) * 0.05;
   }
 
   const pressed = new Set();
@@ -540,1552 +579,688 @@
   }
 
   // ---------- GAMEPLAY ----------
-  function inside(ax,ay,aw,ah, bx,by,bw,bh){
-    return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
+  function inside(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
   }
-  function dist(ax,ay,bx,by){ const dx=ax-bx, dy=ay-by; return Math.hypot(dx,dy); }
+  function dist(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return Math.hypot(dx, dy); }
 
-  function playerByName(name){ return name==='P1' ? state.p1 : state.p2; }
+  function playerByName(name) { return name === 'P1' ? state.p1 : state.p2; }
 
-  function cycleSeed(p){
-    const available = Object.keys(p.invSeeds).filter(id => p.invSeeds[id] > 0);
+  function cycleMod(p) {
+    const available = Object.keys(p.inventory).filter(id => p.inventory[id] > 0);
     if (available.length === 0) return;
     let idx = available.indexOf(p.selected);
     idx = (idx + 1) % available.length;
     p.selected = available[idx];
   }
 
-  function selectSeedByIndex(p, idx) {
-    const available = Object.keys(p.invSeeds).filter(id => p.invSeeds[id] > 0);
+  function selectModByIndex(p, idx) {
+    const available = Object.keys(p.inventory).filter(id => p.inventory[id] > 0);
     if (idx >= 0 && idx < available.length) {
       p.selected = available[idx];
     }
   }
 
-  const SEED_EMOJIS = {
-    candy:'🍬',
-    carrot:'🥕',
-    strawberry:'🍓',
-    blueberry:'🫐',
-    orangeTulip:'🌷',
-    tomato:'🍅',
-    corn:'🌽',
-    daffodil:'🌼',
-    watermelon:'🍉',
-    pumpkin:'🎃',
-    apple:'🍎',
-    bamboo:'🎍',
-    coconut:'🥥',
-    cactus:'🌵',
-    dragonFruit:'🐉',
-    mango:'🥭',
-    grape:'🍇',
-    mushroom:'🍄',
-    pepper:'🌶️',
-    cacao:'🍫',
-    beanstalk:'🌿',
-    emberLily:'🔥',
-    sugarApple:'🍏',
-    burningBud:'💥',
-    giantPinecone:'🌲',
-    elderStrawberry:'🍓',
-    romanesco:'🥦'
-  };
-  function seedEmoji(id){ return SEED_EMOJIS[id] || '🌱'; }
-
-  const PLANT_DRAWERS = {
-    candy: drawCandyPlant,
-    carrot: drawCarrotPlant,
-    strawberry: drawStrawberryPlant,
-    blueberry: drawBlueberryPlant,
-    orangeTulip: drawOrangeTulipPlant,
-    tomato: drawTomatoPlant,
-    corn: drawCornPlant,
-    daffodil: drawDaffodilPlant,
-    watermelon: drawWatermelonPlant,
-    pumpkin: drawPumpkinPlant,
-    apple: drawApplePlant,
-    bamboo: drawBambooPlant,
-    coconut: drawCoconutPlant,
-    cactus: drawCactusPlant,
-    dragonFruit: drawDragonFruitPlant,
-    mango: drawMangoPlant,
-    grape: drawGrapePlant,
-    mushroom: drawMushroomPlant,
-    pepper: drawPepperPlant,
-    cacao: drawCacaoPlant,
-    beanstalk: drawBeanstalkPlant,
-    emberLily: drawEmberLilyPlant,
-    sugarApple: drawSugarApplePlant,
-    burningBud: drawBurningBudPlant,
-    giantPinecone: drawGiantPineconePlant,
-    elderStrawberry: drawElderStrawberryPlant,
-    romanesco: drawRomanescoPlant,
-  };
-
+  const MOD_GLYPHS = Object.fromEntries(MOD_CATALOG.map(mod => [mod.id, MODS[mod.id].icon || '⚙️']));
+  function modGlyph(id) { return MOD_GLYPHS[id] || '⚙️'; }
   function playerAction(p, who) {
     console.log('playerAction triggered', {
       who,
       position: { x: p.x, y: p.y },
-      bag: { ...p.bag },
-      seeds: { ...p.invSeeds },
+      stash: { ...p.stash },
+      inventory: { ...p.inventory },
     });
-    // Vendors
-    if (inside(p.x,p.y,p.w,p.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      state.shopOpen = state.shopOpen===who ? null : who; state.sellOpen = false; log(`${who} toggled Seed Shop.`);
-      if (state.shopOpen) { generateSeedStock(); renderSeedShop(); }
+
+    if (inside(p.x, p.y, p.w, p.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
+      state.shopOpen = state.shopOpen === who ? null : who;
+      state.raceOpen = false;
+      log(`${who} toggled the Parts Vendor.`);
+      if (state.shopOpen) { generateModStock(); renderPartsShop(); }
       return;
     }
-    if (inside(p.x,p.y,p.w,p.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h)) {
+    if (inside(p.x, p.y, p.w, p.h, STATIONS.race.x, STATIONS.race.y, STATIONS.race.w, STATIONS.race.h)) {
       const sold = sellAll(p);
-      if (sold>0) { log(`${who} sold harvest for ${formatCurrency(sold)}.`); state.sellOpen = true; state.shopOpen=null; }
-      else { log(`${who} has nothing to sell.`); state.sellOpen=true; state.shopOpen=null; }
+      if (sold > 0) { log(`${who} banked ${formatCredits(sold)} in race winnings.`); state.raceOpen = true; state.shopOpen = null; }
+      else { log(`${who} has no completed builds to race.`); state.raceOpen = true; state.shopOpen = null; }
       return;
     }
 
-    // Challenge interaction
-    if (state.challenge && Date.now() < state.challenge.endsAt && dist(p.x+p.w/2, p.y+p.h/2, state.challenge.x, state.challenge.y) < state.challenge.r) {
-      // Press action to add progress
-      state.challenge.progress += 1; log(`${who} pumps the challenge (${state.challenge.progress}/${state.challenge.goal}).`);
-      if (state.challenge.progress >= state.challenge.goal) { awardPet(p, who); state.challenge.endsAt = 0; log('Challenge completed!'); }
-      return;
-    }
-
-    // Plant / harvest / fix / inspect
-    const plot = activePlots().find(pl => inside(p.x,p.y,p.w,p.h, pl.x,pl.y,pl.w,pl.h));
-    if (!plot) return;
-
-    // Enforce ownership
-    if (plot.owner !== who) { log(`${who} can't use that plot — it belongs to ${plot.owner}.`); return; }
-
-    if (!plot.crop) {
-      const kind = p.selected;
-      const crop = CROPS[kind];
-      if (crop && p.invSeeds[kind] > 0) {
-        p.invSeeds[kind]--;
-        plot.crop = createPlant(kind, p); // per-player growth perk applies
-        log(`${who} planted ${crop.name}${plot.crop.mutation?` (mutation: ${plot.crop.mutation.label})`:''}.`);
-        save();
-      } else {
-        log(`${who} has no ${crop ? crop.name + ' ' : ''}seeds. Buy at the shop.`);
+    if (state.challenge && Date.now() < state.challenge.endsAt && dist(p.x + p.w / 2, p.y + p.h / 2, state.challenge.x, state.challenge.y) < state.challenge.r) {
+      state.challenge.progress += 1;
+      log(`${who} revs the crowd (${state.challenge.progress}/${state.challenge.goal}).`);
+      if (state.challenge.progress >= state.challenge.goal) {
+        awardCrew(p, who);
+        state.challenge.endsAt = 0;
+        log('Neon Spotlight challenge cleared!');
       }
       return;
     }
 
-    if (plot.crop.dead) {
-      if (p.money >= REPAIR_COST) { p.money -= REPAIR_COST; plot.crop = null; log(`${who} fixed the plot for ${formatCurrency(REPAIR_COST)}.`); save(); }
-      else { log(`${who} needs ${formatCurrency(REPAIR_COST)} to fix this plot.`); }
+    const bay = activeBays().find(pl => inside(p.x, p.y, p.w, p.h, pl.x, pl.y, pl.w, pl.h));
+    if (!bay) return;
+
+    if (bay.owner !== who) { log(`${who} can't use that bay — it belongs to ${bay.owner}.`); return; }
+
+    if (!bay.build) {
+      const kind = p.selected;
+      const mod = MODS[kind];
+      if (mod && p.inventory[kind] > 0) {
+        p.inventory[kind]--;
+        bay.build = createBuild(kind, p);
+        log(`${who} started installing ${mod.name}${bay.build.tuning ? ` (${bay.build.tuning.label})` : ''}.`);
+        save();
+      } else {
+        log(`${who} has no ${mod ? mod.name + ' ' : ''}kits. Grab them at the Parts Vendor.`);
+      }
       return;
     }
 
-    const st = plantStage(plot.crop);
-    if (st>=1) {
-      const yld = (plot.crop.yield||1);
-      p.bag[plot.crop.kind] = (p.bag[plot.crop.kind]||0) + yld;
-      log(`${who} harvested ${yld} × ${CROPS[plot.crop.kind].name}.`);
-      plot.crop = null; save();
+    if (bay.build.dead) {
+      if (p.credits >= REPAIR_COST) {
+        p.credits -= REPAIR_COST;
+        bay.build = null;
+        log(`${who} cleared the bay for ${formatCredits(REPAIR_COST)}.`);
+        save();
+      } else {
+        log(`${who} needs ${formatCredits(REPAIR_COST)} to clear this bay.`);
+      }
+      return;
+    }
+
+    const progress = buildProgress(bay.build);
+    if (progress >= 1) {
+      const yieldCount = bay.build.yield || 1;
+      p.stash[bay.build.kind] = (p.stash[bay.build.kind] || 0) + yieldCount;
+      log(`${who} finished ${yieldCount} × ${MODS[bay.build.kind].name}.`);
+      if (bay.build.extraLoot) {
+        const bonus = bay.build.extraLoot;
+        p.stash[bonus.kind] = (p.stash[bonus.kind] || 0) + bonus.qty;
+        log(`Bonus drop! ${who} scored ${bonus.qty} × ${MODS[bonus.kind].name}.`);
+      }
+      bay.build = null;
+      save();
     } else {
-      showTooltip(p, plot);
+      showTooltip(p, bay);
     }
   }
 
-  function showTooltip(p, pl) {
-    let txt = 'Growing…';
-    if (pl.crop && pl.crop.dead) {
-      txt = `Rotten. Press Action to fix for ${formatCurrency(REPAIR_COST)}.`;
-    } else if (pl.crop) {
-      const c = pl.crop; const st = Math.min(1, plantStage(c));
-      const secs = Math.max(0, Math.ceil((1-st) * c.growMs / (state.growthMult*1000)));
-      txt = `${CROPS[c.kind].name}: ${(st*100).toFixed(0)}% | ~${secs}s left` + (c.mutation?` | ${c.mutation.label}`:'');
+  function showTooltip(p, bay) {
+    let txt = 'Install in progress…';
+    if (bay.build && bay.build.dead) {
+      txt = `Overheated. Press Action to clear for ${formatCredits(REPAIR_COST)}.`;
+    } else if (bay.build) {
+      const build = bay.build;
+      const progress = Math.min(1, buildProgress(build));
+      const secs = Math.max(0, Math.ceil((1 - progress) * build.installMs / (state.installMult * 1000)));
+      txt = `${MODS[build.kind].name}: ${(progress * 100).toFixed(0)}% | ~${secs}s left` + (build.tuning ? ` | ${build.tuning.label}` : '');
     } else {
-      txt = 'Empty plot';
+      txt = 'Empty bay';
     }
-    tooltip.style.left = (p.x + p.w/2) + 'px';
+    tooltip.style.left = (p.x + p.w / 2) + 'px';
     tooltip.style.top = (p.y) + 'px';
-    tooltip.textContent = txt; tooltip.style.opacity=1;
-    clearTimeout(showTooltip._t); showTooltip._t = setTimeout(()=>tooltip.style.opacity=0, 1600);
+    tooltip.textContent = txt;
+    tooltip.style.opacity = 1;
+    clearTimeout(showTooltip._t);
+    showTooltip._t = setTimeout(() => tooltip.style.opacity = 0, 1600);
   }
 
-  function createPlant(kind, planter) {
-    const base = { kind, plantedAt: Date.now(), growMs: CROPS[kind].growMs, yield:1, sellMult:1, rotChance:0, mutation:null, dead:false };
-    if (planter && planter.pet) {
-      const pet = PETS.find(x=>x.id===planter.pet.id);
-      if (pet) {
-        if (pet.plantGrowth) base.growMs /= pet.plantGrowth;
-        if (pet.randomMutation) {
-          const mut = MUTATIONS[Math.floor(Math.random()*MUTATIONS.length)];
-          base.mutation = { id: mut.id, label: mut.label };
-          mut.effect(base);
+  function createBuild(kind, installer) {
+    const base = {
+      kind,
+      plantedAt: Date.now(),
+      installMs: MODS[kind].installMs,
+      yield: 1,
+      payoutMult: 1,
+      rotChance: 0,
+      tuning: null,
+      dead: false,
+      extraLoot: null,
+    };
+    if (installer && installer.crewMember) {
+      const crew = CREW.find(x => x.id === installer.crewMember.id);
+      if (crew) {
+        if (crew.installSpeed) base.installMs /= crew.installSpeed;
+        if (crew.randomBonus) {
+          const tune = TUNINGS[Math.floor(Math.random() * TUNINGS.length)];
+          base.tuning = { id: tune.id, label: tune.label };
+          tune.effect(base);
+          if (tune.id === 'flashsale') base.rotChance = 0.25;
+          if (Math.random() < 0.35) {
+            const bonusPool = MOD_CATALOG.slice(0, 5);
+            const bonus = bonusPool[Math.floor(Math.random() * bonusPool.length)] || MOD_CATALOG[0];
+            base.extraLoot = { kind: bonus.id, qty: 1 };
+          }
         }
       }
     }
     return base;
   }
 
-  function plantStage(crop) {
-    if (!crop) return 0;
-    if (!crop.dead && crop.rotChance && Math.random()<0.0008) {
-      const progress = (Date.now()-crop.plantedAt) / (crop.growMs/state.growthMult);
-      if (progress>0.5) { crop.dead = true; log(`Oh no! A plant rotted.`); }
+  function buildProgress(build) {
+    if (!build) return 0;
+    if (!build.dead && build.rotChance && Math.random() < 0.0008) {
+      const progress = (Date.now() - build.plantedAt) / (build.installMs / state.installMult);
+      if (progress > 0.5) { build.dead = true; log('A build overheated and stalled.'); }
     }
-    const elapsed = Date.now() - crop.plantedAt;
-    const adjusted = crop.growMs / state.growthMult;
-    return Math.min(1, elapsed/adjusted);
+    const elapsed = Date.now() - build.plantedAt;
+    const adjusted = build.installMs / state.installMult;
+    return Math.min(1, elapsed / adjusted);
   }
 
-  function priceOf(kind, seller) {
-    const base = Math.round(CROPS[kind].sell * state.priceMult);
-    const pet = seller && seller.pet ? PETS.find(x=>x.id===seller.pet.id) : null;
-    const petBoost = pet?.priceMult || 1;
-    return Math.round(base * petBoost * (seller && seller.bonusPriceMult || 1));
+  function payoutOf(kind, builder) {
+    const base = Math.round(MODS[kind].payout * state.payoutMult);
+    const crew = builder && builder.crewMember ? CREW.find(x => x.id === builder.crewMember.id) : null;
+    const crewBoost = crew?.payoutMult || 1;
+    return Math.round(base * crewBoost * (builder && builder.bonusPayoutMult || 1));
   }
 
   function sellAll(p) {
-    let total=0; for (const k of Object.keys(CROPS)) {
-      const n = p.bag[k]||0; if (!n) continue; const val = n * priceOf(k, p); total += val; p.bag[k]=0;
+    let total = 0;
+    for (const id of Object.keys(MODS)) {
+      const qty = p.stash[id] || 0;
+      if (!qty) continue;
+      const value = qty * payoutOf(id, p);
+      total += value;
+      p.stash[id] = 0;
     }
-    p.money += total; save(); return total;
+    p.credits += total;
+    save();
+    return total;
   }
 
-  function generateSeedStock(){
-    seedStock.clear();
-    SEED_CATALOG.forEach((s,i)=>{
-      const prob = 1 - (i/SEED_CATALOG.length)*0.9;
-      if (Math.random() < prob) seedStock.add(s.id);
+  function generateModStock() {
+    modStock.clear();
+    MOD_CATALOG.forEach((mod, i) => {
+      const prob = 1 - (i / MOD_CATALOG.length) * 0.85;
+      if (Math.random() < prob) modStock.add(mod.id);
     });
   }
 
-  function renderSeedShop(){
-    if (!seedListEl) return;
-    seedListEl.innerHTML='';
-    for (const s of SEED_CATALOG){
-      const row=document.createElement('div');
-      row.className='row';
-      const name=document.createElement('span'); name.textContent=seedEmoji(s.id)+" "+s.name;
-      const price=document.createElement('span'); price.textContent=formatCurrency(s.sheckles);
-      row.append(name, price); seedListEl.appendChild(row);
-      const actions=document.createElement('div'); actions.className='row';
-      if (seedStock.has(s.id)){
-        const b1=document.createElement('button'); b1.textContent='Buy P1'; b1.onclick=()=>buySeed('P1', s.id); actions.appendChild(b1);
-        const b2=document.createElement('button'); b2.textContent='Buy P2'; b2.className='p2'; b2.onclick=()=>buySeed('P2', s.id); actions.appendChild(b2);
+  function renderPartsShop() {
+    if (!modListEl) return;
+    modListEl.innerHTML = '';
+    for (const mod of MOD_CATALOG) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const name = document.createElement('span');
+      name.textContent = `${modGlyph(mod.id)} ${mod.name}`;
+      const price = document.createElement('span');
+      price.textContent = formatCredits(mod.cost);
+      row.append(name, price);
+      modListEl.appendChild(row);
+      const actions = document.createElement('div');
+      actions.className = 'row';
+      if (modStock.has(mod.id)) {
+        const b1 = document.createElement('button');
+        b1.textContent = 'Buy P1';
+        b1.onclick = () => buyMod('P1', mod.id);
+        actions.appendChild(b1);
+        const b2 = document.createElement('button');
+        b2.textContent = 'Buy P2';
+        b2.className = 'p2';
+        b2.onclick = () => buyMod('P2', mod.id);
+        actions.appendChild(b2);
       } else {
-        const sold=document.createElement('span'); sold.textContent='Out of stock'; actions.appendChild(sold);
+        const sold = document.createElement('span');
+        sold.textContent = 'Sold out';
+        actions.appendChild(sold);
       }
-      seedListEl.appendChild(actions);
+      modListEl.appendChild(actions);
     }
-    if (state.p2Active) document.querySelectorAll('#seedList .p2').forEach(el=>el.classList.remove('p2'));
+    if (state.p2Active) document.querySelectorAll('#modList .p2').forEach(el => el.classList.remove('p2'));
   }
 
-  function buySeed(who, id){
-    const seed = SEED_CATALOG.find(s=>s.id===id);
+  function buyMod(who, id) {
+    const modData = MOD_CATALOG.find(m => m.id === id);
     const target = playerByName(who);
-    if (!seed || !seedStock.has(id)) { log('Seed not available.'); return; }
-    if (state.shopOpen !== who || !inside(target.x,target.y,target.w,target.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      log(`${who} must be at the Seed Shop to buy seeds.`); return;
+    if (!modData || !modStock.has(id)) { log('Part not available.'); return; }
+    if (state.shopOpen !== who || !inside(target.x, target.y, target.w, target.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
+      log(`${who} must be at the Parts Vendor to buy kits.`);
+      return;
     }
-    if (target.money < seed.sheckles) { log(`${who} can’t afford ${seed.name} (${formatCurrency(seed.sheckles)}).`); return; }
-    target.money -= seed.sheckles;
-    target.invSeeds[id] = (target.invSeeds[id]||0) + 1;
-    log(`${who} bought 1 × ${seed.name} seed.`);
+    if (target.credits < modData.cost) {
+      log(`${who} can’t afford ${modData.name} (${formatCredits(modData.cost)}).`);
+      return;
+    }
+    target.credits -= modData.cost;
+    target.inventory[id] = (target.inventory[id] || 0) + 1;
+    log(`${who} bought ${modData.name}.`);
     save();
   }
-
-  // ---------- WORLD / PET CHALLENGE ----------
-  function maybeStartWorldEvent() {
+  function maybeStartStreetEvent() {
     const now = Date.now();
     if (state.activeEvent && now < state.eventUntil) return;
-    if (state.activeEvent) { state.activeEvent = null; state.priceMult = 1; state.growthMult = 1; }
-    if (!maybeStartWorldEvent.nextAt) maybeStartWorldEvent.nextAt = now + (45000 + Math.random()*30000);
-    if (now < maybeStartWorldEvent.nextAt) return;
-    const evt = WORLD_EVENTS[Math.floor(Math.random()*WORLD_EVENTS.length)];
-    state.activeEvent = evt.id; state.eventUntil = now + evt.dur; evt.apply(state);
-    maybeStartWorldEvent.nextAt = now + evt.dur + (40000 + Math.random()*25000);
+    if (state.activeEvent) {
+      state.activeEvent = null;
+      state.payoutMult = 1;
+      state.installMult = 1;
+    }
+    if (!maybeStartStreetEvent.nextAt) maybeStartStreetEvent.nextAt = now + (45000 + Math.random() * 30000);
+    if (now < maybeStartStreetEvent.nextAt) return;
+    const evt = STREET_EVENTS[Math.floor(Math.random() * STREET_EVENTS.length)];
+    state.activeEvent = evt.id;
+    state.eventUntil = now + evt.dur;
+    evt.apply(state);
+    maybeStartStreetEvent.nextAt = now + evt.dur + (40000 + Math.random() * 25000);
     log(evt.label);
   }
 
-  function maybeSpawnChallenge(){
+  function maybeSpawnChallenge() {
     const now = Date.now();
     if (state.challenge && now < state.challenge.endsAt) return;
-    if (!maybeSpawnChallenge.nextAt) maybeSpawnChallenge.nextAt = now + (50000 + Math.random()*40000);
+    if (!maybeSpawnChallenge.nextAt) maybeSpawnChallenge.nextAt = now + (50000 + Math.random() * 40000);
     if (now < maybeSpawnChallenge.nextAt) return;
-    state.challenge = { x: WORLD.w/2, y: WORLD.h/2, r: 60, goal: 10, progress:0, endsAt: now + 25000 };
-    maybeSpawnChallenge.nextAt = now + 75000 + Math.random()*45000;
-    log('Center Challenge appeared! Stand in the circle and press Action to charge it to 10 before time runs out.');
+    state.challenge = { x: WORLD.w / 2, y: WORLD.h / 2, r: 60, goal: 12, progress: 0, endsAt: now + 28000 };
+    maybeSpawnChallenge.nextAt = now + 80000 + Math.random() * 45000;
+    log('Neon Spotlight ignites! Park inside and hit Action repeatedly to hype the crowd.');
   }
 
-  function awardPet(p, who){
-    // Give a random pet not owned, otherwise coins
-    const ownedIds = new Set((p.pets||[]).map(x=>x.id));
-    const pool = PETS.filter(pt=>!ownedIds.has(pt.id));
-    if (pool.length){
-      const pet = pool[Math.floor(Math.random()*pool.length)];
-      p.pets.push({id:pet.id});
-      p.pet = {id:pet.id, x:p.x-16, y:p.y-16};
-      log(`${who} received a pet: ${describePet(pet)}.`);
+  function awardCrew(p, who) {
+    const ownedIds = new Set((p.crew || []).map(x => x.id));
+    const pool = CREW.filter(member => !ownedIds.has(member.id));
+    if (pool.length) {
+      const crew = pool[Math.floor(Math.random() * pool.length)];
+      p.crew.push({ id: crew.id });
+      p.crewMember = { id: crew.id, x: p.x - 16, y: p.y - 16 };
+      log(`${who} recruited ${describeCrew(crew)}.`);
     } else {
-      p.money += 100; log(`${who} already has all pets. Awarded ${formatCurrency(100)} instead.`);
+      p.credits += 800;
+      log(`${who} already has the full crew. Awarded ${formatCredits(800)} instead.`);
     }
     save();
   }
-
   // ---------- TEXTURES ----------
   const patterns = {};
-  function makeGrassPattern(){
-    const c = document.createElement('canvas'); c.width = 64; c.height = 64; const g = c.getContext('2d');
-    g.fillStyle = '#9fce9f'; g.fillRect(0,0,64,64);
-    for (let i=0;i<120;i++){ g.strokeStyle = 'rgba(30,100,40,0.35)'; g.beginPath(); const x=Math.random()*64, y=Math.random()*64; g.moveTo(x,y); g.lineTo(x+Math.random()*2-1, y-3-Math.random()*3); g.stroke(); }
-    g.fillStyle='rgba(255,255,255,.06)'; for (let i=0;i<25;i++){ g.fillRect(Math.random()*64, Math.random()*64, 1, 1); }
-    return g.createPattern(c,'repeat');
+  function makeAsphaltPattern() {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#0f1015';
+    g.fillRect(0, 0, 64, 64);
+    for (let i = 0; i < 180; i++) {
+      const alpha = 0.1 + Math.random() * 0.2;
+      g.fillStyle = `rgba(255,255,255,${alpha})`;
+      g.fillRect(Math.random() * 64, Math.random() * 64, 1, 1);
+    }
+    for (let i = 0; i < 160; i++) {
+      g.fillStyle = 'rgba(20,20,20,0.6)';
+      g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2);
+    }
+    return g.createPattern(c, 'repeat');
   }
-  function makeSoilPattern(){
-    const c = document.createElement('canvas'); c.width = 48; c.height = 48; const g = c.getContext('2d');
-    g.fillStyle = '#8b5a2b'; g.fillRect(0,0,48,48);
-    g.fillStyle = '#6b3d16'; for (let i=0;i<90;i++){ g.fillRect(Math.random()*48, Math.random()*48, 1, 1); }
-    g.fillStyle = '#a7713a'; for (let i=0;i<40;i++){ g.globalAlpha=0.25; g.beginPath(); g.arc(Math.random()*48, Math.random()*48, Math.random()*1.2, 0, Math.PI*2); g.fill(); g.globalAlpha=1; }
-    return g.createPattern(c,'repeat');
-  }
-  patterns.grass = makeGrassPattern();
-  patterns.soil = makeSoilPattern();
 
-  // ---------- RENDER ----------
+  function makeMetalPattern() {
+    const c = document.createElement('canvas');
+    c.width = 48; c.height = 48;
+    const g = c.getContext('2d');
+    g.fillStyle = '#1d1f2f';
+    g.fillRect(0, 0, 48, 48);
+    g.fillStyle = '#3a3e5a';
+    for (let i = 0; i < 6; i++) {
+      g.fillRect(0, i * 8, 48, 2);
+    }
+    g.globalAlpha = 0.25;
+    g.fillStyle = '#7f88ff';
+    g.fillRect(0, 0, 48, 3);
+    g.fillRect(0, 45, 48, 3);
+    g.globalAlpha = 1;
+    return g.createPattern(c, 'repeat');
+  }
+
+  function makeNeonGridPattern() {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(255, 0, 120, 0.08)';
+    g.fillRect(0, 0, 128, 128);
+    g.strokeStyle = 'rgba(0, 255, 255, 0.15)';
+    g.lineWidth = 2;
+    for (let i = 0; i <= 128; i += 16) {
+      g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 128); g.stroke();
+      g.beginPath(); g.moveTo(0, i); g.lineTo(128, i); g.stroke();
+    }
+    return g.createPattern(c, 'repeat');
+  }
+
+  patterns.asphalt = makeAsphaltPattern();
+  patterns.metal = makeMetalPattern();
+  patterns.neon = makeNeonGridPattern();
+  toggleBtn.onclick = () => {
+    eventsPanel.classList.toggle('open');
+  };
+  window.addEventListener('keydown', e => {
+    if (e.code === 'KeyH') {
+      eventsPanel.classList.toggle('open');
+      e.preventDefault();
+    }
+  });
   function draw() {
-    ctx.clearRect(0,0,cv.width,cv.height);
-    ctx.fillStyle = patterns.grass; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = patterns.asphalt;
+    ctx.fillRect(0, 0, cv.width, cv.height);
 
-    // Vendors
-    drawVendor(VENDORS.shop, 'Seed Shop');
-    drawVendor(VENDORS.sell, 'Sell');
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = patterns.neon;
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.restore();
 
-    // Garden rectangles
-    for (const gdn of GARDENS) {
-      if (gdn.owner==='P2' && !state.p2Active) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.fillRect(gdn.x+2, gdn.y+2, gdn.w, gdn.h);
-      ctx.fillStyle = '#7fb07f'; ctx.fillRect(gdn.x, gdn.y, gdn.w, gdn.h);
-      ctx.strokeStyle = '#234'; ctx.lineWidth = 3; ctx.strokeRect(gdn.x, gdn.y, gdn.w, gdn.h);
-      ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font='bold 22px sans-serif';
-      ctx.fillText(gdn.owner, gdn.x+8, gdn.y+26);
+    // road divider
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    for (let i = 0; i < cv.width; i += 40) {
+      ctx.fillRect(i, WORLD.h / 2 - 4, 24, 8);
     }
 
-    // Plots
-    for (const pl of activePlots()) drawPlot(pl);
+    drawStation(STATIONS.parts, 'Parts Vendor', '#ff4f9f', '🔧');
+    drawStation(STATIONS.race, 'Race Terminal', '#00e5ff', '🏁');
 
-    // Center challenge circle
-    if (state.challenge && Date.now() < state.challenge.endsAt){
-      const ch = state.challenge; const rem = Math.max(0, Math.ceil((ch.endsAt-Date.now())/1000));
-      ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fill();
-      ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 3; ctx.stroke();
-      // progress wedge
-      const p = ch.progress / ch.goal; ctx.beginPath(); ctx.moveTo(ch.x, ch.y); ctx.arc(ch.x, ch.y, ch.r, -Math.PI/2, -Math.PI/2 + Math.PI*2*p);
-      ctx.closePath(); ctx.fillStyle = 'rgba(59,130,246,0.4)'; ctx.fill();
-      ctx.fillStyle = '#111'; ctx.font='16px sans-serif'; ctx.fillText(`Challenge: ${ch.progress}/${ch.goal}  (${rem}s)`, ch.x-90, ch.y- ch.r - 10);
+    for (const garage of GARAGES) {
+      if (garage.owner === 'P2' && !state.p2Active) continue;
+      ctx.save();
+      ctx.shadowColor = garage.owner === 'P1' ? '#00f5ff88' : '#ff2d7588';
+      ctx.shadowBlur = 20;
+      ctx.strokeStyle = garage.owner === 'P1' ? '#00f5ff' : '#ff2d75';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(garage.x, garage.y, garage.w, garage.h);
+      ctx.restore();
+      ctx.fillStyle = 'rgba(12, 14, 28, 0.75)';
+      ctx.fillRect(garage.x, garage.y, garage.w, garage.h);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.font = 'bold 18px "Courier New", monospace';
+      ctx.fillText(`${garage.owner} Garage`, garage.x + 12, garage.y + 28);
     }
 
-    // Players
-    drawPlayer(state.p1, '#2563eb');
-    if (state.p2Active) drawPlayer(state.p2, '#e11d48');
-    drawPet(state.p1);
-    if (state.p2Active) drawPet(state.p2);
+    for (const bay of activeBays()) drawBay(bay);
 
-    // HUD
-    p1moneyEl.textContent = `P1 Money: ${formatCurrency(state.p1.money)}`;
-    const matchPet1 = state.p1.pet ? PETS.find(p=>p.id===state.p1.pet.id) : null;
-    const petName1 = describePet(matchPet1);
-    const invEntries1 = Object.entries(state.p1.invSeeds).filter(([k,v])=>v>0);
-    const inv1 = invEntries1.map(([k,v],i)=>`${i+1}:${k}(${v})`).join(', ') || '—';
-    const bag1 = Object.entries(state.p1.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
-    const sel1 = CROPS[state.p1.selected]?.name || state.p1.selected;
-    p1hud.textContent = `P1 Seeds: ${inv1} | Bag: ${bag1} | Pet: ${petName1} | Selected: ${sel1}`;
+    if (state.challenge && Date.now() < state.challenge.endsAt) {
+      const ch = state.challenge;
+      const rem = Math.max(0, Math.ceil((ch.endsAt - Date.now()) / 1000));
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      const gradient = ctx.createRadialGradient(ch.x, ch.y, 10, ch.x, ch.y, ch.r);
+      gradient.addColorStop(0, 'rgba(0,255,255,0.6)');
+      gradient.addColorStop(1, 'rgba(255,0,150,0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#00f5ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(ch.x, ch.y, ch.r, 0, Math.PI * 2); ctx.stroke();
+      const p = Math.min(1, ch.progress / ch.goal);
+      ctx.beginPath();
+      ctx.moveTo(ch.x, ch.y);
+      ctx.fillStyle = 'rgba(255, 20, 147, 0.6)';
+      ctx.arc(ch.x, ch.y, ch.r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#d1f7ff';
+      ctx.font = '16px "Courier New", monospace';
+      ctx.fillText(`Spotlight: ${ch.progress}/${ch.goal} (${rem}s)`, ch.x - 100, ch.y - ch.r - 12);
+    }
+
+    drawPlayer(state.p1, '#00f5ff');
+    if (state.p2Active) drawPlayer(state.p2, '#ff2d75');
+    drawCrewMember(state.p1);
+    if (state.p2Active) drawCrewMember(state.p2);
+
+    p1moneyEl.textContent = `P1 Credits: ${formatCredits(state.p1.credits)}`;
+    const crew1 = state.p1.crewMember ? CREW.find(c => c.id === state.p1.crewMember.id) : null;
+    const inv1 = Object.entries(state.p1.inventory).filter(([, v]) => v > 0).map(([k, v], i) => `${i + 1}:${k}(${v})`).join(', ') || '—';
+    const stash1 = Object.entries(state.p1.stash).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}`).join(', ') || '—';
+    const sel1 = MODS[state.p1.selected]?.name || state.p1.selected;
+    p1hud.textContent = `P1 Parts: ${inv1} | Builds Ready: ${stash1} | Crew: ${describeCrew(crew1)} | Selected: ${sel1}`;
+
     if (state.p2Active) {
-      p2moneyEl.textContent = `P2 Money: ${formatCurrency(state.p2.money)}`;
-      const matchPet2 = state.p2.pet ? PETS.find(p=>p.id===state.p2.pet.id) : null;
-      const petName2 = describePet(matchPet2);
-      const invEntries2 = Object.entries(state.p2.invSeeds).filter(([k,v])=>v>0);
-      const inv2 = invEntries2.map(([k,v],i)=>`${i+1}:${k}(${v})`).join(', ') || '—';
-      const bag2 = Object.entries(state.p2.bag).filter(([k,v])=>v>0).map(([k,v])=>`${k}:${v}`).join(', ') || '—';
-      const sel2 = CROPS[state.p2.selected]?.name || state.p2.selected;
-      p2hud.textContent = `P2 Seeds: ${inv2} | Bag: ${bag2} | Pet: ${petName2} | Selected: ${sel2}`;
+      p2moneyEl.textContent = `P2 Credits: ${formatCredits(state.p2.credits)}`;
+      const crew2 = state.p2.crewMember ? CREW.find(c => c.id === state.p2.crewMember.id) : null;
+      const inv2 = Object.entries(state.p2.inventory).filter(([, v]) => v > 0).map(([k, v], i) => `${i + 1}:${k}(${v})`).join(', ') || '—';
+      const stash2 = Object.entries(state.p2.stash).filter(([, v]) => v > 0).map(([k, v]) => `${k}:${v}`).join(', ') || '—';
+      const sel2 = MODS[state.p2.selected]?.name || state.p2.selected;
+      p2hud.textContent = `P2 Parts: ${inv2} | Builds Ready: ${stash2} | Crew: ${describeCrew(crew2)} | Selected: ${sel2}`;
     }
 
-    // Log HUD state roughly once per second to help debug bag/seed values
     if (!draw._lastLog || Date.now() - draw._lastLog > 1000) {
       const logData = {
-        p1: { money: state.p1.money, bag: { ...state.p1.bag }, seeds: { ...state.p1.invSeeds } }
+        p1: { credits: state.p1.credits, stash: { ...state.p1.stash }, inventory: { ...state.p1.inventory } },
       };
       if (state.p2Active) {
-        logData.p2 = { money: state.p2.money, bag: { ...state.p2.bag }, seeds: { ...state.p2.invSeeds } };
+        logData.p2 = { credits: state.p2.credits, stash: { ...state.p2.stash }, inventory: { ...state.p2.inventory } };
       }
       console.log('HUD state', logData);
       draw._lastLog = Date.now();
     }
-
-    // Panels visibility
-    shopPanel.style.display = state.shopOpen? 'block':'none';
-    sellPanel.style.display = state.sellOpen? 'block':'none';
-
-    // World event banner
-    if (state.activeEvent) {
-      ctx.fillStyle = '#0008'; ctx.fillRect(cv.width/2-170, 14, 340, 30);
-      ctx.fillStyle = '#fff'; ctx.font = '16px sans-serif';
-      const evt = WORLD_EVENTS.find(e=>e.id===state.activeEvent);
-      const label = evt ? evt.label : '—';
-      ctx.fillText(label, cv.width/2-160, 34);
-    }
   }
 
-  function drawVendor(v, label) {
-    ctx.fillStyle = '#f8f2d0'; ctx.fillRect(v.x, v.y, v.w, v.h);
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.strokeRect(v.x, v.y, v.w, v.h);
-    ctx.fillStyle = '#111'; ctx.font = '16px sans-serif'; ctx.fillText(label, v.x+10, v.y+24);
-  }
-
-  function drawPlot(pl) {
-    ctx.fillStyle = patterns.soil; ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
-    ctx.strokeStyle = '#4b2e12'; ctx.lineWidth = 2; ctx.strokeRect(pl.x, pl.y, pl.w, pl.h);
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1;
-    for (let i=1;i<4;i++){ const yy = pl.y + (pl.h*i/4); ctx.beginPath(); ctx.moveTo(pl.x+3, yy); ctx.lineTo(pl.x+pl.w-3, yy); ctx.stroke(); }
-
-    // Owner badge corner
-    ctx.fillStyle = pl.owner==='P1' ? 'rgba(37,99,235,.25)' : 'rgba(225,29,72,.25)';
-    ctx.fillRect(pl.x, pl.y, 10, 10);
-
-    if (!pl.crop) return;
-    const c = pl.crop; const st = plantStage(c);
-    if (c.dead) { ctx.fillStyle = 'rgba(40,20,10,0.65)'; ctx.fillRect(pl.x+4, pl.y+4, pl.w-8, pl.h-8); return; }
-
-    let scale = 1; if (c.yield===2) scale *= 1.15;
-    const drawer = PLANT_DRAWERS[c.kind] || drawGenericPlant;
-    drawer(pl, st, scale, c);
-  }
-
-  function drawCandyPlant(pl, st, scale, crop){
-    const glitter = !!(crop && crop.mutation && crop.mutation.id==='glitter');
-    const cx = pl.x + pl.w/2; const cy = pl.y + pl.h - 6;
-    const stemH = Math.max(6, st*(pl.h-14)) * scale;
-    ctx.strokeStyle = '#2c6e3f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy-stemH); ctx.stroke();
-    ctx.fillStyle = '#3f9958'; for (let i=0;i<3;i++){ ctx.beginPath(); ctx.ellipse(cx-6+i*6, cy-stemH*0.6 - i*3, 8, 3, i*0.7, 0, Math.PI*2); ctx.fill(); }
-    const r = 6 + st*6 * scale; const bx = cx, by = cy-stemH-2;
-    ctx.fillStyle = '#b06bd3';
-    for (let i=0;i<6;i++){ ctx.beginPath(); ctx.ellipse(bx+Math.cos(i)*r, by+Math.sin(i)*r, 6, 10, i, 0, Math.PI*2); ctx.fill(); }
-    ctx.fillStyle = '#ffd1e6'; ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
-    if (glitter){ drawSparkles(bx, by, r*1.2, 6); }
-  }
-
-  function drawCarrotPlant(pl, st, scale){
-    const cx = pl.x + pl.w/2; const baseY = pl.y + pl.h - 6;
-    const top = Math.max(8, st*(pl.h-14)) * scale;
-    ctx.strokeStyle = '#2f8a3a'; ctx.lineWidth = 2;
-    for (let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(cx, baseY-top); ctx.lineTo(cx-14+i*7, baseY-top-10-Math.random()*6); ctx.stroke(); }
-    const vis = Math.min(1, st*1.2);
-    ctx.fillStyle = '#e67e22';
-    ctx.beginPath(); ctx.moveTo(cx, baseY-4 - vis*18);
-    ctx.lineTo(cx-10*scale, baseY-4);
-    ctx.lineTo(cx+10*scale, baseY-4);
-    ctx.closePath(); ctx.fill();
-  }
-
-  function drawSparkles(cx, cy, radius, count=6) {
-    const t = Date.now() / 250;
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    for (let i=0; i<count; i++) {
-      const angle = t + (Math.PI * 2 * i / count);
-      const x = cx + Math.cos(angle) * radius;
-      const y = cy + Math.sin(angle) * radius;
-      const size = 1.2 + 0.4 * Math.sin(t + i);
-      ctx.fillRect(x, y, size, size);
-    }
-  }
-
-  function drawGenericPlant(pl, st, scale) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(6, growth*(pl.h-18)) * scale;
-    ctx.strokeStyle = '#2f8a3a';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx, baseY - stemH);
-    ctx.stroke();
-    ctx.fillStyle = '#4caf50';
-    ctx.beginPath();
-    ctx.ellipse(cx - 6, baseY - stemH*0.6, 7, 3, -0.4, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + 6, baseY - stemH*0.6, 7, 3, 0.4, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#6abe55';
-    ctx.beginPath();
-    ctx.arc(cx, baseY - stemH - 3, 3 + growth*3*scale, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  function drawStrawberryPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(8, growth*(pl.h-18)) * scale;
-    const sway = Math.sin(Date.now()/400 + cx) * 2;
-    ctx.strokeStyle = '#2f8a3a';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx + sway, baseY - stemH);
-    ctx.stroke();
-    ctx.fillStyle = '#3fa55b';
-    for (let i=0;i<3;i++){
-      const angle = -0.5 + i*0.5;
-      ctx.beginPath();
-      ctx.ellipse(cx + sway + Math.cos(angle)*6, baseY - stemH*0.7 + Math.sin(angle)*4, 7, 3, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    const fruitH = 10 + growth*10*scale;
-    const fruitW = 8 + growth*8*scale;
-    const fx = cx + sway;
-    const fy = baseY - stemH + fruitH*0.2;
-    ctx.fillStyle = '#d62839';
-    ctx.beginPath();
-    ctx.moveTo(fx, fy - fruitH/2);
-    ctx.quadraticCurveTo(fx - fruitW, fy - fruitH/4, fx - fruitW*0.9, fy + fruitH/2);
-    ctx.quadraticCurveTo(fx, fy + fruitH*0.7, fx + fruitW*0.9, fy + fruitH/2);
-    ctx.quadraticCurveTo(fx + fruitW, fy - fruitH/4, fx, fy - fruitH/2);
-    ctx.fill();
-    ctx.fillStyle = '#ffe066';
-    const seeds = 6;
-    for (let i=0;i<seeds;i++){
-      const angle = (i/seeds) * Math.PI * 2;
-      const sx = fx + Math.cos(angle) * fruitW * 0.6;
-      const sy = fy + Math.sin(angle) * fruitH * 0.5;
-      ctx.beginPath();
-      ctx.ellipse(sx, sy, 1.2, 2, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(fx, fy - fruitH*0.2, fruitW*0.9, 6);
-    }
-  }
-
-  function drawBlueberryPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const bushH = Math.max(10, growth*(pl.h-20)) * scale;
-    ctx.fillStyle = '#35663a';
-    ctx.beginPath();
-    ctx.ellipse(cx, baseY - bushH*0.5, 12*scale, bushH*0.6, 0, 0, Math.PI*2);
-    ctx.fill();
-    const berryCount = 5 + Math.floor(growth*4);
-    const t = Date.now()/500;
-    for (let i=0;i<berryCount;i++){
-      const angle = (i/berryCount) * Math.PI * 2;
-      const radius = 6 + growth*6;
-      const bx = cx + Math.cos(angle + t*0.2) * radius * 0.35;
-      const by = baseY - bushH*0.5 + Math.sin(angle + t*0.25) * radius * 0.45;
-      const size = 3 + growth*2*scale;
-      ctx.fillStyle = '#3f5bc0';
-      ctx.beginPath();
-      ctx.arc(bx, by, size, 0, Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = '#8aa6ff';
-      ctx.beginPath();
-      ctx.arc(bx - size*0.3, by - size*0.3, size*0.3, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - bushH*0.5, 10*scale, 5);
-    }
-  }
-
-  function drawOrangeTulipPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(8, growth*(pl.h-18)) * scale;
-    const sway = Math.sin(Date.now()/350 + cx) * 1.5 * (0.6 + growth*0.4);
-    ctx.strokeStyle = '#2f8a3a';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx + sway, baseY - stemH);
-    ctx.stroke();
-    ctx.fillStyle = '#3fa55b';
-    ctx.beginPath(); ctx.ellipse(cx - 8, baseY - stemH*0.5, 8, 3, -0.5, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(cx + 8, baseY - stemH*0.5, 8, 3, 0.5, 0, Math.PI*2); ctx.fill();
-    const bloomY = baseY - stemH - 2;
-    const petal = 8 + growth*10*scale;
-    ctx.fillStyle = '#ff8a3c';
-    for (let i=0;i<4;i++){
-      const angle = i * (Math.PI/2);
-      ctx.beginPath();
-      ctx.ellipse(cx + sway + Math.cos(angle)*4, bloomY + Math.sin(angle)*4, petal*0.35, petal*0.8, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.fillStyle = '#ffd166';
-    ctx.beginPath(); ctx.arc(cx + sway, bloomY, petal*0.3, 0, Math.PI*2); ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx + sway, bloomY, petal, 6);
-    }
-  }
-
-  function drawTomatoPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(12, growth*(pl.h-16)) * scale;
-    const sway = Math.sin(Date.now()/420 + baseY) * 2;
-    ctx.strokeStyle = '#2e7d32';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(cx-3, baseY);
-    ctx.bezierCurveTo(cx-4, baseY - stemH*0.3, cx+sway, baseY - stemH*0.5, cx, baseY - stemH);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx+3, baseY);
-    ctx.bezierCurveTo(cx+4, baseY - stemH*0.3, cx+sway, baseY - stemH*0.7, cx+2, baseY - stemH*1.05);
-    ctx.stroke();
-    ctx.fillStyle = '#3fa55b';
-    for (let i=0;i<3;i++){
-      ctx.beginPath();
-      ctx.ellipse(cx - 10 + i*10, baseY - stemH*0.6 - i*4, 7, 3, 0.2*i, 0, Math.PI*2);
-      ctx.fill();
-    }
-    const fruitCount = 3;
-    for (let i=0;i<fruitCount;i++){
-      const fx = cx + (i-1)*8;
-      const fy = baseY - stemH*0.45 + Math.sin(Date.now()/300 + i) * 3;
-      const size = 5 + growth*5*scale;
-      ctx.fillStyle = '#d6453d';
-      ctx.beginPath();
-      ctx.arc(fx, fy, size, 0, Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = '#8bc34a';
-      ctx.beginPath();
-      ctx.arc(fx, fy - size*0.7, size*0.3, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - stemH*0.4, 12*scale, 6);
-    }
-  }
-
-  function drawCornPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stalkH = Math.max(14, growth*(pl.h-12)) * scale;
-    ctx.strokeStyle = '#3b8e2f';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx, baseY - stalkH);
-    ctx.stroke();
-    ctx.fillStyle = '#3fa55b';
-    for (let i=0;i<3;i++){
-      const leafY = baseY - stalkH*(0.3 + i*0.2);
-      ctx.beginPath();
-      ctx.ellipse(cx - 10, leafY, 9, 3, -0.4, 0, Math.PI*2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(cx + 10, leafY - 6, 9, 3, 0.4, 0, Math.PI*2);
-      ctx.fill();
-    }
-    const earH = Math.max(10, stalkH*0.45);
-    const earY = baseY - stalkH*0.55;
-    ctx.fillStyle = '#f3d250';
-    ctx.beginPath();
-    ctx.ellipse(cx, earY, 6*scale, earH*0.4, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#d1a520';
-    ctx.lineWidth = 1;
-    for (let i=0;i<4;i++){
-      const y = earY - earH*0.3 + i*(earH*0.2);
-      ctx.beginPath();
-      ctx.moveTo(cx - 5*scale, y);
-      ctx.lineTo(cx + 5*scale, y);
-      ctx.stroke();
-    }
-    const tasselY = baseY - stalkH - 6;
-    ctx.strokeStyle = '#c9c141';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY - stalkH);
-    ctx.lineTo(cx, tasselY);
-    ctx.stroke();
-    for (let i=0;i<4;i++){
-      ctx.beginPath();
-      ctx.moveTo(cx, tasselY);
-      ctx.lineTo(cx - 6 + i*4, tasselY - 8);
-      ctx.stroke();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, earY, 10*scale, 6);
-    }
-  }
-
-  function drawDaffodilPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(10, growth*(pl.h-14)) * scale;
-    const sway = Math.sin(Date.now()/360 + cx) * 1.5;
-    ctx.strokeStyle = '#3a9a45';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx + sway, baseY - stemH);
-    ctx.stroke();
-    ctx.fillStyle = '#54c26f';
-    ctx.beginPath();
-    ctx.moveTo(cx - 6, baseY);
-    ctx.quadraticCurveTo(cx - 14, baseY - stemH*0.4, cx - 6, baseY - stemH*0.85);
-    ctx.quadraticCurveTo(cx - 4, baseY - stemH*0.65, cx - 6, baseY);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(cx + 6, baseY);
-    ctx.quadraticCurveTo(cx + 14, baseY - stemH*0.4, cx + 4, baseY - stemH*0.85);
-    ctx.quadraticCurveTo(cx + 2, baseY - stemH*0.65, cx + 6, baseY);
-    ctx.fill();
-    const bloomY = baseY - stemH - 2;
-    const petal = 6 + growth*6*scale;
-    ctx.fillStyle = '#ffe066';
-    for (let i=0;i<6;i++){
-      const angle = i * (Math.PI/3);
-      ctx.beginPath();
-      ctx.ellipse(cx + sway + Math.cos(angle)*petal, bloomY + Math.sin(angle)*petal, petal*0.4, petal*0.8, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.fillStyle = '#ffbe0b';
-    ctx.beginPath();
-    ctx.arc(cx + sway, bloomY, petal*0.5, 0, Math.PI*2);
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx + sway, bloomY, petal, 6);
-    }
-  }
-
-  function drawWatermelonPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    ctx.strokeStyle = '#2f7f3f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(pl.x + 6, baseY - 6);
-    ctx.bezierCurveTo(pl.x + 10, baseY - 12, cx, baseY - 12 - growth*4, pl.x + pl.w - 6, baseY - 6);
-    ctx.stroke();
-    ctx.fillStyle = '#4caf50';
-    for (let i=0;i<3;i++){
-      ctx.beginPath();
-      ctx.ellipse(pl.x + 8 + i*10, baseY - 10, 7, 3, i*0.4, 0, Math.PI*2);
-      ctx.fill();
-    }
-    const fruitW = 12 + growth*20*scale;
-    const fruitH = 8 + growth*10*scale;
-    const fy = baseY - fruitH*0.5;
-    ctx.fillStyle = '#1b5e20';
-    ctx.beginPath();
-    ctx.ellipse(cx, fy, fruitW, fruitH, 0, Math.PI*0.1, Math.PI*1.9);
-    ctx.fill();
-    ctx.strokeStyle = '#3ddc84';
-    ctx.lineWidth = 2;
-    for (let i=-2;i<=2;i++){
-      ctx.beginPath();
-      ctx.moveTo(cx + i*fruitW*0.3, fy - fruitH*0.8);
-      ctx.lineTo(cx + i*fruitW*0.3, fy + fruitH*0.8);
-      ctx.stroke();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, fy, fruitW, 7);
-    }
-  }
-
-  function drawPumpkinPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const vineY = baseY - 10;
-    ctx.strokeStyle = '#2f7f3f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(pl.x + 6, vineY);
-    ctx.bezierCurveTo(pl.x + 14, vineY - 8, cx - 6, vineY - 6, cx, vineY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx, vineY);
-    ctx.bezierCurveTo(cx + 6, vineY + 4, pl.x + pl.w - 10, vineY - 4, pl.x + pl.w - 6, vineY - 2);
-    ctx.stroke();
-    const pumpW = 12 + growth*22*scale;
-    const pumpH = 8 + growth*16*scale;
-    ctx.fillStyle = '#ff8c42';
-    for (let i=-1;i<=1;i++){
-      const factor = 1 - Math.abs(i)*0.25;
-      ctx.beginPath();
-      ctx.ellipse(cx + i*pumpW*0.35, baseY - 6, pumpW*0.35*factor, pumpH*0.5, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.strokeStyle = '#d95d0e';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY - pumpH*0.8);
-    ctx.lineTo(cx, baseY - pumpH - 2);
-    ctx.stroke();
-    ctx.fillStyle = '#4caf50';
-    ctx.beginPath();
-    ctx.ellipse(cx, baseY - pumpH - 4, 4, 2, 0.2, 0, Math.PI*2);
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - 6, pumpW, 6);
-    }
-  }
-
-  function drawApplePlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const trunkH = Math.max(12, growth*(pl.h-18)) * scale;
-    ctx.fillStyle = '#8d5a2b';
-    ctx.fillRect(cx - 3, baseY - trunkH, 6, trunkH);
-    const canopyR = 12 + growth*12*scale;
-    const canopyY = baseY - trunkH - canopyR*0.3;
-    ctx.fillStyle = '#3fa55b';
-    ctx.beginPath();
-    ctx.ellipse(cx, canopyY, canopyR, canopyR*0.7, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#2d7c3f';
-    ctx.beginPath();
-    ctx.ellipse(cx - canopyR*0.6, canopyY + 3, canopyR*0.6, canopyR*0.5, 0.2, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + canopyR*0.6, canopyY + 1, canopyR*0.6, canopyR*0.5, -0.2, 0, Math.PI*2);
-    ctx.fill();
-    const appleSize = 2.5 + growth*2.5*scale;
-    for (let i=0;i<3;i++){
-      const ax = cx - canopyR*0.4 + i*(canopyR*0.4);
-      const ay = canopyY + Math.sin(Date.now()/500 + i) * 3;
-      ctx.fillStyle = '#e53935';
-      ctx.beginPath();
-      ctx.arc(ax, ay, appleSize, 0, Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = '#6ab04c';
-      ctx.beginPath();
-      ctx.arc(ax, ay - appleSize, appleSize*0.3, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, canopyY, canopyR, 7);
-    }
-  }
-
-  function drawBambooPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stalkH = Math.max(12, growth*(pl.h-10)) * scale;
-    const segments = 4;
-    const segH = stalkH / segments;
-    ctx.fillStyle = '#a5d152';
-    for (let i=0;i<segments;i++){
-      const top = baseY - segH*(i+1);
-      ctx.fillRect(cx - 4, top, 8, segH - 1);
-      ctx.fillStyle = '#97c246';
-      ctx.fillRect(cx - 4, top + segH - 2, 8, 2);
-      ctx.fillStyle = '#a5d152';
-    }
-    ctx.fillStyle = '#7cb342';
-    ctx.fillRect(cx - 5, baseY - stalkH, 10, 3);
-    ctx.strokeStyle = '#3fa55b';
-    ctx.lineWidth = 2;
-    for (let i=0;i<segments;i++){
-      const y = baseY - segH*(i+0.5);
-      const dir = i % 2 === 0 ? 1 : -1;
-      const offset = dir * (8 + growth*4);
-      ctx.beginPath();
-      ctx.moveTo(cx, y);
-      ctx.lineTo(cx + offset, y - 6);
-      ctx.stroke();
-      ctx.fillStyle = '#6dc070';
-      ctx.beginPath();
-      ctx.ellipse(cx + offset, y - 8, 8, 3, dir>0?0.4:-0.4, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - stalkH*0.6, 12*scale, 6);
-    }
-  }
-
-  function drawCoconutPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const trunkH = Math.max(14, growth*(pl.h-10)) * scale;
-    ctx.fillStyle = '#9c6644';
-    ctx.beginPath();
-    ctx.moveTo(cx - 4, baseY);
-    ctx.lineTo(cx + 4, baseY);
-    ctx.lineTo(cx + 2, baseY - trunkH);
-    ctx.lineTo(cx - 2, baseY - trunkH);
-    ctx.closePath();
-    ctx.fill();
-    const topY = baseY - trunkH;
-    const leafLen = (18 + growth*10) * scale;
-    ctx.strokeStyle = '#2e8b57';
-    ctx.lineWidth = 2;
-    for (let i=0;i<5;i++){
-      const angle = -Math.PI/2 + i*(Math.PI/6) - Math.PI/6;
-      ctx.beginPath();
-      ctx.moveTo(cx, topY);
-      ctx.quadraticCurveTo(cx + Math.cos(angle)*leafLen*0.6, topY + Math.sin(angle)*leafLen*0.4, cx + Math.cos(angle)*leafLen, topY + Math.sin(angle)*leafLen);
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#654321';
-    const nut = 3 + growth*3*scale;
-    ctx.beginPath(); ctx.arc(cx - 4, topY + 6, nut, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 4, topY + 4, nut*0.9, 0, Math.PI*2); ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, topY + 4, leafLen*0.4, 5);
-    }
-  }
-
-  function drawCactusPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const height = Math.max(14, growth*(pl.h-10)) * scale;
-    const bodyW = 10 * scale;
-    ctx.fillStyle = '#2f9e44';
-    ctx.beginPath();
-    ctx.moveTo(cx - bodyW, baseY);
-    ctx.lineTo(cx - bodyW, baseY - height*0.6);
-    ctx.quadraticCurveTo(cx - bodyW, baseY - height, cx, baseY - height);
-    ctx.quadraticCurveTo(cx + bodyW, baseY - height, cx + bodyW, baseY - height*0.6);
-    ctx.lineTo(cx + bodyW, baseY);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(cx - bodyW*0.9, baseY - height*0.45);
-    ctx.quadraticCurveTo(cx - bodyW*1.6, baseY - height*0.7, cx - bodyW*1.3, baseY - height*0.2);
-    ctx.quadraticCurveTo(cx - bodyW*1.1, baseY - height*0.05, cx - bodyW*0.6, baseY - height*0.2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(cx + bodyW*0.9, baseY - height*0.55);
-    ctx.quadraticCurveTo(cx + bodyW*1.5, baseY - height*0.8, cx + bodyW*1.2, baseY - height*0.3);
-    ctx.quadraticCurveTo(cx + bodyW, baseY - height*0.1, cx + bodyW*0.6, baseY - height*0.25);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
-    for (let i=0;i<5;i++){
-      ctx.beginPath();
-      ctx.moveTo(cx - bodyW + i*bodyW*0.4, baseY - height + 4);
-      ctx.lineTo(cx - bodyW + i*bodyW*0.4, baseY);
-      ctx.stroke();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - height*0.4, bodyW*1.2, 5);
-    }
-  }
-
-  function drawDragonFruitPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(10, growth*(pl.h-18)) * scale;
-    ctx.fillStyle = '#2c7a3b';
-    ctx.beginPath();
-    ctx.moveTo(cx - 3, baseY);
-    ctx.lineTo(cx - 3, baseY - stemH);
-    ctx.lineTo(cx + 3, baseY - stemH);
-    ctx.lineTo(cx + 3, baseY);
-    ctx.closePath();
-    ctx.fill();
-    const fruitH = 12 + growth*12*scale;
-    const fruitW = 8 + growth*8*scale;
-    const fy = baseY - stemH - fruitH*0.4;
-    ctx.fillStyle = '#d81b60';
-    ctx.beginPath();
-    ctx.ellipse(cx, fy, fruitW, fruitH, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#8bc34a';
-    ctx.lineWidth = 2;
-    for (let i=0;i<6;i++){
-      const angle = i * (Math.PI/3);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(angle)*fruitW*0.7, fy + Math.sin(angle)*fruitH*0.7);
-      ctx.lineTo(cx + Math.cos(angle)*fruitW*1.1, fy + Math.sin(angle)*fruitH*1.1);
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#6ab04c';
-    for (let i=0;i<4;i++){
-      const angle = i*(Math.PI/2) + Math.PI/4;
-      ctx.beginPath();
-      ctx.ellipse(cx + Math.cos(angle)*fruitW*0.35, fy - fruitH*0.4 + Math.sin(angle)*fruitH*0.6, 3, 6, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, fy, fruitW*1.1, 7);
-    }
-  }
-
-  function drawMangoPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const trunkH = Math.max(10, growth*(pl.h-16)) * scale;
-    ctx.fillStyle = '#8d5a2b';
-    ctx.fillRect(cx - 2, baseY - trunkH, 4, trunkH);
-    const canopyR = 10 + growth*14*scale;
-    const canopyY = baseY - trunkH - canopyR*0.2;
-    ctx.fillStyle = '#2e7d32';
-    ctx.beginPath();
-    ctx.ellipse(cx, canopyY, canopyR, canopyR*0.7, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#3fa55b';
-    ctx.beginPath();
-    ctx.ellipse(cx - canopyR*0.5, canopyY + 2, canopyR*0.6, canopyR*0.5, -0.3, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + canopyR*0.5, canopyY + 2, canopyR*0.6, canopyR*0.5, 0.3, 0, Math.PI*2);
-    ctx.fill();
-    const fruitCount = 2 + Math.round(growth);
-    ctx.fillStyle = '#ffb347';
-    for (let i=0;i<fruitCount;i++){
-      const angle = (i/(fruitCount)) * Math.PI - Math.PI/2;
-      const fx = cx + Math.cos(angle) * canopyR * 0.5;
-      const fy = canopyY + Math.sin(angle) * canopyR * 0.6 + 4;
-      const size = 3 + growth*3*scale;
-      ctx.beginPath();
-      ctx.ellipse(fx, fy, size*0.7, size, 0.2, 0, Math.PI*2);
-      ctx.fill();
-      ctx.strokeStyle = '#f0932b';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(fx, fy - size);
-      ctx.lineTo(fx, fy - size - 3);
-      ctx.stroke();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, canopyY, canopyR, 6);
-    }
-  }
-
-  function drawGrapePlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const trellis = Math.max(10, growth*(pl.h-18)) * scale;
-    ctx.strokeStyle = '#8d5a2b';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(cx - 12, baseY);
-    ctx.lineTo(cx + 12, baseY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx - 12, baseY - trellis*0.6);
-    ctx.lineTo(cx + 12, baseY - trellis*0.6);
-    ctx.stroke();
-    ctx.strokeStyle = '#3f8f46';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.bezierCurveTo(cx - 6, baseY - trellis*0.3, cx + 4, baseY - trellis*0.6, cx - 2, baseY - trellis);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx - 6, baseY - trellis*0.4);
-    ctx.bezierCurveTo(cx - 12, baseY - trellis*0.7, cx + 6, baseY - trellis*0.6, cx + 2, baseY - trellis*1.05);
-    ctx.stroke();
-    const clusterR = 4 + growth*6*scale;
-    const clusterX = cx;
-    const clusterY = baseY - trellis*0.5;
-    ctx.fillStyle = '#7b2cbf';
-    const berries = 8;
-    for (let i=0;i<berries;i++){
-      const angle = (i/berries) * Math.PI * 2;
-      const bx = clusterX + Math.cos(angle) * clusterR * 0.6;
-      const by = clusterY + Math.sin(angle) * clusterR * 0.8;
-      const size = 2 + growth*2*scale * (0.8 + 0.2*Math.sin(i));
-      ctx.beginPath();
-      ctx.arc(bx, by, size, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.fillStyle = '#b794f4';
-    ctx.beginPath();
-    ctx.arc(clusterX, clusterY - clusterR*0.4, clusterR*0.4, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#3fa55b';
-    ctx.beginPath();
-    ctx.ellipse(clusterX - clusterR, clusterY - clusterR, 6, 3, -0.4, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(clusterX + clusterR, clusterY - clusterR*0.6, 6, 3, 0.4, 0, Math.PI*2);
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(clusterX, clusterY, clusterR*1.4, 6);
-    }
-  }
-
-  function drawMushroomPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stalkH = Math.max(6, growth*(pl.h-22)) * scale;
-    ctx.fillStyle = '#f3e5ab';
-    ctx.beginPath();
-    ctx.moveTo(cx - 4, baseY);
-    ctx.lineTo(cx + 4, baseY);
-    ctx.lineTo(cx + 3, baseY - stalkH);
-    ctx.lineTo(cx - 3, baseY - stalkH);
-    ctx.closePath();
-    ctx.fill();
-    const capW = 14 + growth*14*scale;
-    const capH = 8 + growth*6*scale;
-    const capY = baseY - stalkH;
-    ctx.fillStyle = '#d95d5d';
-    ctx.beginPath();
-    ctx.ellipse(cx, capY, capW, capH, 0, Math.PI, 0);
-    ctx.fill();
-    ctx.fillStyle = '#f5d6a0';
-    ctx.beginPath();
-    ctx.ellipse(cx, capY - capH*0.2, capW*0.6, capH*0.5, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#fff8dc';
-    for (let i=0;i<5;i++){
-      ctx.beginPath();
-      ctx.arc(cx - capW*0.6 + i*capW*0.3, capY - capH*0.4, 2, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, capY - capH*0.3, capW, 5);
-    }
-  }
-
-  function drawPepperPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(10, growth*(pl.h-18)) * scale;
-    const sway = Math.sin(Date.now()/320 + cx) * 2;
-    ctx.strokeStyle = '#2f8a3a';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx + sway, baseY - stemH);
-    ctx.stroke();
-    ctx.fillStyle = '#3fa55b';
-    ctx.beginPath(); ctx.ellipse(cx - 6, baseY - stemH*0.6, 7, 3, -0.5, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(cx + 6, baseY - stemH*0.4, 7, 3, 0.5, 0, Math.PI*2); ctx.fill();
-    const pepperH = 10 + growth*10*scale;
-    const pepperW = 5 + growth*4*scale;
-    const fx = cx + sway;
-    const fy = baseY - stemH + pepperH*0.1;
-    ctx.fillStyle = '#e5383b';
-    ctx.beginPath();
-    ctx.moveTo(fx, fy - pepperH/2);
-    ctx.bezierCurveTo(fx - pepperW, fy - pepperH/2, fx - pepperW, fy + pepperH/2, fx, fy + pepperH/2);
-    ctx.bezierCurveTo(fx + pepperW, fy + pepperH/2, fx + pepperW, fy - pepperH/2, fx, fy - pepperH/2);
-    ctx.fill();
-    ctx.fillStyle = '#3fa55b';
-    ctx.beginPath();
-    ctx.arc(fx, fy - pepperH/2, 3, 0, Math.PI*2);
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(fx, fy, pepperH, 5);
-    }
-  }
-
-  function drawCacaoPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const trunkH = Math.max(14, growth*(pl.h-16)) * scale;
-    ctx.fillStyle = '#7b4b2a';
-    ctx.fillRect(cx - 3, baseY - trunkH, 6, trunkH);
-    const canopyY = baseY - trunkH + 6;
-    ctx.fillStyle = '#2e7d32';
-    ctx.beginPath();
-    ctx.ellipse(cx, canopyY - 8, 16*scale, 10*scale, 0, 0, Math.PI*2);
-    ctx.fill();
-    const podCount = 3;
-    ctx.fillStyle = '#c27c59';
-    for (let i=0;i<podCount;i++){
-      const angle = -Math.PI/4 + i*(Math.PI/4);
-      const px = cx + Math.cos(angle)*8;
-      const py = canopyY - 2 + Math.sin(angle)*6;
-      const podL = 6 + growth*4*scale;
-      ctx.beginPath();
-      ctx.ellipse(px, py, podL*0.4, podL*0.9, angle, 0, Math.PI*2);
-      ctx.fill();
-      ctx.strokeStyle = '#8e4d2c';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(px - Math.cos(angle)*podL*0.4, py - Math.sin(angle)*podL*0.4);
-      ctx.lineTo(px + Math.cos(angle)*podL*0.4, py + Math.sin(angle)*podL*0.4);
-      ctx.stroke();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, canopyY - 4, 14*scale, 6);
-    }
-  }
-
-  function drawBeanstalkPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const height = Math.max(16, growth*(pl.h-8)) * scale;
-    const segments = 6;
-    ctx.strokeStyle = '#4caf50';
+  function drawStation(st, label, color, icon) {
+    ctx.save();
+    ctx.shadowColor = color + '55';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = 'rgba(10, 12, 24, 0.85)';
+    ctx.fillRect(st.x, st.y, st.w, st.h);
+    ctx.strokeStyle = color;
     ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    for (let i=1;i<=segments;i++){
-      const y = baseY - height * (i/segments);
-      const offset = Math.sin(i/segments * Math.PI * 1.5 + Date.now()/600) * 8;
-      ctx.lineTo(cx + offset, y);
-    }
-    ctx.stroke();
-    ctx.fillStyle = '#6fcf6f';
-    for (let i=0;i<segments;i++){
-      const y = baseY - height*(i/segments);
-      const offset = Math.sin(i*0.6 + Date.now()/600) * 8;
-      ctx.beginPath();
-      ctx.ellipse(cx + offset, y - height/(segments*2), 9, 4, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - height*0.5, height*0.4, 7);
-    }
+    ctx.strokeRect(st.x, st.y, st.w, st.h);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = 'bold 18px "Courier New", monospace';
+    ctx.fillStyle = color;
+    ctx.fillText(icon, st.x + 12, st.y + 28);
+    ctx.fillStyle = '#f0f6ff';
+    ctx.fillText(label, st.x + 44, st.y + 28);
+    ctx.font = '12px "Courier New", monospace';
+    ctx.fillStyle = 'rgba(225, 235, 255, 0.7)';
+    ctx.fillText('Action to interact', st.x + 12, st.y + st.h - 16);
+    ctx.restore();
   }
 
-  function drawEmberLilyPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(10, growth*(pl.h-18)) * scale;
-    ctx.strokeStyle = '#2f8a3a';
+  function drawBay(bay) {
+    ctx.save();
+    ctx.translate(bay.x, bay.y);
+    ctx.fillStyle = patterns.metal;
+    ctx.fillRect(0, 0, bay.w, bay.h);
+    ctx.strokeStyle = bay.owner === 'P1' ? 'rgba(0,245,255,0.7)' : 'rgba(255,45,117,0.7)';
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx, baseY - stemH);
-    ctx.stroke();
-    const bloomY = baseY - stemH - 2;
-    const petalL = 8 + growth*10*scale;
-    const flicker = 0.6 + 0.4*Math.abs(Math.sin(Date.now()/300));
-    ctx.fillStyle = `rgba(255,99,71,${0.75 + 0.2*Math.sin(Date.now()/400)})`;
-    for (let i=0;i<5;i++){
-      const angle = -Math.PI/2 + i*(Math.PI*2/5);
-      ctx.beginPath();
-      ctx.moveTo(cx, bloomY);
-      ctx.quadraticCurveTo(cx + Math.cos(angle)*petalL*0.3, bloomY + Math.sin(angle)*petalL*0.3, cx + Math.cos(angle)*petalL*flicker, bloomY + Math.sin(angle)*petalL*flicker);
-      ctx.lineTo(cx, bloomY);
-      ctx.fill();
+    ctx.strokeRect(0, 0, bay.w, bay.h);
+
+    if (!bay.build) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.setLineDash([6, 6]);
+      ctx.strokeRect(6, 6, bay.w - 12, bay.h - 12);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(8, bay.h - 28, bay.w - 16, 18);
+    } else {
+      drawBuild(bay, bay.build);
     }
-    ctx.fillStyle = '#ffde7d';
-    ctx.beginPath();
-    ctx.arc(cx, bloomY + 1, 3 + growth*2*scale, 0, Math.PI*2);
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, bloomY, petalL, 7);
-    }
+    ctx.restore();
   }
 
-  function drawSugarApplePlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(12, growth*(pl.h-18)) * scale;
-    ctx.fillStyle = '#8d5a2b';
-    ctx.fillRect(cx - 2, baseY - stemH, 4, stemH);
-    const leafY = baseY - stemH + 4;
-    ctx.fillStyle = '#3fa55b';
-    for (let i=0;i<4;i++){
-      const angle = -Math.PI/4 + i*(Math.PI/6);
-      ctx.beginPath();
-      ctx.ellipse(cx + Math.cos(angle)*8, leafY + Math.sin(angle)*6, 7, 3, angle, 0, Math.PI*2);
-      ctx.fill();
+  function drawBuild(bay, build) {
+    const progress = Math.min(1, buildProgress(build));
+    const def = MODS[build.kind] || { palette: ['#ff4f9f', '#ffe066', '#111'], name: build.kind };
+    const palette = def.palette || ['#ff4f9f', '#ffe066', '#111'];
+    const [body, accent, shadow] = [palette[0], palette[1] || '#ffe066', palette[2] || '#0b0b0b'];
+    const x = 8;
+    const y = 10;
+    const w = bay.w - 16;
+    const h = bay.h - 32;
+    const liftY = bay.h - 28;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(x - 4, liftY + 18, w + 8, 6);
+
+    ctx.fillStyle = 'rgba(20, 26, 52, 0.85)';
+    ctx.fillRect(x, liftY, w, 18);
+    ctx.fillStyle = '#1f293a';
+    ctx.fillRect(x + 6, liftY + 4, w - 12, 6);
+    ctx.fillStyle = '#162235';
+    ctx.fillRect(x + 6, liftY + 10, w - 12, 6);
+
+    const carHeight = h * 0.6;
+    const carY = liftY - carHeight - 6 - (1 - progress) * 20;
+    ctx.fillStyle = shadow;
+    ctx.fillRect(x + 4, carY + carHeight - 4, w - 8, 6);
+    ctx.fillStyle = body;
+    ctx.fillRect(x, carY, w, carHeight);
+    ctx.fillStyle = accent;
+    ctx.fillRect(x + 6, carY + 6, w - 12, carHeight / 2);
+    ctx.fillStyle = '#0d0d17';
+    ctx.fillRect(x + 10, carY + carHeight / 2 - 6, w - 20, carHeight / 3);
+    ctx.fillStyle = '#a5f3ff';
+    ctx.fillRect(x + 12, carY + carHeight / 2 - 2, w - 24, carHeight / 5);
+
+    ctx.fillStyle = '#10131f';
+    ctx.fillRect(x + 4, carY + carHeight - 8, w - 8, 6);
+    ctx.fillStyle = '#999';
+    ctx.fillRect(x + 8, carY + carHeight - 6, w - 16, 4);
+
+    const headlightColor = progress >= 1 ? '#fffbe6' : '#2bff88';
+    ctx.fillStyle = headlightColor;
+    ctx.fillRect(x + 10, carY + 4, 10, 6);
+    ctx.fillRect(x + w - 20, carY + 4, 10, 6);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(x, carY - 8, w * progress, 4);
+
+    if (build.tuning) {
+      drawSparkles(bay.x + bay.w / 2, bay.y + carY + carHeight / 2, 24, 6);
     }
-    const fruitR = 6 + growth*8*scale;
-    const fy = baseY - stemH + fruitR;
-    ctx.fillStyle = '#74c69d';
-    ctx.beginPath();
-    ctx.ellipse(cx, fy, fruitR, fruitR*0.9, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#52b788';
-    ctx.lineWidth = 1;
-    for (let i=0;i<5;i++){
-      const angle = i * (Math.PI*2/5);
+
+    if (build.dead) {
+      ctx.fillStyle = 'rgba(255,0,70,0.4)';
+      ctx.fillRect(0, 0, bay.w, bay.h);
+      ctx.strokeStyle = '#ff2255';
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(cx, fy);
-      ctx.lineTo(cx + Math.cos(angle)*fruitR*0.9, fy + Math.sin(angle)*fruitR*0.9);
+      ctx.moveTo(6, 6); ctx.lineTo(bay.w - 6, bay.h - 6);
+      ctx.moveTo(bay.w - 6, 6); ctx.lineTo(6, bay.h - 6);
       ctx.stroke();
     }
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, fy, fruitR*1.1, 6);
+
+    ctx.fillStyle = 'rgba(15, 20, 32, 0.9)';
+    ctx.fillRect(x, bay.h - 24, w, 14);
+    ctx.fillStyle = '#66f7ff';
+    ctx.fillRect(x + 2, bay.h - 22, (w - 4) * progress, 6);
+    ctx.fillStyle = '#0b132b';
+    ctx.fillRect(x + 2, bay.h - 14, w - 4, 2);
+  }
+
+  function drawSparkles(cx, cy, radius, count = 6) {
+    const t = Date.now() / 350;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + t;
+      const r = radius * (0.5 + Math.random() * 0.3);
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+      ctx.fillRect(x - 1, y - 1, 2, 2);
+      ctx.fillStyle = 'rgba(255, 20, 147, 0.6)';
+      ctx.fillRect(x, y, 1, 1);
     }
   }
 
-  function drawBurningBudPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(8, growth*(pl.h-18)) * scale;
-    ctx.strokeStyle = '#914616';
+  function drawPlayer(p, neon) {
+    const x = p.x;
+    const y = p.y;
+    const w = p.w;
+    const h = p.h;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(x - 4, y + h - 8, w + 8, 8);
+
+    ctx.fillStyle = '#0b1120';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = neon;
+    ctx.fillRect(x + 4, y + 4, w - 8, h - 12);
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(x + 6, y + h - 12, w - 12, 10);
+    ctx.fillStyle = '#d9faff';
+    ctx.fillRect(x + 6, y + 6, w - 12, 8);
+
+    ctx.fillStyle = '#0bf0ff';
+    ctx.fillRect(x + 2, y + h - 10, 6, 6);
+    ctx.fillRect(x + w - 8, y + h - 10, 6, 6);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fillRect(x + 4, y + 2, w - 8, 4);
+
+    // selected mod bubble
+    const bubbleX = x + w / 2;
+    const bubbleY = y - 18;
+    ctx.fillStyle = 'rgba(10, 12, 24, 0.85)';
+    const bubbleW = 32;
+    const bubbleH = 18;
+    ctx.fillRect(bubbleX - bubbleW / 2, bubbleY - bubbleH / 2, bubbleW, bubbleH);
+    ctx.strokeStyle = neon;
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx, baseY - stemH);
-    ctx.stroke();
-    const flameH = 12 + growth*14*scale;
-    const fx = cx;
-    const fy = baseY - stemH;
-    const flicker = 0.6 + 0.4*Math.sin(Date.now()/200);
-    ctx.fillStyle = 'rgba(255,87,34,0.85)';
-    ctx.beginPath();
-    ctx.moveTo(fx, fy - flameH*flicker);
-    ctx.quadraticCurveTo(fx - 8*scale, fy - flameH*0.2, fx, fy + flameH*0.1);
-    ctx.quadraticCurveTo(fx + 8*scale, fy - flameH*0.2, fx, fy - flameH*flicker);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,195,0,0.9)';
-    ctx.beginPath();
-    ctx.moveTo(fx, fy - flameH*flicker*0.7);
-    ctx.quadraticCurveTo(fx - 4*scale, fy - flameH*0.1, fx, fy + flameH*0.05);
-    ctx.quadraticCurveTo(fx + 4*scale, fy - flameH*0.1, fx, fy - flameH*flicker*0.7);
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(fx, fy - flameH*0.4, flameH*0.6, 6);
-    }
-  }
-
-  function drawGiantPineconePlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const trunkH = Math.max(10, growth*(pl.h-16)) * scale;
-    ctx.fillStyle = '#7b4b2a';
-    ctx.fillRect(cx - 2, baseY - trunkH, 4, trunkH);
-    const coneH = 16 + growth*16*scale;
-    const coneW = 10 + growth*12*scale;
-    const topY = baseY - trunkH - coneH*0.3;
-    ctx.fillStyle = '#9c6644';
-    const layers = 6;
-    for (let i=0;i<layers;i++){
-      const level = topY + i*(coneH/layers);
-      const w = coneW * (1 - i/(layers+1));
-      ctx.beginPath();
-      ctx.ellipse(cx, level, w, coneH/9, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.strokeStyle = '#5e3c2e';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx, topY - coneH*0.2);
-    ctx.lineTo(cx, baseY - trunkH + coneH*0.8);
-    ctx.stroke();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, topY + coneH*0.3, coneW, 6);
-    }
-  }
-
-  function drawElderStrawberryPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const stemH = Math.max(10, growth*(pl.h-20)) * scale;
-    const sway = Math.sin(Date.now()/420 + cx) * 2.5;
-    ctx.strokeStyle = '#2f8a3a';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx + sway, baseY - stemH);
-    ctx.stroke();
-    ctx.fillStyle = '#4caf50';
-    for (let i=0;i<4;i++){
-      const angle = -0.8 + i*0.5;
-      ctx.beginPath();
-      ctx.ellipse(cx + sway + Math.cos(angle)*8, baseY - stemH*0.7 + Math.sin(angle)*4, 8, 3, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    const fruitH = 16 + growth*16*scale;
-    const fruitW = 12 + growth*12*scale;
-    const fx = cx + sway;
-    const fy = baseY - stemH + fruitH*0.1;
-    ctx.fillStyle = '#c1121f';
-    ctx.beginPath();
-    ctx.moveTo(fx, fy - fruitH/2);
-    ctx.quadraticCurveTo(fx - fruitW, fy - fruitH/3, fx - fruitW*0.9, fy + fruitH/2);
-    ctx.quadraticCurveTo(fx, fy + fruitH*0.7, fx + fruitW*0.9, fy + fruitH/2);
-    ctx.quadraticCurveTo(fx + fruitW, fy - fruitH/3, fx, fy - fruitH/2);
-    ctx.fill();
-    ctx.fillStyle = '#ffe066';
-    const seeds = 10;
-    for (let i=0;i<seeds;i++){
-      const angle = i*(Math.PI*2/seeds);
-      const sx = fx + Math.cos(angle)*fruitW*0.6;
-      const sy = fy + Math.sin(angle)*fruitH*0.5;
-      ctx.beginPath();
-      ctx.ellipse(sx, sy, 1.3, 2.6, angle, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.beginPath();
-    ctx.ellipse(fx, fy, fruitW*0.9, fruitH*0.8, 0, 0, Math.PI*2);
-    ctx.fill();
-    drawSparkles(fx, fy - fruitH*0.3, fruitW*0.9, 7);
-  }
-
-  function drawRomanescoPlant(pl, st, scale, crop) {
-    const growth = Math.min(1, st);
-    const cx = pl.x + pl.w/2;
-    const baseY = pl.y + pl.h - 6;
-    const baseW = 14 + growth*12*scale;
-    ctx.fillStyle = '#3d9a4f';
-    ctx.beginPath();
-    ctx.ellipse(cx, baseY - 4, baseW, baseW*0.4, 0, 0, Math.PI*2);
-    ctx.fill();
-    const levels = 5;
-    for (let i=0;i<levels;i++){
-      const radius = baseW * (1 - i*0.18);
-      const y = baseY - 6 - i*radius*0.35;
-      const points = Math.max(3, 5 - Math.floor(i/1.2));
-      for (let j=0;j<points;j++){
-        const angle = (j/points) * Math.PI*2 + i*0.2;
-        const baseX = cx + Math.cos(angle) * radius * 0.4;
-        const peakY = y - radius*0.45;
-        ctx.fillStyle = `rgba(133,187,101,${0.7 + 0.05*i})`;
-        ctx.beginPath();
-        ctx.moveTo(baseX, y);
-        ctx.lineTo(baseX + Math.cos(angle+0.3)*radius*0.2, peakY);
-        ctx.lineTo(baseX + Math.cos(angle-0.3)*radius*0.2, peakY);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
-    ctx.fillStyle = '#c5f277';
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY - 6 - baseW*0.6);
-    ctx.lineTo(cx - baseW*0.1, baseY - 6 - baseW*0.4);
-    ctx.lineTo(cx + baseW*0.1, baseY - 6 - baseW*0.4);
-    ctx.closePath();
-    ctx.fill();
-    if (crop?.mutation?.id === 'glitter') {
-      drawSparkles(cx, baseY - 6 - baseW*0.4, baseW*0.8, 6);
-    }
-  }
-
-  function drawPlayer(p, color) {
-    // Body
-    const cx = p.x + p.w / 2;
-    ctx.fillStyle = color;
-    ctx.fillRect(p.x + 4, p.y + 8, p.w - 8, p.h - 8);
-
-    // Head
-    ctx.fillStyle = '#ffdfba';
-    const r = p.w * 0.25;
-    ctx.beginPath();
-    ctx.arc(cx, p.y + r + 1, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hat
-    ctx.fillStyle = '#8b4513';
-    ctx.fillRect(p.x + 2, p.y, p.w - 4, 3);
-    ctx.beginPath();
-    ctx.moveTo(cx - r, p.y);
-    ctx.lineTo(cx + r, p.y);
-    ctx.lineTo(cx, p.y - r * 1.5);
-    ctx.closePath();
-    ctx.fill();
-
-    // Tool emoji for flair
-    ctx.font = '12px serif';
-    ctx.fillText('🌾', p.x + p.w - 6, p.y + p.h + 2);
-
-    // Selected seed bubble
-    const bubbleWidth = p.w + 8;
-    const bubbleHeight = Math.round(p.h * 0.6);
-    const bubbleX = p.x - 4;
-    const bubbleY = p.y - bubbleHeight - 12;
-    ctx.fillStyle = '#0007';
-    ctx.fillRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
-
-    const prevFont = ctx.font;
-    const prevAlign = ctx.textAlign;
-    const prevBaseline = ctx.textBaseline;
-    ctx.fillStyle = '#fff';
-    ctx.font = `${Math.round(r * 2)}px sans-serif`;
+    ctx.strokeRect(bubbleX - bubbleW / 2, bubbleY - bubbleH / 2, bubbleW, bubbleH);
+    ctx.fillStyle = '#d1f7ff';
+    ctx.font = '14px "Courier New", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(seedEmoji(p.selected), bubbleX + bubbleWidth / 2, bubbleY + bubbleHeight / 2);
-    ctx.font = prevFont;
-    ctx.textAlign = prevAlign;
-    ctx.textBaseline = prevBaseline;
+    ctx.fillText(modGlyph(p.selected), bubbleX, bubbleY);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
   }
 
-  function drawPet(p) {
-    if (!p.pet) return;
-    const pet = PETS.find(pt=>pt.id===p.pet.id);
-    if (!pet) return;
-    ctx.font='16px sans-serif';
-    ctx.fillText(pet.emoji, p.pet.x, p.pet.y);
+  function drawCrewMember(p) {
+    if (!p.crewMember) return;
+    const crew = CREW.find(x => x.id === p.crewMember.id);
+    if (!crew) return;
+    const x = p.crewMember.x;
+    const y = p.crewMember.y;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(x, y, 24, 10);
+    ctx.fillStyle = 'rgba(15, 18, 34, 0.9)';
+    ctx.fillRect(x, y - 20, 24, 24);
+    ctx.strokeStyle = 'rgba(0, 245, 255, 0.6)';
+    ctx.strokeRect(x, y - 20, 24, 24);
+    ctx.font = '18px "Courier New", monospace';
+    ctx.fillStyle = '#f8faff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(crew.emoji, x + 12, y - 8);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
   }
+  const NUMBER_KEYS = ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','Digit0'];
+  const NUMPAD_KEYS = ['Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','Numpad0'];
 
-  // ---------- MAIN LOOP ----------
-  let firstTick = true;
-  function tick() {
-    if (firstTick) {
-      console.log('Game loop started');
-      firstTick = false;
+  function update() {
+    movePlayer(state.p1, 'KeyW', 'KeyA', 'KeyS', 'KeyD');
+    moveCrew(state.p1);
+    if (state.p2Active) {
+      movePlayer(state.p2, 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight');
+      moveCrew(state.p2);
     }
-    movePlayer(state.p1, 'KeyW','KeyA','KeyS','KeyD');
-    movePet(state.p1);
-    if (state.p2Active) { movePlayer(state.p2, 'ArrowUp','ArrowLeft','ArrowDown','ArrowRight'); movePet(state.p2); }
 
-    if (net && net.isOpen) {
-      net.sendState({ x: state.p1.x, y: state.p1.y, selected: state.p1.selected });
-    }
+    maybeStartStreetEvent();
+    maybeSpawnChallenge();
 
     if (justPressed('KeyE')) playerAction(state.p1, 'P1');
-    if (state.p2Active && justPressed('Slash')) playerAction(state.p2, 'P2');
+    if (justPressed('KeyQ')) cycleMod(state.p1);
+    NUMBER_KEYS.forEach((code, idx) => { if (justPressed(code)) selectModByIndex(state.p1, idx); });
 
-    for (let i = 1; i <= 10; i++) {
-      if (justPressed('Digit' + (i % 10))) selectSeedByIndex(state.p1, i - 1);
-      if (state.p2Active && justPressed('Numpad' + (i % 10))) selectSeedByIndex(state.p2, i - 1);
+    if (state.p2Active) {
+      if (justPressed('Slash')) playerAction(state.p2, 'P2');
+      if (justPressed('Period')) cycleMod(state.p2);
+      NUMPAD_KEYS.forEach((code, idx) => { if (justPressed(code)) selectModByIndex(state.p2, idx); });
     }
 
-    if (justPressed('KeyQ')) cycleSeed(state.p1);
-    if (state.p2Active && justPressed('Period')) cycleSeed(state.p2);
-
-    if (justPressed('KeyH')) eventsPanel.classList.toggle('open');
-
-    if (state.shopOpen === 'P1' && !inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      state.shopOpen = null;
+    if (net) {
+      net.sendState({ x: state.p1.x, y: state.p1.y, selected: state.p1.selected });
     }
-    if (state.p2Active && state.shopOpen === 'P2' && !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.shop.x,VENDORS.shop.y,VENDORS.shop.w,VENDORS.shop.h)) {
-      state.shopOpen = null;
-    }
-    if (!inside(state.p1.x,state.p1.y,state.p1.w,state.p1.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h) &&
-        (!state.p2Active || !inside(state.p2.x,state.p2.y,state.p2.w,state.p2.h, VENDORS.sell.x,VENDORS.sell.y,VENDORS.sell.w,VENDORS.sell.h))) {
-      state.sellOpen = false;
-    }
+  }
 
-    maybeStartWorldEvent();
-    maybeSpawnChallenge();
+  function loop() {
+    update();
     draw();
-    requestAnimationFrame(tick);
+    requestAnimationFrame(loop);
   }
 
-  // Init
-  toggleBtn.onclick = () => eventsPanel.classList.toggle('open');
+  loop();
 
-  if (!localStorage.getItem(SAVE_KEY)) {
-    log('Welcome! Buy seeds at the Seed Shop (top-left).');
-    log(`Plant on your OWN plots. If a plant rots, fix the plot for ${formatCurrency(REPAIR_COST)}.`);
-    log('Growth persists from timestamps. Use Save/Load or Export/Import to back up progress.');
-  } else {
-    log('Save loaded from previous session.');
-  }
-  console.log('Initialization complete', {
-    startingP1: state.p1,
-    startingP2: state.p2,
-    p2Active: state.p2Active,
-  });
-  tick();
+  log('Welcome to Neon Drift Garage! Buy kits at the Parts Vendor (top left).');
+  log('Install mods in your bays, then cash out at the Race Terminal (top right).');
 })();

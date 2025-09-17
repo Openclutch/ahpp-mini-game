@@ -19,7 +19,20 @@
   function formatCredits(value) {
     const amount = Number(value ?? 0);
     const safeAmount = Number.isFinite(amount) ? amount : 0;
-    return `${CREDIT_SYMBOL}${safeAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    try {
+      return `${CREDIT_SYMBOL}${safeAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } catch (err) {
+      if (!formatCredits._warned) {
+        console.warn('Falling back to simple credit formatting', err);
+        formatCredits._warned = true;
+      }
+      const rounded = Math.round(safeAmount);
+      const withGrouping = Math.abs(rounded)
+        .toString()
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const prefix = rounded < 0 ? '-' : '';
+      return `${CREDIT_SYMBOL}${prefix}${withGrouping}`;
+    }
   }
 
   const REPAIR_COST = 250;

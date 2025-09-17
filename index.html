@@ -60,17 +60,29 @@
     #gameArea { position:relative; flex:1; background:#050510; }
     canvas { width:100%; height:100%; display:block; image-rendering: pixelated; background:#04040a; }
 
-    .window { position:absolute; top:14px; left:14px; display:flex; gap:14px; }
+    .window {
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      gap:clamp(18px, 5vw, 60px);
+      width:min(96vw, 1080px);
+      flex-wrap:wrap;
+    }
     .panel {
       background: rgba(8, 16, 36, 0.85);
       border:1px solid rgba(0,255,255,0.25);
       border-radius:10px;
       padding:12px;
-      width:210px;
+      width:clamp(180px, 22vw, 220px);
       display:flex;
       flex-direction:column;
       max-height:min(78vh, 620px);
       box-shadow:0 0 18px rgba(0,255,255,0.2);
+      pointer-events:auto;
     }
     .panel h3 { margin:0 0 10px 0; font-size:17px; color:#63e7ff; text-transform:uppercase; letter-spacing:0.12em; }
     .panel .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; }
@@ -87,10 +99,53 @@
     .mod-list { flex:1 1 auto; max-height:min(60vh, 540px); overflow-y:auto; font-size:13px; }
     .panel-note { font-size:12px; opacity:0.75; margin-top:8px; }
 
-    #events { position:absolute; right:-380px; top:14px; width:340px; max-width:48vw; background:rgba(8,16,36,0.9); border:1px solid rgba(0,255,255,0.25); border-radius:10px; padding:10px 14px; transition:right .18s ease-out; box-shadow:0 0 20px rgba(0,255,255,0.2); }
-    #events.open { right:14px; }
+    #events {
+      position:relative;
+      top:auto;
+      right:auto;
+      width:clamp(220px, 26vw, 320px);
+      max-height:min(60vh, 480px);
+      background:rgba(8,16,36,0.9);
+      padding:12px 14px;
+      transition:opacity .18s ease-out, transform .18s ease-out, visibility .18s ease-out;
+      opacity:0;
+      visibility:hidden;
+      pointer-events:none;
+      transform:translateY(-12px) scale(0.97);
+    }
+    #events.open {
+      opacity:1;
+      visibility:visible;
+      pointer-events:auto;
+      transform:none;
+    }
     #events h3 { margin:0 0 8px 0; font-size:17px; color:#63e7ff; text-transform:uppercase; letter-spacing:0.12em; }
-    #feed { max-height:40vh; overflow:auto; font-size:13px; line-height:1.3; }
+    #feed { max-height:min(34vh, 320px); overflow:auto; font-size:13px; line-height:1.3; }
+
+    @media (max-width: 980px) {
+      .panel {
+        width:clamp(160px, 32vw, 200px);
+        padding:10px;
+      }
+      #events {
+        width:clamp(200px, 46vw, 260px);
+        padding:10px 12px;
+      }
+      .panel h3 {
+        font-size:15px;
+      }
+      .panel .panel-note { font-size:11px; }
+      #feed { max-height:min(36vh, 260px); }
+    }
+
+    @media (max-height: 720px) {
+      .panel {
+        max-height:min(68vh, 520px);
+      }
+      #events {
+        max-height:min(52vh, 360px);
+      }
+    }
     .evt { padding:4px 0; border-bottom:1px dashed rgba(99,231,255,0.3); }
 
     #tooltip { position:absolute; pointer-events:none; background:rgba(5,12,30,0.9); color:#aff6ff; padding:6px 8px; border-radius:4px; font-size:12px; transform:translate(-50%, -140%); opacity:0; transition:opacity .08s; white-space:nowrap; border:1px solid rgba(99,231,255,0.5); box-shadow:0 0 8px rgba(99,231,255,0.4); }
@@ -144,15 +199,14 @@
         <div id="modList" class="mod-list"></div>
         <div class="panel-note">Stand at the vendor & press <b>Action</b> (<code>E</code>) to toggle this UI.</div>
       </div>
+      <div id="events" class="panel events-panel">
+        <h3>Street Feed</h3>
+        <div id="feed"></div>
+      </div>
       <div class="panel" id="sellPanel">
         <h3>Race Terminal</h3>
         <div id="sellInfo" style="font-size:13px;">Park at the terminal & press Action to bank every finished build in your stash.</div>
       </div>
-    </div>
-
-    <div id="events">
-      <h3>Street Feed</h3>
-      <div id="feed"></div>
     </div>
 
     <div id="tooltip"></div>

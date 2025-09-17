@@ -745,12 +745,16 @@
     const progress = buildProgress(bay.build);
     if (progress >= 1) {
       const yieldCount = bay.build.yield || 1;
+      const mod = MODS[bay.build.kind];
+      const modName = mod?.name || bay.build.kind || 'Unknown Part';
       p.stash[bay.build.kind] = (p.stash[bay.build.kind] || 0) + yieldCount;
-      log(`You finished ${yieldCount} × ${MODS[bay.build.kind].name}.`);
+      log(`You finished ${yieldCount} × ${modName}.`);
       if (bay.build.extraLoot) {
         const bonus = bay.build.extraLoot;
+        const bonusMod = MODS[bonus.kind];
+        const bonusName = bonusMod?.name || bonus.kind || 'Mystery Part';
         p.stash[bonus.kind] = (p.stash[bonus.kind] || 0) + bonus.qty;
-        log(`Bonus drop! You scored ${bonus.qty} × ${MODS[bonus.kind].name}.`);
+        log(`Bonus drop! You scored ${bonus.qty} × ${bonusName}.`);
       }
       bay.build = null;
       save();
@@ -765,9 +769,17 @@
       txt = `Overheated. Press Action to clear for ${formatCredits(REPAIR_COST)}.`;
     } else if (bay.build) {
       const build = bay.build;
+      const mod = MODS[build.kind];
+      const label = mod?.name || build.kind || 'Unknown Part';
+      const installMs = Number.isFinite(build.installMs) && build.installMs > 0
+        ? build.installMs
+        : (mod?.installMs || baseInstall);
       const progress = Math.min(1, buildProgress(build));
-      const secs = Math.max(0, Math.ceil((1 - progress) * build.installMs / (state.installMult * 1000)));
-      txt = `${MODS[build.kind].name}: ${(progress * 100).toFixed(0)}% | ~${secs}s left` + (build.tuning ? ` | ${build.tuning.label}` : '');
+      const secs = state.installMult > 0
+        ? Math.max(0, Math.ceil((1 - progress) * installMs / (state.installMult * 1000)))
+        : Infinity;
+      const etaText = Number.isFinite(secs) ? `~${secs}s left` : 'Paused';
+      txt = `${label}: ${(progress * 100).toFixed(0)}% | ${etaText}` + (build.tuning ? ` | ${build.tuning.label}` : '');
     } else {
       txt = 'Empty bay';
     }
@@ -780,10 +792,11 @@
   }
 
   function createBuild(kind, installer) {
+    const mod = MODS[kind];
     const base = {
       kind,
       plantedAt: Date.now(),
-      installMs: MODS[kind].installMs,
+      installMs: mod?.installMs || baseInstall,
       progressMs: 0,
       yield: 1,
       payoutMult: 1,
@@ -846,7 +859,8 @@
   }
 
   function payoutOf(kind, builder) {
-    const base = Math.round(MODS[kind].payout * state.payoutMult);
+    const mod = MODS[kind];
+    const base = Math.round((mod?.payout || 0) * state.payoutMult);
     const crew = builder && builder.crewMember ? CREW.find(x => x.id === builder.crewMember.id) : null;
     const crewBoost = crew?.payoutMult || 1;
     return Math.round(base * crewBoost * (builder && builder.bonusPayoutMult || 1));

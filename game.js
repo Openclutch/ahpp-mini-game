@@ -446,23 +446,50 @@
   const ctx = cv.getContext('2d');
   const WORLD = { w: cv.width, h: cv.height };
 
+  const STATION_W = 220;
+  const STATION_H = 140;
+  const STATION_GAP = 48;
+  const PLAZA_TOP = 40;
+  const plazaCenterX = WORLD.w / 2;
+
   const STATIONS = {
-    parts: { x: 40, y: 40, w: 220, h: 140 },
-    race: { x: WORLD.w - 260, y: 40, w: 220, h: 140 },
+    parts: {
+      x: Math.round(plazaCenterX - STATION_W - STATION_GAP / 2),
+      y: PLAZA_TOP,
+      w: STATION_W,
+      h: STATION_H,
+    },
+    race: {
+      x: Math.round(plazaCenterX + STATION_GAP / 2),
+      y: PLAZA_TOP,
+      w: STATION_W,
+      h: STATION_H,
+    },
   };
 
+  const GARAGE_W = 420;
+  const GARAGE_H = 360;
+  const GARAGE_TOP = 260;
+
   const GARAGES = [
-    { x: 80, y: 230, w: 320, h: 360, cols: 5, rows: 4, owner: 'P1' },
+    { x: Math.round((WORLD.w - GARAGE_W) / 2), y: GARAGE_TOP, w: GARAGE_W, h: GARAGE_H, cols: 5, rows: 4, owner: 'P1' },
   ];
 
-  function addGarageBays(owner) {
+  const SPOTLIGHT_POSITION = {
+    x: Math.round(plazaCenterX),
+    y: STATIONS.parts.y + STATIONS.parts.h + 90,
+    r: 60,
+  };
+
+  function buildGarageLayout(owner) {
     const g = GARAGES.find(g => g.owner === owner);
-    if (!g) return;
+    if (!g) return [];
     const cellW = Math.floor(g.w / g.cols);
     const cellH = Math.floor(g.h / g.rows);
+    const layout = [];
     for (let r = 0; r < g.rows; r++) {
       for (let c = 0; c < g.cols; c++) {
-        state.bays.push({
+        layout.push({
           x: g.x + c * cellW + 6,
           y: g.y + r * cellH + 6,
           w: cellW - 12,
@@ -472,10 +499,24 @@
         });
       }
     }
+    return layout;
   }
 
-  if (!state.bays || !state.bays.length) {
-    addGarageBays('P1');
+  const otherBays = Array.isArray(state.bays) ? state.bays.filter(bay => bay.owner && bay.owner !== 'P1') : [];
+  const existingP1Bays = Array.isArray(state.bays) ? state.bays.filter(bay => (bay.owner || 'P1') === 'P1') : [];
+  existingP1Bays.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+
+  const p1Layout = buildGarageLayout('P1');
+  for (let i = 0; i < p1Layout.length; i++) {
+    p1Layout[i].build = existingP1Bays[i]?.build || null;
+  }
+
+  state.bays = [...p1Layout, ...otherBays];
+
+  const defaultGarage = GARAGES.find(g => g.owner === 'P1');
+  if (defaultGarage) {
+    state.p1.x = defaultGarage.x + defaultGarage.w / 2 - state.p1.w / 2;
+    state.p1.y = defaultGarage.y + defaultGarage.h - state.p1.h - 24;
   }
 
   function activeBays() {
@@ -815,9 +856,9 @@
     if (state.challenge && now < state.challenge.endsAt) return;
     if (!maybeSpawnChallenge.nextAt) maybeSpawnChallenge.nextAt = now + (50000 + Math.random() * 40000);
     if (now < maybeSpawnChallenge.nextAt) return;
-    state.challenge = { x: WORLD.w / 2, y: WORLD.h / 2, r: 60, goal: 12, progress: 0, endsAt: now + 28000 };
+    state.challenge = { ...SPOTLIGHT_POSITION, goal: 12, progress: 0, endsAt: now + 28000 };
     maybeSpawnChallenge.nextAt = now + 80000 + Math.random() * 45000;
-    log('Neon Spotlight ignites! Park inside and hit Action repeatedly to hype the crowd.');
+    log('Neon Spotlight ignites in the plaza! Park inside and hit Action repeatedly to hype the crowd.');
   }
 
   function awardCrew(p, who) {
@@ -1199,6 +1240,6 @@
 
   loop();
 
-  log('Welcome to Neon Drift Garage! Buy kits at the Parts Vendor (top left).');
-  log('Install mods in your bays, then cash out at the Race Terminal (top right).');
+  log('Welcome to Neon Drift Garage! Buy kits at the Parts Vendor in the plaza.');
+  log('Install mods in your bays, then cash out at the Race Terminal in the plaza.');
 })();

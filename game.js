@@ -325,6 +325,7 @@
   }
 
   updateHelpVisibility();
+  syncVendorUi();
 
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   function bindTouchControls(container) {
@@ -492,6 +493,7 @@
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
     if (!applySavedState(saved)) { log('No garage save found.'); return; }
     updateHelpVisibility();
+    syncVendorUi();
     save();
     log('Garage save loaded.');
   };
@@ -514,6 +516,7 @@
       const data = JSON.parse(txt);
       applySavedState(data);
       updateHelpVisibility();
+      syncVendorUi();
       save();
       log('Imported garage data.');
     } catch {
@@ -546,7 +549,7 @@
     },
   };
 
-  const GARAGE_W = 420;
+  const GARAGE_W = 480;
   const GARAGE_H = 360;
   const GARAGE_TOP = 260;
 
@@ -668,6 +671,10 @@
   function inside(ax, ay, aw, ah, bx, by, bw, bh) {
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
   }
+  function isAtStation(p, station) {
+    if (!p || !station) return false;
+    return inside(p.x, p.y, p.w, p.h, station.x, station.y, station.w, station.h);
+  }
   function dist(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return Math.hypot(dx, dy); }
 
   function playerByName(name) {
@@ -702,18 +709,20 @@
       inventory: { ...p.inventory },
     });
 
-    if (inside(p.x, p.y, p.w, p.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
+    if (isAtStation(p, STATIONS.parts)) {
       state.shopOpen = state.shopOpen === who ? null : who;
       state.raceOpen = false;
       log('You toggled the Parts Vendor.');
       dismissHint('parts');
-      if (state.shopOpen) { generateModStock(); renderPartsShop(); }
+      if (state.shopOpen) { generateModStock(); }
+      syncVendorUi();
       return;
     }
-    if (inside(p.x, p.y, p.w, p.h, STATIONS.race.x, STATIONS.race.y, STATIONS.race.w, STATIONS.race.h)) {
+    if (isAtStation(p, STATIONS.race)) {
       const sold = sellAll(p);
       if (sold > 0) { log(`You banked ${formatCredits(sold)} in race winnings.`); state.raceOpen = true; state.shopOpen = null; }
       else { log('You have no completed builds to race.'); state.raceOpen = true; state.shopOpen = null; }
+      syncVendorUi();
       dismissHint('race');
       return;
     }
@@ -934,11 +943,26 @@
     }
   }
 
+  function syncVendorUi() {
+    const open = state.shopOpen === 'P1';
+    if (shopPanel) {
+      shopPanel.classList.toggle('panel-hidden', !open);
+      shopPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+    if (modListEl) {
+      if (open) {
+        renderPartsShop();
+      } else {
+        modListEl.innerHTML = '';
+      }
+    }
+  }
+
   function buyMod(id) {
     const modData = MOD_CATALOG.find(m => m.id === id);
     if (!modData || !modStock.has(id)) { log('Part not available.'); return; }
     const target = state.p1;
-    if (state.shopOpen !== 'P1' || !inside(target.x, target.y, target.w, target.h, STATIONS.parts.x, STATIONS.parts.y, STATIONS.parts.w, STATIONS.parts.h)) {
+    if (state.shopOpen !== 'P1' || !isAtStation(target, STATIONS.parts)) {
       log('You must be at the Parts Vendor to buy kits.');
       return;
     }
@@ -1417,6 +1441,11 @@
   function update() {
     movePlayer(state.p1, 'KeyW', 'KeyA', 'KeyS', 'KeyD');
     moveCrew(state.p1);
+
+    if (state.shopOpen === 'P1' && !isAtStation(state.p1, STATIONS.parts)) {
+      state.shopOpen = null;
+      syncVendorUi();
+    }
 
     maybeStartStreetEvent();
     maybeSpawnChallenge();

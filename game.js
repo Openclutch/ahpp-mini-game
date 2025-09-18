@@ -1325,10 +1325,16 @@
       g.beginPath(); g.moveTo(0, i); g.lineTo(96, i); g.stroke();
     }
 
-    g.fillStyle = 'rgba(241, 165, 18, 0.08)';
-    for (let y = 6; y < 96; y += 24) {
-      for (let x = 6; x < 96; x += 24) {
-        g.fillRect(x, y, 4, 4);
+    for (let y = 12; y < 96; y += 24) {
+      for (let x = 12; x < 96; x += 24) {
+        const glow = g.createRadialGradient(x, y, 0, x, y, 8);
+        glow.addColorStop(0, 'rgba(252, 226, 182, 0.45)');
+        glow.addColorStop(0.55, 'rgba(252, 226, 182, 0.15)');
+        glow.addColorStop(1, 'rgba(252, 226, 182, 0)');
+        g.fillStyle = glow;
+        g.beginPath();
+        g.arc(x, y, 8, 0, Math.PI * 2);
+        g.fill();
       }
     }
 

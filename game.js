@@ -65,7 +65,7 @@
   }
   const DEFAULT_MOD = 'nos';
   const STARTING_CREDITS = 1000;
-  const PERSISTENCE_ENABLED = false;
+  const PERSISTENCE_ENABLED = true;
 
   const CREW = [
     { id: 'mechanic', name: 'Brett', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },

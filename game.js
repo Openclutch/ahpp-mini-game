@@ -1092,19 +1092,51 @@
   const patterns = {};
   function makeAsphaltPattern() {
     const c = document.createElement('canvas');
-    c.width = 64; c.height = 64;
+    c.width = 128; c.height = 128;
     const g = c.getContext('2d');
-    g.fillStyle = RETRO.midnight;
-    g.fillRect(0, 0, 64, 64);
-    for (let i = 0; i < 180; i++) {
-      const alpha = 0.1 + Math.random() * 0.2;
-      g.fillStyle = `rgba(249, 226, 182, ${alpha})`;
-      g.fillRect(Math.random() * 64, Math.random() * 64, 1, 1);
+
+    const base = g.createLinearGradient(0, 0, 128, 128);
+    base.addColorStop(0, '#272530');
+    base.addColorStop(1, '#1f1d28');
+    g.fillStyle = base;
+    g.fillRect(0, 0, 128, 128);
+
+    g.fillStyle = 'rgba(60, 58, 74, 0.35)';
+    for (let y = 0; y < 128; y += 16) {
+      g.fillRect(0, y, 128, 2);
     }
-    for (let i = 0; i < 160; i++) {
-      g.fillStyle = 'rgba(140, 0, 39, 0.45)';
-      g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2);
+
+    g.fillStyle = 'rgba(18, 16, 26, 0.35)';
+    for (let x = -16; x < 128; x += 24) {
+      g.save();
+      g.translate(x, 0);
+      g.rotate(-Math.PI / 10);
+      g.fillRect(0, 0, 6, 160);
+      g.restore();
     }
+
+    g.globalAlpha = 0.5;
+    for (let y = 0; y < 128; y += 8) {
+      for (let x = 0; x < 128; x += 8) {
+        const value = Math.abs(Math.sin((x + 13) * 12.9898 + (y + 37) * 78.233));
+        const light = 0.03 + value * 0.08;
+        g.fillStyle = `rgba(255, 255, 255, ${light})`;
+        g.fillRect(x, y, 2, 2);
+        g.fillStyle = `rgba(0, 0, 0, ${light * 0.6})`;
+        g.fillRect(x + 2, y + 2, 1, 1);
+      }
+    }
+    g.globalAlpha = 1;
+
+    g.strokeStyle = 'rgba(15, 15, 20, 0.55)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(0, 18);
+    g.lineTo(128, 14);
+    g.moveTo(-32, 96);
+    g.lineTo(128, 108);
+    g.stroke();
+
     return g.createPattern(c, 'repeat');
   }
 
@@ -1158,17 +1190,95 @@
     ctx.fillStyle = patterns.asphalt;
     ctx.fillRect(0, 0, cv.width, cv.height);
 
+    const topZoneHeight = 140;
+    const bottomZoneHeight = 120;
+    ctx.fillStyle = 'rgba(24, 18, 28, 0.9)';
+    ctx.fillRect(0, 0, cv.width, topZoneHeight);
+    ctx.fillStyle = 'rgba(26, 20, 32, 0.92)';
+    ctx.fillRect(0, cv.height - bottomZoneHeight, cv.width, bottomZoneHeight);
+
+    const bayLaneHeight = 220;
+    const bayLaneY = Math.round(WORLD.h / 2 - bayLaneHeight / 2);
+    ctx.fillStyle = 'rgba(44, 41, 55, 0.92)';
+    ctx.fillRect(0, bayLaneY, WORLD.w, bayLaneHeight);
+
     ctx.save();
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = patterns.neon;
     ctx.fillRect(0, 0, cv.width, cv.height);
     ctx.restore();
 
-    // road divider
-    ctx.fillStyle = 'rgba(249, 228, 193, 0.16)';
-    for (let i = 0; i < cv.width; i += 40) {
-      ctx.fillRect(i, WORLD.h / 2 - 4, 24, 8);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(161, 212, 177, 0.45)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([22, 12]);
+    ctx.beginPath();
+    ctx.moveTo(0, bayLaneY + 36);
+    ctx.lineTo(WORLD.w, bayLaneY + 36);
+    ctx.moveTo(0, bayLaneY + bayLaneHeight - 36);
+    ctx.lineTo(WORLD.w, bayLaneY + bayLaneHeight - 36);
+    ctx.stroke();
+    ctx.restore();
+
+    const stripeHeight = 18;
+    const stripeAlpha = 0.32;
+    ctx.fillStyle = `rgba(241, 165, 18, ${stripeAlpha})`;
+    for (let i = -48; i < WORLD.w + 96; i += 48) {
+      ctx.save();
+      ctx.translate(i, bayLaneY + 6);
+      ctx.rotate(-Math.PI / 6);
+      ctx.fillRect(0, 0, 20, stripeHeight);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(i + 12, bayLaneY + bayLaneHeight - stripeHeight - 6);
+      ctx.rotate(-Math.PI / 6);
+      ctx.fillRect(0, 0, 20, stripeHeight);
+      ctx.restore();
     }
+
+    ctx.fillStyle = 'rgba(23, 21, 30, 0.65)';
+    for (let x = 96; x < WORLD.w; x += 160) {
+      ctx.fillRect(x, bayLaneY + bayLaneHeight / 2 - 6, 56, 12);
+      ctx.fillStyle = 'rgba(10, 10, 16, 0.45)';
+      ctx.fillRect(x, bayLaneY + bayLaneHeight / 2 - 1, 56, 2);
+      ctx.fillStyle = 'rgba(23, 21, 30, 0.65)';
+    }
+
+    const lightPositions = [0.18, 0.5, 0.82];
+    for (const pos of lightPositions) {
+      const lx = WORLD.w * pos;
+      const topLight = ctx.createRadialGradient(lx, topZoneHeight - 12, 8, lx, topZoneHeight - 12, 180);
+      topLight.addColorStop(0, 'rgba(203, 232, 210, 0.28)');
+      topLight.addColorStop(1, 'rgba(203, 232, 210, 0)');
+      ctx.fillStyle = topLight;
+      ctx.fillRect(lx - 180, 0, 360, topZoneHeight + 120);
+
+      const bottomLight = ctx.createRadialGradient(lx, cv.height - bottomZoneHeight + 18, 8, lx, cv.height - bottomZoneHeight + 18, 160);
+      bottomLight.addColorStop(0, 'rgba(221, 65, 17, 0.22)');
+      bottomLight.addColorStop(1, 'rgba(221, 65, 17, 0)');
+      ctx.fillStyle = bottomLight;
+      ctx.fillRect(lx - 180, cv.height - bottomZoneHeight - 120, 360, bottomZoneHeight + 120);
+    }
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 12, 20, 0.75)';
+    const signY = bayLaneY - 78;
+    ctx.fillRect(WORLD.w / 2 - 220, signY - 40, 440, 82);
+    ctx.strokeStyle = 'rgba(241, 165, 18, 0.5)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(WORLD.w / 2 - 220, signY - 40, 440, 82);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 18;
+    ctx.font = 'bold 40px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(241, 165, 18, 0.85)';
+    ctx.fillText("LEE'S GARAGE", WORLD.w / 2, signY + 4);
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(203, 232, 210, 0.4)';
+    ctx.strokeText("LEE'S GARAGE", WORLD.w / 2, signY + 4);
+    ctx.restore();
 
     drawStation(STATIONS.parts, 'Parts Vendor', RETRO.gold, '🔧');
     drawStation(STATIONS.race, 'Race Terminal', RETRO.teal, '🏁');

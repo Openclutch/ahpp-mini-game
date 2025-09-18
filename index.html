@@ -115,10 +115,11 @@
       z-index:2;
       transform:translateX(-50%);
       display:flex;
-      align-items:flex-start;
-      justify-content:center;
-      gap:clamp(18px, 5vw, 60px);
-      width:min(96vw, 1080px);
+      align-items:stretch;
+      justify-content:space-between;
+      gap:clamp(32px, 6vw, 96px);
+      padding:0 clamp(26px, 6vw, 100px);
+      width:min(96vw, 1240px);
       flex-wrap:wrap;
     }
     .panel {
@@ -126,13 +127,19 @@
       border:1px solid rgba(241,165,18,0.35);
       border-radius:10px;
       padding:12px;
-      width:clamp(180px, 22vw, 220px);
+      width:clamp(200px, 24vw, 260px);
       display:flex;
       flex-direction:column;
       max-height:min(78vh, 620px);
       box-shadow:0 0 18px rgba(221,65,17,0.28);
       pointer-events:auto;
       transition:opacity .22s ease, transform .22s ease;
+    }
+    #shopPanel { align-self:flex-start; }
+    #sellPanel { align-self:flex-start; }
+    #events {
+      flex:1 1 clamp(260px, 32vw, 360px);
+      margin:0 auto;
     }
     .panel.panel-hidden {
       opacity:0;
@@ -161,7 +168,6 @@
       position:relative;
       top:auto;
       right:auto;
-      width:clamp(220px, 26vw, 320px);
       max-height:min(60vh, 480px);
       background:rgba(71,16,32,0.92);
       padding:12px 14px;
@@ -181,12 +187,17 @@
     #feed { max-height:min(34vh, 320px); overflow:auto; font-size:13px; line-height:1.3; }
 
     @media (max-width: 980px) {
+      .window {
+        justify-content:center;
+        padding:0 clamp(18px, 4vw, 40px);
+        gap:clamp(24px, 6vw, 64px);
+      }
       .panel {
-        width:clamp(160px, 32vw, 200px);
+        width:clamp(180px, 34vw, 220px);
         padding:10px;
       }
       #events {
-        width:clamp(200px, 46vw, 260px);
+        flex:1 1 clamp(220px, 58vw, 320px);
         padding:10px 12px;
       }
       .panel h3 {

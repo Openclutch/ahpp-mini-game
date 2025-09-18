@@ -314,6 +314,7 @@
   const p1moneyEl = document.getElementById('p1money');
   const p1hud = document.getElementById('p1hud');
   const feed = document.getElementById('feed');
+  const eventBanner = document.getElementById('eventBanner');
   const tooltip = document.getElementById('tooltip');
   const eventsPanel = document.getElementById('events');
   const toggleBtn = document.getElementById('toggleEvents');
@@ -337,6 +338,47 @@
     partsHelp,
     modListEl,
   });
+
+  const bannerQueue = [];
+  let bannerShowing = false;
+  let bannerHideTimer = null;
+  let bannerNextTimer = null;
+
+  function flushBannerQueue() {
+    if (!eventBanner) return;
+    const next = bannerQueue.shift();
+    if (!next) {
+      bannerShowing = false;
+      return;
+    }
+    bannerShowing = true;
+    eventBanner.textContent = next;
+    eventBanner.classList.add('show');
+    eventBanner.setAttribute('aria-hidden', 'false');
+
+    if (bannerHideTimer) {
+      clearTimeout(bannerHideTimer);
+      bannerHideTimer = null;
+    }
+    if (bannerNextTimer) {
+      clearTimeout(bannerNextTimer);
+      bannerNextTimer = null;
+    }
+
+    bannerHideTimer = window.setTimeout(() => {
+      eventBanner.classList.remove('show');
+      eventBanner.setAttribute('aria-hidden', 'true');
+      bannerNextTimer = window.setTimeout(() => {
+        flushBannerQueue();
+      }, 260);
+    }, 4000);
+  }
+
+  function queueEventBanner(message) {
+    if (!eventBanner || !message) return;
+    bannerQueue.push(message);
+    if (!bannerShowing) flushBannerQueue();
+  }
 
   function updateHelpVisibility() {
     if (partsHelp) partsHelp.hidden = !state.hints?.parts;
@@ -1069,6 +1111,7 @@
     evt.apply(state);
     maybeStartStreetEvent.nextAt = now + evt.dur + (40000 + Math.random() * 25000);
     log(evt.label);
+    queueEventBanner(evt.label);
   }
 
   function maybeSpawnChallenge() {

@@ -320,6 +320,9 @@
   const btnExport = document.getElementById('btnExport');
   const btnImport = document.getElementById('btnImport');
   const fileImport = document.getElementById('fileImport');
+  const btnDevReset = document.getElementById('btnDevReset');
+  const btnDevFunds = document.getElementById('btnDevFunds');
+  const btnDevFinish = document.getElementById('btnDevFinish');
   const shopPanel = document.getElementById('shopPanel');
   const sellPanel = document.getElementById('sellPanel');
   const partsHelp = document.getElementById('partsHelp');
@@ -549,6 +552,41 @@
       log('Failed to import data.');
     }
   };
+
+  if (btnDevReset) {
+    btnDevReset.addEventListener('click', () => {
+      if (!confirm('Reset all progress and reload the garage?')) return;
+      try {
+        localStorage.removeItem(SAVE_KEY);
+      } catch (err) {
+        console.warn('Unable to clear save key', err);
+      }
+      location.reload();
+    });
+  }
+
+  if (btnDevFunds) {
+    btnDevFunds.addEventListener('click', () => {
+      const bonus = 10000;
+      const current = Math.max(0, Number(state.p1.credits) || 0);
+      state.p1.credits = current + bonus;
+      log(`Dev boost: Added ${formatCredits(bonus)} to your wallet.`);
+      save();
+    });
+  }
+
+  if (btnDevFinish) {
+    btnDevFinish.addEventListener('click', () => {
+      let completed = 0;
+      for (const bay of state.bays) {
+        if (!bay || !bay.build) continue;
+        bay.build.progressMs = bay.build.installMs;
+        completed += 1;
+      }
+      log(`Dev boost: Marked ${completed} build${completed === 1 ? '' : 's'} as complete.`);
+      save();
+    });
+  }
   // ---------- WORLD LAYOUT ----------
   const cv = document.getElementById('game');
   const ctx = cv.getContext('2d');

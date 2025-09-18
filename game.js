@@ -68,7 +68,7 @@
 
   const CREW = [
     { id: 'mechanic', name: 'Brett', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },
-    { id: 'driver',   name: 'Ange', emoji: '👻', speed: 0.6,        perk: 'Movement speed boost' },
+    { id: 'driver',   name: 'Ange', emoji: '👻', speed: 0.54,       perk: 'Movement speed boost' },
     { id: 'tuner',    name: 'Lee',   emoji: '💾', installSpeed: 1.15, perk: 'Install time -15%' },
     { id: 'spotter',  name: '???', emoji: '👀', randomBonus: true, perk: 'Chance for bonus builds' },
   ];
@@ -89,9 +89,8 @@
   const costValues = MOD_CATALOG.map(mod => mod.cost);
   const minCost = costValues.length ? Math.min(...costValues) : 0;
   const maxCost = costValues.length ? Math.max(...costValues) : 0;
-  const baseInstall = MODS[DEFAULT_MOD].installMs;
-  const maxInstall = Math.max(...Object.values(MODS).map(mod => mod.installMs || baseInstall));
-  const targetMaxInstall = Math.max(baseInstall, Math.round(maxInstall * 0.75));
+  const baseInstall = 10000; // Cold Air Intake target (10 seconds)
+  const targetMaxInstall = 240000; // Race engine swap target (4 minutes)
   const costLogSpan = (minCost > 0 && maxCost > minCost) ? Math.log(maxCost / minCost) : 0;
 
   for (const entry of MOD_CATALOG) {
@@ -100,7 +99,8 @@
     if (costLogSpan && entry.cost > minCost) {
       ratio = Math.log(entry.cost / minCost) / costLogSpan;
     }
-    const smooth = baseInstall + (targetMaxInstall - baseInstall) * Math.min(1, Math.max(0, ratio));
+    const clampedRatio = Math.min(1, Math.max(0, ratio));
+    const smooth = baseInstall * Math.pow(targetMaxInstall / baseInstall, clampedRatio);
     const installMs = Math.round(smooth / 1000) * 1000;
     mod.installMs = Math.min(targetMaxInstall, Math.max(baseInstall, installMs));
     mod.name = mod.name || entry.name;
@@ -146,7 +146,7 @@
     payoutMult: 1,
     installMult: 1,
     bays: [],
-    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: STARTING_CREDITS, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
+    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 2.88, credits: STARTING_CREDITS, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
     shopOpen: null,
     activeEvent: null,
     eventUntil: 0,
@@ -328,6 +328,7 @@
   const p1moneyEl = document.getElementById('p1money');
   const p1hud = document.getElementById('p1hud');
   const feed = document.getElementById('feed');
+  const eventBanner = document.getElementById('eventBanner');
   const tooltip = document.getElementById('tooltip');
   const eventsPanel = document.getElementById('events');
   const toggleBtn = document.getElementById('toggleEvents');
@@ -352,6 +353,47 @@
     modListEl,
   });
 
+  const bannerQueue = [];
+  let bannerShowing = false;
+  let bannerHideTimer = null;
+  let bannerNextTimer = null;
+
+  function flushBannerQueue() {
+    if (!eventBanner) return;
+    const next = bannerQueue.shift();
+    if (!next) {
+      bannerShowing = false;
+      return;
+    }
+    bannerShowing = true;
+    eventBanner.textContent = next;
+    eventBanner.classList.add('show');
+    eventBanner.setAttribute('aria-hidden', 'false');
+
+    if (bannerHideTimer) {
+      clearTimeout(bannerHideTimer);
+      bannerHideTimer = null;
+    }
+    if (bannerNextTimer) {
+      clearTimeout(bannerNextTimer);
+      bannerNextTimer = null;
+    }
+
+    bannerHideTimer = window.setTimeout(() => {
+      eventBanner.classList.remove('show');
+      eventBanner.setAttribute('aria-hidden', 'true');
+      bannerNextTimer = window.setTimeout(() => {
+        flushBannerQueue();
+      }, 260);
+    }, 4000);
+  }
+
+  function queueEventBanner(message) {
+    if (!eventBanner || !message) return;
+    bannerQueue.push(message);
+    if (!bannerShowing) flushBannerQueue();
+  }
+
   function updateHelpVisibility() {
     if (partsHelp) partsHelp.hidden = !state.hints?.parts;
   }
@@ -372,8 +414,8 @@
     if (!container) return;
     container.querySelectorAll('button[data-key]').forEach(btn => {
       const code = btn.dataset.key;
-      const start = e => { e.preventDefault(); keys.add(code); };
-      const end = () => { keys.delete(code); };
+      const start = e => { e.preventDefault(); activateKey(code, 1, 'touch-button'); };
+      const end = () => { deactivateKey(code, 'touch-button'); };
       btn.addEventListener('touchstart', start);
       btn.addEventListener('touchend', end);
       btn.addEventListener('touchcancel', end);
@@ -382,8 +424,8 @@
       btn.addEventListener('mouseleave', end);
       btn.addEventListener('click', e => {
         e.preventDefault();
-        keys.add(code);
-        setTimeout(() => keys.delete(code), 100);
+        activateKey(code, 1, 'touch-button');
+        setTimeout(() => deactivateKey(code, 'touch-button'), 100);
       });
     });
   }
@@ -396,32 +438,42 @@
       left: container.dataset.left,
       right: container.dataset.right,
     };
-    const combos = [
-      [mapping.right],
-      [mapping.right, mapping.down],
-      [mapping.down],
-      [mapping.down, mapping.left],
-      [mapping.left],
-      [mapping.left, mapping.up],
-      [mapping.up],
-      [mapping.up, mapping.right],
-    ].map(arr => arr.filter(Boolean));
     const thumb = container.querySelector('.stick');
-    const active = new Set();
     let pointerId = null;
 
-    function setActiveCodes(codes) {
-      for (const code of Array.from(active)) {
-        if (!codes.includes(code)) {
-          active.delete(code);
-          keys.delete(code);
-        }
+    function applyAnalog(x, y) {
+      let any = false;
+      if (mapping.right) {
+        const strength = x > 0 ? x : 0;
+        setKeyStrength(mapping.right, strength, 'joystick');
+        if (strength > 0) any = true;
       }
-      for (const code of codes) {
-        if (!active.has(code)) {
-          active.add(code);
-          keys.add(code);
-        }
+      if (mapping.left) {
+        const strength = x < 0 ? -x : 0;
+        setKeyStrength(mapping.left, strength, 'joystick');
+        if (strength > 0) any = true;
+      }
+      if (mapping.down) {
+        const strength = y > 0 ? y : 0;
+        setKeyStrength(mapping.down, strength, 'joystick');
+        if (strength > 0) any = true;
+      }
+      if (mapping.up) {
+        const strength = y < 0 ? -y : 0;
+        setKeyStrength(mapping.up, strength, 'joystick');
+        if (strength > 0) any = true;
+      }
+      if (any) {
+        container.classList.add('active');
+      } else {
+        container.classList.remove('active');
+      }
+    }
+
+    function clearAnalog() {
+      applyAnalog(0, 0);
+      if (thumb) {
+        thumb.style.transform = 'translate(0px, 0px)';
       }
     }
 
@@ -429,40 +481,45 @@
       const rect = container.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
+      let dx = e.clientX - cx;
+      let dy = e.clientY - cy;
       const radius = rect.width / 2;
       const thumbRadius = thumb ? thumb.offsetWidth / 2 : 0;
       const maxDistance = Math.max(0, radius - thumbRadius - 4);
       const distance = Math.hypot(dx, dy);
-      const ratio = distance > 0 ? Math.min(1, maxDistance / distance) : 0;
-      if (thumb) {
-        thumb.style.transform = `translate(${dx * ratio}px, ${dy * ratio}px)`;
+      if (maxDistance > 0 && distance > maxDistance && distance > 0) {
+        const scale = maxDistance / distance;
+        dx *= scale;
+        dy *= scale;
       }
-      const threshold = Math.max(8, maxDistance * 0.45);
-      if (distance < threshold) {
-        setActiveCodes([]);
-        container.classList.remove('active');
+      if (thumb) {
+        thumb.style.transform = `translate(${dx}px, ${dy}px)`;
+      }
+      if (maxDistance <= 0) {
+        clearAnalog();
         return;
       }
-      let angle = Math.atan2(dy, dx);
-      if (angle < 0) angle += Math.PI * 2;
-      const segment = Math.round(angle / (Math.PI / 4)) % 8;
-      const codes = combos[segment] || [];
-      setActiveCodes(codes);
-      if (codes.length) {
-        container.classList.add('active');
-      } else {
-        container.classList.remove('active');
+      const limitedDistance = Math.hypot(dx, dy);
+      const magnitude = Math.min(1, limitedDistance / maxDistance);
+      const deadZone = 0.15;
+      if (magnitude <= deadZone) {
+        clearAnalog();
+        return;
       }
+      if (limitedDistance === 0) {
+        clearAnalog();
+        return;
+      }
+      const scaledMagnitude = (magnitude - deadZone) / (1 - deadZone);
+      const unitX = dx / limitedDistance;
+      const unitY = dy / limitedDistance;
+      const analogX = unitX * scaledMagnitude;
+      const analogY = unitY * scaledMagnitude;
+      applyAnalog(analogX, analogY);
     }
 
     function reset() {
-      setActiveCodes([]);
-      container.classList.remove('active');
-      if (thumb) {
-        thumb.style.transform = 'translate(0px, 0px)';
-      }
+      clearAnalog();
     }
 
     container.addEventListener('pointerdown', e => {
@@ -695,12 +752,68 @@
   }
   // ---------- INPUT ----------
   const keys = new Set();
+  const keyStrength = new Map();
+  const keySources = new Map();
+
+  function recomputeKey(code) {
+    const entry = keySources.get(code);
+    if (!entry || entry.size === 0) {
+      keySources.delete(code);
+      keys.delete(code);
+      keyStrength.delete(code);
+      return;
+    }
+    let max = 0;
+    for (const value of entry.values()) {
+      if (value > max) max = value;
+    }
+    if (max > 0) {
+      keys.add(code);
+      keyStrength.set(code, max);
+    } else {
+      keySources.delete(code);
+      keys.delete(code);
+      keyStrength.delete(code);
+    }
+  }
+
+  function setKeyStrength(code, strength, source = 'default') {
+    if (!code) return;
+    const value = Number.isFinite(strength) ? Math.max(0, Math.min(1, strength)) : 0;
+    let entry = keySources.get(code);
+    if (!entry) {
+      entry = new Map();
+      keySources.set(code, entry);
+    }
+    if (value > 0) {
+      entry.set(source, value);
+    } else {
+      entry.delete(source);
+    }
+    recomputeKey(code);
+  }
+
+  function activateKey(code, strength = 1, source = 'default') {
+    setKeyStrength(code, strength, source);
+  }
+
+  function deactivateKey(code, source = 'default') {
+    if (!code) return;
+    setKeyStrength(code, 0, source);
+  }
+
+  function keyIntensity(code) {
+    if (!code) return 0;
+    if (keyStrength.has(code)) return keyStrength.get(code);
+    return keys.has(code) ? 1 : 0;
+  }
+
   window.addEventListener('keydown', e => {
-    keys.add(e.code);
+    activateKey(e.code, 1, 'keyboard');
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
   });
   window.addEventListener('keyup', e => {
-    keys.delete(e.code);
+    deactivateKey(e.code, 'keyboard');
   });
 
   console.log('Touch support detected:', isTouch);
@@ -732,10 +845,19 @@
   function movePlayer(p, up, left, down, right) {
     const crew = p.crewMember ? CREW.find(x => x.id === p.crewMember.id) : null;
     const speed = p.speedBase + (crew?.speed || 0);
-    if (keys.has(up)) p.y -= speed;
-    if (keys.has(down)) p.y += speed;
-    if (keys.has(left)) p.x -= speed;
-    if (keys.has(right)) p.x += speed;
+    const upStrength = keyIntensity(up);
+    const downStrength = keyIntensity(down);
+    const leftStrength = keyIntensity(left);
+    const rightStrength = keyIntensity(right);
+    let vx = rightStrength - leftStrength;
+    let vy = downStrength - upStrength;
+    const magnitude = Math.hypot(vx, vy);
+    if (magnitude > 1) {
+      vx /= magnitude;
+      vy /= magnitude;
+    }
+    p.x += vx * speed;
+    p.y += vy * speed;
     p.x = Math.max(0, Math.min(WORLD.w - p.w, p.x));
     p.y = Math.max(0, Math.min(WORLD.h - p.h, p.y));
   }
@@ -912,8 +1034,10 @@
     } else {
       txt = 'Empty bay';
     }
-    tooltip.style.left = (p.x + p.w / 2) + 'px';
-    tooltip.style.top = (p.y) + 'px';
+    const anchorX = bay ? bay.x + bay.w / 2 : p.x + p.w / 2;
+    const anchorY = bay ? bay.y + 8 : p.y;
+    tooltip.style.left = anchorX + 'px';
+    tooltip.style.top = anchorY + 'px';
     tooltip.textContent = txt;
     tooltip.style.opacity = 1;
     clearTimeout(showTooltip._t);
@@ -1099,6 +1223,7 @@
     evt.apply(state);
     maybeStartStreetEvent.nextAt = now + evt.dur + (40000 + Math.random() * 25000);
     log(evt.label);
+    queueEventBanner(evt.label);
   }
 
   function maybeSpawnChallenge() {

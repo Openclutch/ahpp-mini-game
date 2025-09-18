@@ -55,6 +55,7 @@
 
   const REPAIR_COST = 250;
   const DEFAULT_MOD = 'nos';
+  const STARTING_CREDITS = 1000;
 
   const CREW = [
     { id: 'mechanic', name: 'Brett', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },
@@ -136,7 +137,7 @@
     payoutMult: 1,
     installMult: 1,
     bays: [],
-    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1000, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
+    p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: STARTING_CREDITS, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
     shopOpen: null,
     activeEvent: null,
     eventUntil: 0,
@@ -245,7 +246,7 @@
     state.shopOpen = null;
     state.hints = normalizeHints(saved.hints);
 
-    if (state.p1.credits == null) state.p1.credits = 1000;
+    if (state.p1.credits == null) state.p1.credits = STARTING_CREDITS;
 
     if (!state.p1.inventory) state.p1.inventory = {};
     if (!state.p1.stash) state.p1.stash = {};
@@ -555,6 +556,14 @@
       skipSaving = true;
       try {
         localStorage.removeItem(SAVE_KEY);
+        localStorage.removeItem(GUIDE_STORAGE_KEY);
+        for (const key of LEGACY_KEYS) {
+          try {
+            localStorage.removeItem(key);
+          } catch (err) {
+            console.warn('Unable to clear legacy key', key, err);
+          }
+        }
       } catch (err) {
         console.warn('Unable to clear save key', err);
       }

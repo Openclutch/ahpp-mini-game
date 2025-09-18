@@ -115,6 +115,22 @@
     { id: 'jackpot',      label: 'High Roller! Race payouts +50% for 30s',   dur: 30000, apply: s => { s.payoutMult *= 1.5; } },
     { id: 'crackdown',    label: 'Police Crackdown! Payouts -30% for 30s',   dur: 30000, apply: s => { s.payoutMult *= 0.7; } },
   ];
+
+  const GUIDE_STORAGE_KEY = 'garage-guide-intro-v1';
+  const GUIDE_STEPS = [
+    {
+      title: 'Meet Liora',
+      text: "Hey there! I'm Liora, the plaza host. This underground garage is buzzing tonight, so I'll walk you through it.",
+    },
+    {
+      title: 'Getting Around',
+      text: 'Use WASD (or the touch controls) to move. Visit the Parts Vendor to stock up, then head into your bays to install mods.',
+    },
+    {
+      title: 'Cash Out & Events',
+      text: 'Finish builds to stash race-ready cars. Hit the Race Terminal to cash in and watch for plaza events—come find me if you need a refresher! Press Space or tap to get rolling.',
+    },
+  ];
   // ---------- STATE ----------
   const state = {
     payoutMult: 1,
@@ -127,6 +143,7 @@
     eventUntil: 0,
     challenge: null,
     hints: { parts: true, race: true },
+    guide: { active: false, step: 0 },
   };
 
   function normalizeHints(hints) {
@@ -137,6 +154,15 @@
   }
 
   state.hints = normalizeHints(state.hints);
+
+  try {
+    if (typeof localStorage !== 'undefined' && !localStorage.getItem(GUIDE_STORAGE_KEY)) {
+      state.guide.active = true;
+      state.guide.step = 0;
+    }
+  } catch (err) {
+    console.warn('Unable to read guide storage flag', err);
+  }
 
   function hydrateBuild(build) {
     if (!build || typeof build !== 'object') return null;
@@ -622,6 +648,10 @@
   if (isTouch) {
     console.log('Touch mode enabled – pointer interactions will trigger actions');
     cv.addEventListener('pointerdown', e => {
+      if (state.guide?.active) {
+        advanceGuide();
+        return;
+      }
       const rect = cv.getBoundingClientRect();
       const x = (e.clientX - rect.left) * cv.width / rect.width;
       const y = (e.clientY - rect.top) * cv.height / rect.height;
@@ -635,6 +665,9 @@
     });
   } else {
     console.log('Keyboard mode enabled – use WASD/Arrows to move');
+    cv.addEventListener('click', () => {
+      if (state.guide?.active) advanceGuide();
+    });
   }
 
   function movePlayer(p, up, left, down, right) {
@@ -1151,6 +1184,8 @@
     drawPlayer(state.p1, RETRO.teal);
     drawCrewMember(state.p1);
 
+    drawGuideOverlay();
+
     p1moneyEl.textContent = `Credits: ${formatCredits(state.p1.credits)}`;
     const crew1 = state.p1.crewMember ? CREW.find(c => c.id === state.p1.crewMember.id) : null;
     const inv1 = Object.entries(state.p1.inventory).filter(([, v]) => v > 0).map(([k, v], i) => `${i + 1}:${k}(${v})`).join(', ') || '—';
@@ -1436,9 +1471,184 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
   }
+
+  function advanceGuide() {
+    if (!state.guide) state.guide = { active: false, step: 0 };
+    if (!state.guide.active) return;
+    state.guide.step += 1;
+    if (state.guide.step >= GUIDE_STEPS.length) {
+      state.guide.active = false;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(GUIDE_STORAGE_KEY, '1');
+        }
+      } catch (err) {
+        console.warn('Unable to persist guide completion flag', err);
+      }
+    }
+  }
+
+  function drawGuideOverlay() {
+    if (!state.guide?.active) return;
+    const step = GUIDE_STEPS[state.guide.step] || GUIDE_STEPS[GUIDE_STEPS.length - 1];
+    ctx.save();
+    ctx.fillStyle = 'rgba(4, 8, 18, 0.82)';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.restore();
+
+    const characterScale = 4;
+    const charX = Math.round(cv.width * 0.58);
+    const charY = Math.round(cv.height * 0.4 - 36 * characterScale);
+    drawGuideCharacter(charX, charY, characterScale);
+
+    const boxWidth = Math.min(460, cv.width - 80);
+    const boxHeight = 200;
+    const boxX = Math.round(cv.width * 0.14);
+    const boxY = Math.round(cv.height * 0.54 - boxHeight / 2);
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(6, 14, 32, 0.92)';
+    ctx.strokeStyle = '#4ecbff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.rect(boxX, boxY, boxWidth, boxHeight);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#d1f7ff';
+    ctx.font = 'bold 22px "Courier New", monospace';
+    ctx.fillText(step.title, boxX + 24, boxY + 42);
+
+    ctx.font = '16px "Courier New", monospace';
+    ctx.fillStyle = '#9fdcff';
+    drawWrappedText(step.text, boxX + 24, boxY + 72, boxWidth - 48, 22);
+
+    ctx.font = '14px "Courier New", monospace';
+    ctx.fillStyle = '#63e7ff';
+    ctx.fillText(`(${state.guide.step + 1}/${GUIDE_STEPS.length}) Press Space to continue`, boxX + 24, boxY + boxHeight - 24);
+    ctx.restore();
+  }
+
+  function drawWrappedText(text, x, y, maxWidth, lineHeight) {
+    const words = String(text || '').split(/\s+/);
+    let line = '';
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const testLine = line ? `${line} ${word}` : word;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && line) {
+        ctx.fillText(line, x, y);
+        line = word;
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      ctx.fillText(line, x, y);
+    }
+  }
+
+  function drawGuideCharacter(x, y, scale = 4) {
+    const palette = {
+      hairDark: '#586172',
+      hairMid: '#6e7a8d',
+      hairLight: '#8b95a7',
+      skin: '#f2c9b0',
+      blush: '#f5b6a6',
+      eyeLight: '#f8fbff',
+      iris: '#4fb5ff',
+      top: '#1b1d29',
+      shorts: '#3e5f88',
+      shortsLight: '#5f84ad',
+      shoes: '#1a1a21',
+      lace: '#2c2c38',
+      tattoo: '#caa87d',
+      outline: '#0d111f',
+    };
+
+    const px = (gx, gy, gw = 1, gh = 1, color) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.round(x + gx * scale), Math.round(y + gy * scale), Math.round(gw * scale), Math.round(gh * scale));
+    };
+
+    // shadow
+    px(4, 48, 12, 2, 'rgba(0, 0, 0, 0.25)');
+
+    // hair back layer
+    px(5, 2, 10, 3, palette.hairDark);
+    px(4, 5, 12, 4, palette.hairDark);
+    px(3, 9, 14, 4, palette.hairMid);
+    px(2, 13, 5, 16, palette.hairMid);
+    px(13, 13, 4, 14, palette.hairLight);
+
+    // face
+    px(6, 8, 8, 7, palette.skin);
+    px(6, 15, 8, 2, palette.blush);
+
+    // bangs
+    px(5, 6, 10, 3, palette.hairLight);
+    px(4, 9, 2, 4, palette.hairLight);
+    px(13, 8, 3, 4, palette.hairMid);
+
+    // eyes
+    px(7, 10, 2, 1, palette.eyeLight);
+    px(11, 10, 2, 1, palette.eyeLight);
+    px(7, 11, 2, 1, palette.iris);
+    px(11, 11, 2, 1, palette.iris);
+    px(8, 11, 1, 1, palette.outline);
+    px(12, 11, 1, 1, palette.outline);
+    px(8, 12, 2, 1, palette.outline);
+    px(11, 12, 2, 1, palette.outline);
+
+    // mouth
+    px(9, 14, 3, 1, palette.outline);
+
+    // neck
+    px(8, 16, 4, 2, palette.skin);
+
+    // top
+    px(5, 18, 10, 4, palette.top);
+    px(4, 18, 1, 5, palette.skin);
+    px(15, 18, 1, 5, palette.skin);
+
+    // tattoo on arm
+    px(4, 20, 1, 3, palette.tattoo);
+    px(4, 23, 1, 2, palette.tattoo);
+    px(4, 25, 1, 2, palette.tattoo);
+    px(4, 27, 1, 2, palette.tattoo);
+
+    // shorts
+    px(5, 22, 10, 6, palette.shorts);
+    px(5, 22, 3, 2, palette.shortsLight);
+    px(12, 22, 3, 2, palette.shortsLight);
+    px(8, 28, 4, 1, palette.outline);
+
+    // legs
+    px(7, 28, 3, 6, palette.skin);
+    px(10, 28, 3, 6, palette.skin);
+
+    // shoes
+    px(6, 34, 4, 3, palette.shoes);
+    px(10, 34, 4, 3, palette.shoes);
+    px(7, 34, 2, 1, palette.lace);
+    px(11, 34, 2, 1, palette.lace);
+
+    // outline hints
+    px(5, 18, 10, 1, palette.outline);
+    px(5, 22, 10, 1, palette.outline);
+    px(6, 33, 8, 1, palette.outline);
+  }
+
   const NUMBER_KEYS = ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','Digit0'];
 
   function update() {
+    if (state.guide?.active) {
+      if (justPressed('Space') || justPressed('Enter') || justPressed('NumpadEnter') || justPressed('Escape')) {
+        advanceGuide();
+      }
+      return;
+    }
     movePlayer(state.p1, 'KeyW', 'KeyA', 'KeyS', 'KeyD');
     moveCrew(state.p1);
 
@@ -1471,7 +1681,7 @@
     const now = nowMs();
     const delta = Math.max(0, Math.min(now - lastFrameTime, 250));
     lastFrameTime = now;
-    if (!(typeof document !== 'undefined' && document.hidden)) {
+    if (!(typeof document !== 'undefined' && document.hidden) && !state.guide?.active) {
       advanceBuilds(delta);
     }
     update();

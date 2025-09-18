@@ -120,11 +120,11 @@
   const GUIDE_STEPS = [
     {
       title: 'Meet Ange',
-      text: "Hey there! I'm Ange. This underground garage is buzzing tonight, so I'll walk you through it.",
+      text: "Hey there! I'm Ange. Weird, you we're just laying on the floor when I came in... do you even know your name? Your Lee in Lee's Garage! You build some of the hottest cars on the street!",
     },
     {
       title: 'Getting Around',
-      text: 'Use WASD (or the touch controls) to move. Visit the Parts Vendor to stock up, then head into your bays to install mods.',
+      text: 'I'''ll give you a few hints since you must have hit your head... Use WASD (or the touch controls) to move. Visit the Parts Vendor to stock up, then head into your bays to install mods.',
     },
     {
       title: 'Cash Out & Events',

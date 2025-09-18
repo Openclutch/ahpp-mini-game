@@ -124,7 +124,7 @@
     },
     {
       title: 'Getting Around',
-      text: 'I'''ll give you a few hints since you must have hit your head... Use WASD (or the touch controls) to move. Visit the Parts Vendor to stock up, then head into your bays to install mods.',
+    text: "I'll give you a few hints since you must have hit your head... Use WASD (or the touch controls) to move. Visit the Parts Vendor to stock up, then head into your bays to install mods.",
     },
     {
       title: 'Cash Out & Events',

@@ -19,7 +19,7 @@
 
       #${TOGGLE_ID} {
         position: fixed;
-        bottom: 90px;
+        bottom: 20px;
         right: 20px;
         z-index: 2147483642;
         border: none;
@@ -108,7 +108,7 @@
 
       @media (max-width: 520px) {
         #${TOGGLE_ID} {
-          bottom: 80px;
+          bottom: 16px;
           right: 16px;
           padding: 0.55rem 1rem;
           font-size: 0.9rem;

@@ -1393,6 +1393,21 @@
     ctx.restore();
   }
 
+  const INSTALL_SCENE_MAP = {
+    coldair: drawSceneColdAir,
+    turbo: drawSceneTurbo,
+    fuel: drawSceneFuel,
+    ecu: drawSceneEcu,
+    intercooler: drawSceneIntercooler,
+    nos: drawSceneNos,
+    exhaust: drawSceneExhaust,
+    headers: drawSceneHeaders,
+    suspension: drawSceneSuspension,
+    brakes: drawSceneBrakes,
+    bodykit: drawSceneBodykit,
+    engineswap: drawSceneEngineSwap,
+  };
+
   function drawBuild(bay, build) {
     const progress = Math.min(1, buildProgress(build));
     const def = MODS[build.kind] || { palette: [RETRO.orange, RETRO.gold, RETRO.shadow], name: build.kind };
@@ -1401,47 +1416,35 @@
     const x = 8;
     const y = 10;
     const w = bay.w - 16;
-    const h = bay.h - 32;
     const liftY = bay.h - 28;
+    const stage = {
+      x,
+      y,
+      w,
+      h: liftY - y - 6,
+      groundY: liftY - 6,
+      liftY,
+    };
 
-    ctx.fillStyle = 'rgba(35, 8, 18, 0.55)';
-    ctx.fillRect(x - 4, liftY + 18, w + 8, 6);
+    drawBayFloor(stage, w);
 
-    ctx.fillStyle = 'rgba(71, 16, 32, 0.88)';
-    ctx.fillRect(x, liftY, w, 18);
-    ctx.fillStyle = RETRO.plum;
-    ctx.fillRect(x + 6, liftY + 4, w - 12, 6);
-    ctx.fillStyle = RETRO.shadow;
-    ctx.fillRect(x + 6, liftY + 10, w - 12, 6);
-
-    const carHeight = h * 0.6;
-    const carY = liftY - carHeight - 6 - (1 - progress) * 20;
-    ctx.fillStyle = shadow;
-    ctx.fillRect(x + 4, carY + carHeight - 4, w - 8, 6);
-    ctx.fillStyle = body;
-    ctx.fillRect(x, carY, w, carHeight);
-    ctx.fillStyle = accent;
-    ctx.fillRect(x + 6, carY + 6, w - 12, carHeight / 2);
-    ctx.fillStyle = RETRO.midnight;
-    ctx.fillRect(x + 10, carY + carHeight / 2 - 6, w - 20, carHeight / 3);
-    ctx.fillStyle = RETRO.mint;
-    ctx.fillRect(x + 12, carY + carHeight / 2 - 2, w - 24, carHeight / 5);
-
-    ctx.fillStyle = RETRO.shadow;
-    ctx.fillRect(x + 4, carY + carHeight - 8, w - 8, 6);
-    ctx.fillStyle = '#C78F7D';
-    ctx.fillRect(x + 8, carY + carHeight - 6, w - 16, 4);
-
-    const headlightColor = progress >= 1 ? RETRO.cream : RETRO.teal;
-    ctx.fillStyle = headlightColor;
-    ctx.fillRect(x + 10, carY + 4, 10, 6);
-    ctx.fillRect(x + w - 20, carY + 4, 10, 6);
+    const paletteObj = { body, accent, shadow };
+    const scene = INSTALL_SCENE_MAP[build.kind] || drawSceneDefault;
+    const info = scene(ctx, {
+      stage,
+      progress,
+      palette: paletteObj,
+      build,
+      complete: progress >= 1,
+    }) || {};
 
     ctx.fillStyle = 'rgba(249,228,193,0.16)';
-    ctx.fillRect(x, carY - 8, w * progress, 4);
+    ctx.fillRect(stage.x, stage.y - 4, stage.w * progress, 3);
 
     if (build.tuning) {
-      drawSparkles(bay.x + bay.w / 2, bay.y + carY + carHeight / 2, 24, 6);
+      const sparkleX = bay.x + (info.sparkleX != null ? info.sparkleX : stage.x + stage.w / 2);
+      const sparkleY = bay.y + (info.sparkleY != null ? info.sparkleY : stage.y + stage.h / 2);
+      drawSparkles(sparkleX, sparkleY, 24, 6);
     }
 
     if (build.dead) {
@@ -1461,6 +1464,535 @@
     ctx.fillRect(x + 2, bay.h - 22, (w - 4) * progress, 6);
     ctx.fillStyle = RETRO.shadow;
     ctx.fillRect(x + 2, bay.h - 14, w - 4, 2);
+  }
+
+  function drawBayFloor(stage, width) {
+    ctx.fillStyle = 'rgba(35, 8, 18, 0.55)';
+    ctx.fillRect(stage.x - 4, stage.liftY + 18, width + 8, 6);
+
+    ctx.fillStyle = 'rgba(71, 16, 32, 0.88)';
+    ctx.fillRect(stage.x, stage.liftY, width, 18);
+    ctx.fillStyle = RETRO.plum;
+    ctx.fillRect(stage.x + 6, stage.liftY + 4, width - 12, 6);
+    ctx.fillStyle = RETRO.shadow;
+    ctx.fillRect(stage.x + 6, stage.liftY + 10, width - 12, 6);
+  }
+
+  function drawSceneDefault(ctx, opts) {
+    return drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+    });
+  }
+
+  function drawSceneColdAir(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+    });
+    const engine = car.engineRect;
+    const filterWidth = 12;
+    const filterHeight = 6;
+    const drop = Math.round((1 - opts.progress) * 10);
+    const filterX = engine.x - filterWidth - 6;
+    const filterY = engine.y + engine.h - filterHeight - 2;
+
+    ctx.fillStyle = '#3EC1D3';
+    ctx.fillRect(filterX, filterY - drop, filterWidth, filterHeight);
+    ctx.fillStyle = '#1B6B7E';
+    ctx.fillRect(filterX + 2, filterY - drop + 1, filterWidth - 4, filterHeight - 2);
+
+    const pipeStart = filterX + filterWidth;
+    const pipeEnd = engine.x + engine.w - 4;
+    const pipeWidth = Math.max(0, pipeEnd - pipeStart);
+    const installed = Math.round(pipeWidth * opts.progress);
+    ctx.fillStyle = '#A1D4B1';
+    ctx.fillRect(pipeStart, filterY - drop + 2, installed, 3);
+
+    return { sparkleX: car.centerX, sparkleY: car.centerY - 6 };
+  }
+
+  function drawSceneTurbo(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+    });
+    const engine = car.engineRect;
+    const snailSize = 14;
+    const drop = Math.round((1 - opts.progress) * 14);
+    const snailX = engine.x + Math.round(engine.w / 2) - Math.round(snailSize / 2);
+    const snailY = engine.y - snailSize - 4 - drop;
+
+    ctx.fillStyle = '#B7C7D6';
+    ctx.fillRect(snailX, snailY, snailSize, snailSize);
+    ctx.fillStyle = '#7B8EA3';
+    ctx.fillRect(snailX + 3, snailY + 3, snailSize - 6, snailSize - 6);
+    ctx.fillStyle = '#47566D';
+    ctx.fillRect(snailX + 5, snailY + 5, snailSize - 10, snailSize - 10);
+    ctx.fillStyle = '#D9E4F0';
+    ctx.fillRect(snailX - 4, snailY + 4, 6, 4);
+    ctx.fillRect(snailX + snailSize - 2, snailY + 6, 8, 2);
+
+    ctx.fillStyle = '#1B6B7E';
+    ctx.fillRect(engine.x + 2, engine.y + engine.h - 4, engine.w - 8, 3);
+
+    return { sparkleX: car.centerX, sparkleY: engine.y + engine.h / 2 };
+  }
+
+  function drawSceneFuel(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+    });
+    const engine = car.engineRect;
+    const installed = Math.round(Math.max(0, engine.w - 4) * opts.progress);
+    ctx.fillStyle = '#E04F3B';
+    ctx.fillRect(engine.x + 2, engine.y + 3, installed, 4);
+    ctx.fillStyle = '#F9E4C1';
+    ctx.fillRect(engine.x + 2, engine.y + 7, installed, 2);
+    ctx.fillStyle = '#360C1B';
+    ctx.fillRect(engine.x - 6, engine.y + engine.h - 3, 6, 3);
+    ctx.fillRect(engine.x + engine.w, engine.y + engine.h - 3, 6, 3);
+
+    return { sparkleX: car.centerX, sparkleY: engine.y + engine.h / 2 };
+  }
+
+  function drawSceneEcu(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+    });
+    const engine = car.engineRect;
+    const cartX = engine.x - 26;
+    const cartY = engine.y + engine.h + 2;
+    const slide = Math.round((1 - opts.progress) * 12);
+
+    ctx.fillStyle = '#1F2336';
+    ctx.fillRect(cartX - slide, cartY - 18, 22, 12);
+    ctx.fillStyle = '#2BAF90';
+    ctx.fillRect(cartX - slide + 2, cartY - 16, Math.round(18 * opts.progress), 8);
+    ctx.fillStyle = '#0D101C';
+    ctx.fillRect(cartX - slide, cartY - 6, 22, 4);
+    ctx.fillRect(cartX - slide + 2, cartY - 2, 18, 2);
+    ctx.fillStyle = '#C78F7D';
+    ctx.fillRect(cartX - slide + 8, cartY, 6, 2);
+
+    ctx.strokeStyle = '#A1D4B1';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cartX - slide + 22, cartY - 12);
+    ctx.lineTo(engine.x + 2, engine.y + engine.h - 4);
+    ctx.stroke();
+
+    return { sparkleX: cartX + 4, sparkleY: cartY - 10 };
+  }
+
+  function drawSceneNos(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      trunkOpen: true,
+    });
+    const trunk = car.trunkRect;
+    const bottleHeight = 12;
+    const drop = Math.round((1 - opts.progress) * 12);
+    const bottleX = trunk.x + Math.round(trunk.w / 2) - 4;
+    const bottleY = trunk.y + trunk.h - bottleHeight - 2;
+
+    ctx.fillStyle = '#143C73';
+    ctx.fillRect(bottleX, bottleY - drop, 8, bottleHeight);
+    ctx.fillStyle = '#F1A512';
+    ctx.fillRect(bottleX + 2, bottleY - drop + 2, 4, 4);
+    ctx.fillStyle = '#CBE8D2';
+    ctx.fillRect(bottleX + 1, bottleY - drop - 3, 6, 3);
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(trunk.x - 2, trunk.y + trunk.h - 2, trunk.w + 4, 2);
+
+    return { sparkleX: trunk.x + trunk.w / 2, sparkleY: trunk.y + trunk.h / 2 };
+  }
+
+  function drawSceneIntercooler(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+    });
+    const nose = car.noseRect;
+    ctx.fillStyle = 'rgba(35, 8, 18, 0.75)';
+    ctx.fillRect(nose.x, nose.y, nose.w, nose.h);
+
+    const coolerHeight = Math.max(6, nose.h - 6);
+    const installed = Math.round(coolerHeight * opts.progress);
+    const coolerY = nose.y + Math.max(0, nose.h - coolerHeight) / 2;
+    if (installed > 0) {
+      ctx.fillStyle = '#9FB6C7';
+      ctx.fillRect(nose.x - 4, coolerY + coolerHeight - installed, nose.w + 8, installed);
+      ctx.fillStyle = '#47566D';
+      ctx.fillRect(nose.x - 4, coolerY + coolerHeight - installed, nose.w + 8, 2);
+
+      const pipeHeight = Math.max(0, installed - 4);
+      if (pipeHeight > 0) {
+        ctx.fillStyle = '#CBE8D2';
+        ctx.fillRect(nose.x - 8, coolerY + coolerHeight - installed + 2, 4, pipeHeight);
+        ctx.fillRect(nose.x + nose.w + 4, coolerY + coolerHeight - installed + 2, 4, pipeHeight);
+      }
+    }
+
+    return { sparkleX: car.centerX, sparkleY: nose.y + nose.h / 2 };
+  }
+
+  function drawSceneExhaust(ctx, opts) {
+    const lift = 18;
+    drawLiftPosts(opts.stage, lift);
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      lift,
+    });
+
+    const pipeY = car.baseY - 18;
+    const pipeLength = car.carWidth - 20;
+    const pipeX = car.carX + 10;
+    const installed = Math.round(pipeLength * opts.progress);
+    ctx.fillStyle = '#A4A7B8';
+    ctx.fillRect(pipeX, pipeY, installed, 4);
+    ctx.fillStyle = '#686C7A';
+    ctx.fillRect(pipeX + installed - 4, pipeY + 1, 4, 2);
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(car.carX + 4, car.baseY, car.carWidth - 8, 3);
+
+    return { sparkleX: car.centerX, sparkleY: pipeY - 6 };
+  }
+
+  function drawSceneHeaders(ctx, opts) {
+    const lift = 18;
+    drawLiftPosts(opts.stage, lift);
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      lift,
+    });
+
+    const headerWidth = 14;
+    const headerHeight = 8;
+    const headerX = car.engineRect.x + 2;
+    const headerY = car.baseY - lift - 6;
+    const installed = Math.round(headerWidth * opts.progress);
+    ctx.fillStyle = '#F1A512';
+    ctx.fillRect(headerX, headerY, installed, headerHeight);
+    ctx.fillStyle = '#8C0027';
+    ctx.fillRect(headerX, headerY + headerHeight - 2, installed, 2);
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(headerX - 6, headerY + headerHeight, installed + 12, 2);
+
+    return { sparkleX: car.centerX + 6, sparkleY: headerY - 4 };
+  }
+
+  function drawSceneSuspension(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+      frontWheelMode: 'removed',
+    });
+    const wheel = car.frontWheelRect;
+    const strutHeight = wheel.h + 14;
+    const installed = Math.round(strutHeight * opts.progress);
+    const strutX = wheel.x + Math.round(wheel.w / 2) - 3;
+    const strutY = wheel.y + wheel.h - installed;
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(wheel.x + wheel.w / 2 - 4, wheel.y + wheel.h + 2, 8, 10);
+
+    ctx.fillStyle = '#F1A512';
+    ctx.fillRect(strutX, strutY, 6, installed);
+    ctx.fillStyle = '#DD4111';
+    ctx.fillRect(strutX, strutY + 6, 6, 2);
+    ctx.fillRect(strutX, strutY + 12, 6, 2);
+
+    return { sparkleX: wheel.x + wheel.w / 2, sparkleY: wheel.y + wheel.h / 2 };
+  }
+
+  function drawSceneBrakes(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+      frontWheelMode: 'removed',
+    });
+    const wheel = car.frontWheelRect;
+    const rotorSize = 16;
+    const rotorX = wheel.x + Math.round(wheel.w / 2) - rotorSize / 2;
+    const rotorY = wheel.y + wheel.h - rotorSize + 2;
+    const installed = Math.round(rotorSize * opts.progress);
+
+    if (installed > 0) {
+      ctx.fillStyle = '#7B8EA3';
+      ctx.fillRect(rotorX, rotorY, rotorSize, installed);
+      const highlightH = Math.max(2, installed - 4);
+      if (highlightH > 0) {
+        ctx.fillStyle = '#CBE8D2';
+        ctx.fillRect(rotorX + 2, rotorY + 2, rotorSize - 4, highlightH);
+      }
+      const caliperH = Math.max(2, installed - 8);
+      if (caliperH > 0) {
+        ctx.fillStyle = '#DD4111';
+        ctx.fillRect(rotorX + rotorSize - 3, rotorY + 4, 3, caliperH);
+      }
+    }
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(wheel.x + wheel.w / 2 - 4, wheel.y + wheel.h + 2, 8, 10);
+
+    return { sparkleX: wheel.x + wheel.w / 2, sparkleY: rotorY + rotorSize / 2 };
+  }
+
+  function drawSceneBodykit(ctx, opts) {
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+    });
+    const skirtY = car.baseY - 12;
+    const installed = Math.round(car.carWidth * opts.progress);
+
+    ctx.fillStyle = opts.palette.accent;
+    ctx.fillRect(car.carX, skirtY, installed, 6);
+    ctx.fillStyle = '#FCE2B6';
+    ctx.fillRect(car.carX, skirtY + 4, installed, 2);
+
+    const panelWidth = 18;
+    const panelX = car.carX + 12 + Math.round((1 - opts.progress) * 14);
+    const panelY = skirtY - 18;
+    ctx.fillStyle = '#A1D4B1';
+    ctx.fillRect(panelX, panelY, panelWidth, 12);
+    ctx.fillStyle = '#2BAF90';
+    ctx.fillRect(panelX + 2, panelY + 2, panelWidth - 4, 8);
+
+    return { sparkleX: car.centerX, sparkleY: skirtY - 6 };
+  }
+
+  function drawSceneEngineSwap(ctx, opts) {
+    drawHoist(opts.stage);
+    const car = drawCarSprite(ctx, {
+      stage: opts.stage,
+      palette: opts.palette,
+      complete: opts.complete,
+      hoodOpen: true,
+    });
+    const engine = car.engineRect;
+    const liftHeight = 26;
+    const engineWidth = engine.w - 4;
+    const engineX = engine.x + 2;
+    const drop = Math.round((1 - opts.progress) * (liftHeight + 12));
+    const engineY = engine.y - liftHeight - drop;
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(engineX - 1, engineY - 12, engineWidth + 2, 12);
+    ctx.fillStyle = '#F1A512';
+    ctx.fillRect(engineX, engineY, engineWidth, 12);
+    ctx.fillStyle = '#8C0027';
+    ctx.fillRect(engineX + 4, engineY + 4, engineWidth - 8, 4);
+
+    ctx.strokeStyle = '#CBE8D2';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(engineX + engineWidth / 2, opts.stage.y + 6);
+    ctx.lineTo(engineX + engineWidth / 2, engineY - 12);
+    ctx.stroke();
+
+    return { sparkleX: car.centerX + 4, sparkleY: engineY + 6 };
+  }
+
+  function drawLiftPosts(stage, lift) {
+    const postHeight = stage.h + lift + 12;
+    const leftX = stage.x + 10;
+    const rightX = stage.x + stage.w - 16;
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(leftX, stage.groundY - postHeight + lift, 6, postHeight);
+    ctx.fillRect(rightX, stage.groundY - postHeight + lift, 6, postHeight);
+    ctx.fillStyle = '#471020';
+    ctx.fillRect(leftX + 1, stage.groundY - postHeight + lift + 4, 4, postHeight - 8);
+    ctx.fillRect(rightX + 1, stage.groundY - postHeight + lift + 4, 4, postHeight - 8);
+
+    ctx.fillStyle = '#8C0027';
+    ctx.fillRect(leftX + 4, stage.groundY - lift + 2, 16, 4);
+    ctx.fillRect(rightX - 16, stage.groundY - lift + 2, 16, 4);
+  }
+
+  function drawHoist(stage) {
+    const leftX = stage.x + 6;
+    const rightX = stage.x + stage.w - 12;
+    const baseY = stage.groundY;
+    const postHeight = stage.h + 18;
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(leftX, baseY - postHeight, 6, postHeight);
+    ctx.fillRect(rightX, baseY - postHeight, 6, postHeight);
+    ctx.fillStyle = '#471020';
+    ctx.fillRect(leftX + 1, baseY - postHeight + 4, 4, postHeight - 8);
+    ctx.fillRect(rightX + 1, baseY - postHeight + 4, 4, postHeight - 8);
+    ctx.fillStyle = '#8C0027';
+    ctx.fillRect(leftX - 2, baseY - postHeight, rightX - leftX + 10, 6);
+  }
+
+  function drawCarSprite(ctx, opts) {
+    const stage = opts.stage;
+    const palette = opts.palette || {};
+    const carWidth = Math.min(stage.w - 6, Math.max(52, stage.w - 12));
+    const x = Math.round(stage.x + (stage.w - carWidth) / 2);
+    const lift = Math.max(0, opts.lift || 0);
+    const baseY = Math.round(stage.groundY - lift);
+    const wheelH = 8;
+    const bodyH = 14;
+    const roofH = 8;
+    const carHeight = wheelH + bodyH + roofH;
+    const carY = baseY - carHeight;
+    const wheelW = Math.round(Math.min(16, Math.max(12, carWidth * 0.24)));
+    const rearWheelX = x + 4;
+    const frontWheelX = x + carWidth - wheelW - 4;
+    const wheelY = baseY - wheelH;
+    const hoodLineY = carY + roofH;
+    const accentY = hoodLineY + Math.floor(bodyH / 2) - 2;
+
+    ctx.fillStyle = 'rgba(35, 8, 18, 0.5)';
+    ctx.fillRect(x - 6, baseY - wheelH + 4, carWidth + 12, 4);
+
+    const drawWheel = (wx) => {
+      ctx.fillStyle = palette.shadow || RETRO.shadow;
+      ctx.fillRect(wx, wheelY, wheelW, wheelH);
+      ctx.fillStyle = '#111016';
+      ctx.fillRect(wx + 2, wheelY + 2, wheelW - 4, wheelH - 3);
+      ctx.fillStyle = '#676778';
+      ctx.fillRect(wx + 4, wheelY + 3, wheelW - 8, wheelH - 5);
+      ctx.fillStyle = '#F1A512';
+      ctx.fillRect(wx + Math.floor(wheelW / 2) - 1, wheelY + Math.floor(wheelH / 2), 2, 2);
+    };
+
+    if (opts.rearWheelMode !== 'removed') {
+      drawWheel(rearWheelX);
+    }
+
+    if (opts.frontWheelMode !== 'removed') {
+      drawWheel(frontWheelX);
+    } else {
+      ctx.fillStyle = 'rgba(53, 13, 25, 0.4)';
+      ctx.fillRect(frontWheelX, wheelY, wheelW, wheelH);
+    }
+
+    ctx.fillStyle = palette.shadow || RETRO.shadow;
+    ctx.fillRect(x + 2, hoodLineY + bodyH - 4, carWidth - 4, 4);
+
+    ctx.fillStyle = palette.body || RETRO.orange;
+    ctx.fillRect(x, hoodLineY, carWidth, bodyH);
+    ctx.fillStyle = palette.accent || RETRO.gold;
+    ctx.fillRect(x + 6, accentY, carWidth - 12, 4);
+
+    ctx.fillStyle = '#2B0F1A';
+    ctx.fillRect(x + 4, hoodLineY + bodyH - 6, carWidth - 8, 2);
+    ctx.fillStyle = '#C78F7D';
+    ctx.fillRect(x + 6, hoodLineY + bodyH - 4, carWidth - 12, 2);
+
+    ctx.fillStyle = palette.shadow || RETRO.shadow;
+    ctx.fillRect(x + 2, carY + 2, carWidth - 4, roofH + 2);
+    ctx.fillStyle = '#0F2131';
+    const cabinX = x + Math.round(carWidth * 0.28);
+    const cabinW = Math.max(18, Math.round(carWidth * 0.42));
+    const cabinY = carY + 2;
+    const cabinH = roofH - 2;
+    ctx.fillRect(cabinX, cabinY, cabinW, cabinH);
+    ctx.fillStyle = '#2B627A';
+    ctx.fillRect(cabinX + 2, cabinY + 2, cabinW - 4, cabinH - 3);
+
+    ctx.fillStyle = RETRO.berry;
+    ctx.fillRect(x + 3, hoodLineY + 4, 6, 4);
+    ctx.fillStyle = opts.complete ? RETRO.cream : RETRO.teal;
+    ctx.fillRect(x + carWidth - 10, hoodLineY + 4, 8, 4);
+
+    const engineRect = {
+      x: x + carWidth - Math.max(18, Math.round(carWidth * 0.28)) - 6,
+      y: hoodLineY + 2,
+      w: Math.max(18, Math.round(carWidth * 0.28)),
+      h: bodyH - 6,
+    };
+
+    ctx.fillStyle = '#1C1E2A';
+    ctx.fillRect(engineRect.x, engineRect.y, engineRect.w, engineRect.h);
+    ctx.fillStyle = '#353B57';
+    ctx.fillRect(engineRect.x + 2, engineRect.y + 2, engineRect.w - 4, engineRect.h - 4);
+
+    if (opts.hoodOpen) {
+      const hoodWidth = engineRect.w + 6;
+      const hoodHeight = 14;
+      const hingeX = engineRect.x;
+      const hingeY = engineRect.y + 1;
+      ctx.fillStyle = palette.body || RETRO.orange;
+      ctx.beginPath();
+      ctx.moveTo(hingeX, hingeY);
+      ctx.lineTo(hingeX + hoodWidth, hingeY);
+      ctx.lineTo(hingeX + hoodWidth - 6, hingeY - hoodHeight);
+      ctx.lineTo(hingeX - 4, hingeY - hoodHeight + 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = palette.accent || RETRO.gold;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    const trunkRect = {
+      x: x + 4,
+      y: hoodLineY + 2,
+      w: Math.max(16, Math.round(carWidth * 0.26)),
+      h: bodyH - 6,
+    };
+
+    if (opts.trunkOpen) {
+      const hatchHeight = 14;
+      ctx.fillStyle = palette.body || RETRO.orange;
+      ctx.beginPath();
+      ctx.moveTo(trunkRect.x + trunkRect.w, trunkRect.y);
+      ctx.lineTo(trunkRect.x + trunkRect.w, trunkRect.y - hatchHeight);
+      ctx.lineTo(trunkRect.x + trunkRect.w - 4, trunkRect.y - hatchHeight - 4);
+      ctx.lineTo(trunkRect.x, trunkRect.y - 6);
+      ctx.lineTo(trunkRect.x, trunkRect.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = palette.accent || RETRO.gold;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    return {
+      carX: x,
+      carY,
+      carWidth,
+      carHeight,
+      baseY,
+      engineRect,
+      frontWheelRect: { x: frontWheelX, y: wheelY, w: wheelW, h: wheelH },
+      rearWheelRect: { x: rearWheelX, y: wheelY, w: wheelW, h: wheelH },
+      trunkRect,
+      noseRect: { x: engineRect.x + engineRect.w - 6, y: hoodLineY + 2, w: 12, h: bodyH - 4 },
+      centerX: x + carWidth / 2,
+      centerY: carY + carHeight / 2,
+    };
   }
 
   function drawSparkles(cx, cy, radius, count = 6) {

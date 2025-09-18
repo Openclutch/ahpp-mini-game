@@ -30,7 +30,6 @@
         font-weight: 700;
         font-size: 0.95rem;
         letter-spacing: 0.06em;
-        text-transform: uppercase;
         box-shadow: 0 18px 36px -20px rgba(8, 18, 44, 0.92);
         cursor: pointer;
         display: inline-flex;
@@ -97,7 +96,6 @@
         font-size: 0.82rem;
         font-weight: 600;
         letter-spacing: 0.04em;
-        text-transform: uppercase;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
       }
 
@@ -169,7 +167,7 @@
 
     const iframe = document.createElement('iframe');
     iframe.src = GAME_URL;
-    iframe.title = 'Neon Drift Garage — Retro street racing garage sim';
+    iframe.title = 'AHPP Underground Garage Tycoon — Retro street racing garage sim';
     iframe.loading = 'lazy';
     iframe.referrerPolicy = 'no-referrer';
 
@@ -211,7 +209,7 @@
     const toggle = document.createElement('button');
     toggle.id = TOGGLE_ID;
     toggle.type = 'button';
-    toggle.textContent = 'Play AHPP Underground Manager';
+    toggle.textContent = 'Play AHPP Underground Garage Tycoon';
     toggle.setAttribute('aria-controls', OVERLAY_ID);
     toggle.setAttribute('aria-expanded', 'false');
 

@@ -121,7 +121,7 @@
   const GUIDE_STEPS = [
     {
       title: 'Meet Ange',
-      text: "Hey there! I'm Ange. Weird, you we're just laying on the floor when I came in... do you even know your name? Your Lee in Lee's Garage! You build some of the hottest cars on the street!",
+      text: "Hey there! I'm Ange. Weird, you were just laying on the floor when I came in... do you even know your name? Your Lee in Lee's Garage! You build some of the hottest cars on the street!",
     },
     {
       title: 'Getting Around',

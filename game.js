@@ -65,6 +65,7 @@
   }
   const DEFAULT_MOD = 'nos';
   const STARTING_CREDITS = 1000;
+  const PERSISTENCE_ENABLED = false;
 
   const CREW = [
     { id: 'mechanic', name: 'Brett', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },
@@ -240,7 +241,9 @@
       }
     }
   }
-  migrateLegacy();
+  if (PERSISTENCE_ENABLED) {
+    migrateLegacy();
+  }
 
   function applySavedState(saved) {
     if (!saved) return false;
@@ -286,11 +289,13 @@
     return true;
   }
 
-  try {
-    const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-    if (applySavedState(saved)) save();
-  } catch (err) {
-    console.warn('Failed to load save', err);
+  if (PERSISTENCE_ENABLED) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+      if (applySavedState(saved)) save();
+    } catch (err) {
+      console.warn('Failed to load save', err);
+    }
   }
 
   for (const mod of MOD_CATALOG) {
@@ -311,7 +316,7 @@
   let skipSaving = false;
 
   function save() {
-    if (skipSaving) return;
+    if (!PERSISTENCE_ENABLED || skipSaving) return;
     const minimal = JSON.parse(JSON.stringify({
       payoutMult: state.payoutMult,
       installMult: state.installMult,
@@ -322,8 +327,11 @@
     console.log('Saving game state', minimal);
     localStorage.setItem(SAVE_KEY, JSON.stringify(minimal));
   }
-  setInterval(save, 10000);
-  window.addEventListener('beforeunload', save);
+
+  if (PERSISTENCE_ENABLED) {
+    setInterval(save, 10000);
+    window.addEventListener('beforeunload', save);
+  }
   // ---------- DOM ----------
   const p1moneyEl = document.getElementById('p1money');
   const p1hud = document.getElementById('p1hud');
@@ -332,11 +340,6 @@
   const tooltip = document.getElementById('tooltip');
   const eventsPanel = document.getElementById('events');
   const toggleBtn = document.getElementById('toggleEvents');
-  const btnSave = document.getElementById('btnSave');
-  const btnLoad = document.getElementById('btnLoad');
-  const btnExport = document.getElementById('btnExport');
-  const btnImport = document.getElementById('btnImport');
-  const fileImport = document.getElementById('fileImport');
   const btnDevReset = document.getElementById('btnDevReset');
   const btnDevFunds = document.getElementById('btnDevFunds');
   const btnDevFinish = document.getElementById('btnDevFinish');
@@ -585,60 +588,26 @@
     while (feed.childElementCount > 60) feed.lastChild.remove();
   }
 
-  btnSave.onclick = () => { save(); log('Garage data saved to browser.'); };
-  btnLoad.onclick = () => {
-    const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-    if (!applySavedState(saved)) { log('No garage save found.'); return; }
-    updateHelpVisibility();
-    syncVendorUi();
-    save();
-    log('Garage save loaded.');
-  };
-  btnExport.onclick = () => {
-    save();
-    const blob = new Blob([localStorage.getItem(SAVE_KEY) || '{}'], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'neon_drift_save.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    log('Exported garage data.');
-  };
-  btnImport.onclick = () => fileImport.click();
-  fileImport.onchange = async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const txt = await file.text();
-      const data = JSON.parse(txt);
-      applySavedState(data);
-      updateHelpVisibility();
-      syncVendorUi();
-      save();
-      log('Imported garage data.');
-    } catch {
-      log('Failed to import data.');
-    }
-  };
-
   if (btnDevReset) {
     btnDevReset.addEventListener('click', () => {
       if (!confirm('Reset all progress and reload the garage?')) return;
-      skipSaving = true;
-      try {
-        localStorage.removeItem(SAVE_KEY);
-        localStorage.removeItem(GUIDE_STORAGE_KEY);
-        for (const key of LEGACY_KEYS) {
-          try {
-            localStorage.removeItem(key);
-          } catch (err) {
-            console.warn('Unable to clear legacy key', key, err);
+      if (PERSISTENCE_ENABLED) {
+        skipSaving = true;
+        try {
+          localStorage.removeItem(SAVE_KEY);
+          localStorage.removeItem(GUIDE_STORAGE_KEY);
+          for (const key of LEGACY_KEYS) {
+            try {
+              localStorage.removeItem(key);
+            } catch (err) {
+              console.warn('Unable to clear legacy key', key, err);
+            }
           }
+        } catch (err) {
+          console.warn('Unable to clear save key', err);
         }
-      } catch (err) {
-        console.warn('Unable to clear save key', err);
+        window.removeEventListener('beforeunload', save);
       }
-      window.removeEventListener('beforeunload', save);
       location.reload();
     });
   }

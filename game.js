@@ -80,9 +80,8 @@
   const costValues = MOD_CATALOG.map(mod => mod.cost);
   const minCost = costValues.length ? Math.min(...costValues) : 0;
   const maxCost = costValues.length ? Math.max(...costValues) : 0;
-  const baseInstall = MODS[DEFAULT_MOD].installMs;
-  const maxInstall = Math.max(...Object.values(MODS).map(mod => mod.installMs || baseInstall));
-  const targetMaxInstall = Math.max(baseInstall, Math.round(maxInstall * 0.75));
+  const baseInstall = 10000; // Cold Air Intake target (10 seconds)
+  const targetMaxInstall = 240000; // Race engine swap target (4 minutes)
   const costLogSpan = (minCost > 0 && maxCost > minCost) ? Math.log(maxCost / minCost) : 0;
 
   for (const entry of MOD_CATALOG) {
@@ -91,7 +90,8 @@
     if (costLogSpan && entry.cost > minCost) {
       ratio = Math.log(entry.cost / minCost) / costLogSpan;
     }
-    const smooth = baseInstall + (targetMaxInstall - baseInstall) * Math.min(1, Math.max(0, ratio));
+    const clampedRatio = Math.min(1, Math.max(0, ratio));
+    const smooth = baseInstall * Math.pow(targetMaxInstall / baseInstall, clampedRatio);
     const installMs = Math.round(smooth / 1000) * 1000;
     mod.installMs = Math.min(targetMaxInstall, Math.max(baseInstall, installMs));
     mod.name = mod.name || entry.name;

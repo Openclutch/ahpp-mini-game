@@ -74,12 +74,12 @@
         flex-direction: column;
         align-items: stretch;
         gap: 0.65rem;
-        width: min(92vw, 960px);
+        width: min(98vw, 1280px);
       }
 
       #${OVERLAY_ID} iframe {
         width: 100%;
-        height: clamp(360px, 70vh, 640px);
+        height: clamp(460px, 75vh, 720px);
         border: 0;
         border-radius: 14px;
         background: radial-gradient(circle at top, #131035, #04040f 65%);
@@ -120,7 +120,7 @@
         }
 
         #${OVERLAY_ID} iframe {
-          height: clamp(240px, 65vh, 520px);
+          height: clamp(260px, 70vh, 560px);
           border-radius: 12px;
         }
       }

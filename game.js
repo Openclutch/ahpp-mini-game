@@ -930,8 +930,10 @@
     } else {
       txt = 'Empty bay';
     }
-    tooltip.style.left = (p.x + p.w / 2) + 'px';
-    tooltip.style.top = (p.y) + 'px';
+    const anchorX = bay ? bay.x + bay.w / 2 : p.x + p.w / 2;
+    const anchorY = bay ? bay.y + 8 : p.y;
+    tooltip.style.left = anchorX + 'px';
+    tooltip.style.top = anchorY + 'px';
     tooltip.textContent = txt;
     tooltip.style.opacity = 1;
     clearTimeout(showTooltip._t);

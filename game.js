@@ -19,18 +19,18 @@
   };
 
   const MODS = {
-    nitro:        { name: 'Cold Air Intake',          installMs: 60000,  payout: 900,   cost: 350,  icon: '🌬️', palette: [RETRO.teal, RETRO.softMint, RETRO.deepTeal] },
-    neon:         { name: 'Performance Exhaust',      installMs: 75000,  payout: 1200,  cost: 520,  icon: '💨', palette: [RETRO.gold, RETRO.paleGold, RETRO.berry] },
-    driftTires:   { name: 'Tuned Headers',            installMs: 90000,  payout: 1900,  cost: 900,  icon: '🔧', palette: [RETRO.sunburst, RETRO.gold, RETRO.shadow] },
-    suspension:   { name: 'High-Flow Fuel System',    installMs: 120000, payout: 2800,  cost: 1500, icon: '⛽', palette: [RETRO.mint, RETRO.teal, RETRO.deepBerry] },
-    sound:        { name: 'ECU Tune',                 installMs: 150000, payout: 3600,  cost: 2100, icon: '💾', palette: [RETRO.berry, RETRO.orange, RETRO.midnight] },
-    wrap:         { name: 'Coilover Suspension',      installMs: 180000, payout: 4700,  cost: 2600, icon: '🛞', palette: [RETRO.orange, RETRO.sunburst, RETRO.shadow] },
-    turbo:        { name: 'Big Brake Kit',            installMs: 240000, payout: 6800,  cost: 4000, icon: '🛑', palette: [RETRO.gold, RETRO.teal, RETRO.deepBerry] },
-    aero:         { name: 'Carbon Fiber Body Kit',    installMs: 300000, payout: 9400,  cost: 6200, icon: '🪶', palette: [RETRO.mint, RETRO.paleGold, RETRO.shadow] },
-    ecu:          { name: 'Stage 2 Turbocharger',     installMs: 360000, payout: 12600, cost: 8300, icon: '🌀', palette: [RETRO.teal, RETRO.gold, RETRO.midnight] },
-    supercharger: { name: 'Front-Mount Intercooler',  installMs: 420000, payout: 17100, cost: 12000,icon: '❄️', palette: [RETRO.mint, RETRO.softMint, RETRO.deepTeal] },
-    driftAI:      { name: 'Wet Nitrous Kit',          installMs: 480000, payout: 22800, cost: 18000,icon: '🧨', palette: [RETRO.orange, RETRO.sunburst, RETRO.berry] },
-    rocketFuel:   { name: 'Race-Spec Engine Swap',    installMs: 540000, payout: 29600, cost: 25000,icon: '⚙️', palette: [RETRO.gold, RETRO.orange, RETRO.midnight] },
+    coldair:        { name: 'Cold Air Intake',          installMs: 60000,  payout: 900,   cost: 350,  icon: '🌬️', palette: [RETRO.teal, RETRO.softMint, RETRO.deepTeal] },
+    exhaust:         { name: 'Performance Exhaust',      installMs: 75000,  payout: 1200,  cost: 520,  icon: '💨', palette: [RETRO.gold, RETRO.paleGold, RETRO.berry] },
+    headers:   { name: 'Tuned Headers',            installMs: 90000,  payout: 1900,  cost: 900,  icon: '🔧', palette: [RETRO.sunburst, RETRO.gold, RETRO.shadow] },
+    fuel:   { name: 'High-Flow Fuel System',    installMs: 120000, payout: 2800,  cost: 1500, icon: '⛽', palette: [RETRO.mint, RETRO.teal, RETRO.deepBerry] },
+    ecu:        { name: 'ECU Tune',                 installMs: 150000, payout: 3600,  cost: 2100, icon: '💾', palette: [RETRO.berry, RETRO.orange, RETRO.midnight] },
+    suspension:         { name: 'Coilover Suspension',      installMs: 180000, payout: 4700,  cost: 2600, icon: '🛞', palette: [RETRO.orange, RETRO.sunburst, RETRO.shadow] },
+    brakes:        { name: 'Big Brake Kit',            installMs: 240000, payout: 6800,  cost: 4000, icon: '🛑', palette: [RETRO.gold, RETRO.teal, RETRO.deepBerry] },
+    bodykit:         { name: 'Carbon Fiber Body Kit',    installMs: 300000, payout: 9400,  cost: 6200, icon: '🪶', palette: [RETRO.mint, RETRO.paleGold, RETRO.shadow] },
+    turbo:          { name: 'Stage 2 Turbocharger',     installMs: 360000, payout: 12600, cost: 8300, icon: '🌀', palette: [RETRO.teal, RETRO.gold, RETRO.midnight] },
+    intercooler: { name: 'Front-Mount Intercooler',  installMs: 420000, payout: 17100, cost: 12000,icon: '❄️', palette: [RETRO.mint, RETRO.softMint, RETRO.deepTeal] },
+    nos:          { name: 'Wet Nitrous Kit',          installMs: 480000, payout: 22800, cost: 18000,icon: '🧨', palette: [RETRO.orange, RETRO.sunburst, RETRO.berry] },
+    engineswap:   { name: 'Race-Spec Engine Swap',    installMs: 540000, payout: 29600, cost: 25000,icon: '⚙️', palette: [RETRO.gold, RETRO.orange, RETRO.midnight] },
   };
 
   const CREDIT_SYMBOL = '$';
@@ -57,10 +57,10 @@
   const DEFAULT_MOD = 'nitro';
 
   const CREW = [
-    { id: 'mechanic', name: 'Ace Mechanic', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },
-    { id: 'driver',   name: 'Ghost Driver', emoji: '👻', speed: 0.6,        perk: 'Movement speed boost' },
-    { id: 'tuner',    name: 'Chip Tuner',   emoji: '💾', installSpeed: 1.15, perk: 'Install time -15%' },
-    { id: 'spotter',  name: 'Street Spotter', emoji: '👀', randomBonus: true, perk: 'Chance for bonus builds' },
+    { id: 'mechanic', name: 'Brett', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },
+    { id: 'driver',   name: 'Ange', emoji: '👻', speed: 0.6,        perk: 'Movement speed boost' },
+    { id: 'tuner',    name: 'Lee',   emoji: '💾', installSpeed: 1.15, perk: 'Install time -15%' },
+    { id: 'spotter',  name: '???', emoji: '👀', randomBonus: true, perk: 'Chance for bonus builds' },
   ];
 
   function describeCrew(member) {
@@ -119,8 +119,8 @@
   const GUIDE_STORAGE_KEY = 'garage-guide-intro-v1';
   const GUIDE_STEPS = [
     {
-      title: 'Meet Liora',
-      text: "Hey there! I'm Liora, the plaza host. This underground garage is buzzing tonight, so I'll walk you through it.",
+      title: 'Meet Ange',
+      text: "Hey there! I'm Ange. This underground garage is buzzing tonight, so I'll walk you through it.",
     },
     {
       title: 'Getting Around',
@@ -128,7 +128,7 @@
     },
     {
       title: 'Cash Out & Events',
-      text: 'Finish builds to stash race-ready cars. Hit the Race Terminal to cash in and watch for plaza events—come find me if you need a refresher! Press Space or tap to get rolling.',
+      text: 'Finish builds to stash race-ready cars. Hit the Race Terminal to cash in and watch for underground events — come find me if you need a refresher! Press Space or tap to get rolling.',
     },
   ];
   // ---------- STATE ----------
@@ -1691,6 +1691,6 @@
 
   requestAnimationFrame(loop);
 
-  log('Welcome to Neon Drift Garage! Buy kits at the Parts Vendor in the plaza.');
-  log('Install mods in your bays, then cash out at the Race Terminal in the plaza.');
+  log('Welcome to AHPP Underground Garage! Buy kits at the Parts Vendor.');
+  log('Install mods in your bays, then cash out at the Race Terminal.');
 })();

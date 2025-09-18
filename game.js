@@ -293,7 +293,10 @@
     if (!MODS[player.selected]) player.selected = DEFAULT_MOD;
   }
 
+  let skipSaving = false;
+
   function save() {
+    if (skipSaving) return;
     const minimal = JSON.parse(JSON.stringify({
       payoutMult: state.payoutMult,
       installMult: state.installMult,
@@ -549,11 +552,13 @@
   if (btnDevReset) {
     btnDevReset.addEventListener('click', () => {
       if (!confirm('Reset all progress and reload the garage?')) return;
+      skipSaving = true;
       try {
         localStorage.removeItem(SAVE_KEY);
       } catch (err) {
         console.warn('Unable to clear save key', err);
       }
+      window.removeEventListener('beforeunload', save);
       location.reload();
     });
   }

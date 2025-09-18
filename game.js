@@ -641,10 +641,13 @@
   const ctx = cv.getContext('2d');
   const WORLD = { w: cv.width, h: cv.height };
 
+  const CITY_BLOCK_MARGIN = 80;
+  const SIDEWALK_WIDTH = 32;
+
   const STATION_W = 220;
   const STATION_H = 140;
-  const STATION_MARGIN = 80;
-  const PLAZA_TOP = 40;
+  const STATION_MARGIN = CITY_BLOCK_MARGIN + 36;
+  const PLAZA_TOP = CITY_BLOCK_MARGIN + 40;
   const plazaCenterX = WORLD.w / 2;
 
   const STATIONS = {
@@ -1225,9 +1228,38 @@
     return g.createPattern(c, 'repeat');
   }
 
+  function makePlazaPattern() {
+    const c = document.createElement('canvas');
+    c.width = 96; c.height = 96;
+    const g = c.getContext('2d');
+
+    const gradient = g.createLinearGradient(0, 0, 96, 96);
+    gradient.addColorStop(0, '#311021');
+    gradient.addColorStop(1, '#230b18');
+    g.fillStyle = gradient;
+    g.fillRect(0, 0, 96, 96);
+
+    g.strokeStyle = 'rgba(161, 212, 177, 0.08)';
+    g.lineWidth = 2;
+    for (let i = 12; i < 96; i += 24) {
+      g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 96); g.stroke();
+      g.beginPath(); g.moveTo(0, i); g.lineTo(96, i); g.stroke();
+    }
+
+    g.fillStyle = 'rgba(241, 165, 18, 0.08)';
+    for (let y = 6; y < 96; y += 24) {
+      for (let x = 6; x < 96; x += 24) {
+        g.fillRect(x, y, 4, 4);
+      }
+    }
+
+    return g.createPattern(c, 'repeat');
+  }
+
   patterns.asphalt = makeAsphaltPattern();
   patterns.metal = makeMetalPattern();
   patterns.neon = makeNeonGridPattern();
+  patterns.plaza = makePlazaPattern();
   toggleBtn.onclick = () => {
     eventsPanel.classList.toggle('open');
   };
@@ -1242,80 +1274,139 @@
     ctx.fillStyle = patterns.asphalt;
     ctx.fillRect(0, 0, cv.width, cv.height);
 
-    const topZoneHeight = 140;
-    const bottomZoneHeight = 120;
-    ctx.fillStyle = 'rgba(24, 18, 28, 0.9)';
-    ctx.fillRect(0, 0, cv.width, topZoneHeight);
-    ctx.fillStyle = 'rgba(26, 20, 32, 0.92)';
-    ctx.fillRect(0, cv.height - bottomZoneHeight, cv.width, bottomZoneHeight);
+    const roadMargin = CITY_BLOCK_MARGIN;
+    const sidewalkWidth = SIDEWALK_WIDTH;
+    const blockRect = {
+      x: roadMargin,
+      y: roadMargin,
+      w: WORLD.w - roadMargin * 2,
+      h: WORLD.h - roadMargin * 2,
+    };
 
-    const bayLaneHeight = 220;
-    const bayLaneY = Math.round(WORLD.h / 2 - bayLaneHeight / 2);
-    ctx.fillStyle = 'rgba(44, 41, 55, 0.92)';
-    ctx.fillRect(0, bayLaneY, WORLD.w, bayLaneHeight);
+    const sidewalkRect = {
+      x: blockRect.x - sidewalkWidth,
+      y: blockRect.y - sidewalkWidth,
+      w: blockRect.w + sidewalkWidth * 2,
+      h: blockRect.h + sidewalkWidth * 2,
+    };
+
+    ctx.fillStyle = 'rgba(54, 16, 28, 0.88)';
+    ctx.fillRect(sidewalkRect.x, sidewalkRect.y, sidewalkRect.w, sidewalkRect.h);
+
+    ctx.strokeStyle = 'rgba(249, 228, 193, 0.16)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(sidewalkRect.x + 6, sidewalkRect.y + 6, sidewalkRect.w - 12, sidewalkRect.h - 12);
+
+    ctx.fillStyle = patterns.plaza;
+    ctx.fillRect(blockRect.x, blockRect.y, blockRect.w, blockRect.h);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(blockRect.x, blockRect.y, blockRect.w, blockRect.h);
+    ctx.clip();
+
+    const topZoneHeight = 180;
+    const bottomZoneHeight = 140;
+    ctx.fillStyle = 'rgba(24, 18, 28, 0.9)';
+    ctx.fillRect(blockRect.x, blockRect.y, blockRect.w, topZoneHeight);
+    ctx.fillStyle = 'rgba(26, 20, 32, 0.92)';
+    ctx.fillRect(blockRect.x, blockRect.y + blockRect.h - bottomZoneHeight, blockRect.w, bottomZoneHeight);
+    ctx.restore();
+
+    const garageFloorTop = Math.max(blockRect.y + 110, GARAGE_TOP - 60);
+    const garageFloorBottom = Math.min(blockRect.y + blockRect.h - 20, GARAGE_TOP + GARAGE_H + 72);
+    const garageFloor = {
+      x: blockRect.x + 36,
+      y: garageFloorTop,
+      w: blockRect.w - 72,
+      h: Math.max(180, garageFloorBottom - garageFloorTop),
+    };
+
+    ctx.fillStyle = 'rgba(43, 15, 26, 0.92)';
+    ctx.fillRect(garageFloor.x, garageFloor.y, garageFloor.w, garageFloor.h);
 
     ctx.save();
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = patterns.neon;
-    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillRect(garageFloor.x, garageFloor.y, garageFloor.w, garageFloor.h);
     ctx.restore();
 
+    ctx.strokeStyle = 'rgba(161, 212, 177, 0.18)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(garageFloor.x + 6, garageFloor.y + 6, garageFloor.w - 12, garageFloor.h - 12);
+
+    ctx.fillStyle = 'rgba(241, 165, 18, 0.12)';
+    for (let x = garageFloor.x + 60; x < garageFloor.x + garageFloor.w; x += 96) {
+      ctx.fillRect(x, garageFloor.y + 20, 6, garageFloor.h - 40);
+    }
+
     ctx.save();
-    ctx.strokeStyle = 'rgba(161, 212, 177, 0.45)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([22, 12]);
+    ctx.strokeStyle = 'rgba(241, 165, 18, 0.55)';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([28, 18]);
+    const horizontalY = roadMargin / 2;
     ctx.beginPath();
-    ctx.moveTo(0, bayLaneY + 36);
-    ctx.lineTo(WORLD.w, bayLaneY + 36);
-    ctx.moveTo(0, bayLaneY + bayLaneHeight - 36);
-    ctx.lineTo(WORLD.w, bayLaneY + bayLaneHeight - 36);
+    ctx.moveTo(0, horizontalY);
+    ctx.lineTo(WORLD.w, horizontalY);
+    ctx.moveTo(0, WORLD.h - horizontalY);
+    ctx.lineTo(WORLD.w, WORLD.h - horizontalY);
+    const verticalX = roadMargin / 2;
+    ctx.moveTo(verticalX, 0);
+    ctx.lineTo(verticalX, WORLD.h);
+    ctx.moveTo(WORLD.w - verticalX, 0);
+    ctx.lineTo(WORLD.w - verticalX, WORLD.h);
     ctx.stroke();
     ctx.restore();
 
-    const stripeHeight = 18;
-    const stripeAlpha = 0.32;
-    ctx.fillStyle = `rgba(241, 165, 18, ${stripeAlpha})`;
-    for (let i = -48; i < WORLD.w + 96; i += 48) {
-      ctx.save();
-      ctx.translate(i, bayLaneY + 6);
-      ctx.rotate(-Math.PI / 6);
-      ctx.fillRect(0, 0, 20, stripeHeight);
-      ctx.restore();
-
-      ctx.save();
-      ctx.translate(i + 12, bayLaneY + bayLaneHeight - stripeHeight - 6);
-      ctx.rotate(-Math.PI / 6);
-      ctx.fillRect(0, 0, 20, stripeHeight);
-      ctx.restore();
+    ctx.fillStyle = 'rgba(249, 228, 193, 0.32)';
+    const crosswalkSize = 72;
+    const crosswalkSpacing = 18;
+    const leftCrosswalkX = blockRect.x - sidewalkWidth - 16;
+    const rightCrosswalkX = blockRect.x + blockRect.w + sidewalkWidth + 4;
+    const topCrosswalkY = roadMargin - crosswalkSize / 2;
+    const bottomCrosswalkY = WORLD.h - roadMargin - crosswalkSize / 2;
+    for (let offset = 0; offset < crosswalkSize; offset += crosswalkSpacing * 2) {
+      ctx.fillRect(leftCrosswalkX, topCrosswalkY + offset, 12, crosswalkSpacing);
+      ctx.fillRect(rightCrosswalkX, topCrosswalkY + offset, 12, crosswalkSpacing);
+      ctx.fillRect(leftCrosswalkX, bottomCrosswalkY + offset, 12, crosswalkSpacing);
+      ctx.fillRect(rightCrosswalkX, bottomCrosswalkY + offset, 12, crosswalkSpacing);
     }
 
-    ctx.fillStyle = 'rgba(23, 21, 30, 0.65)';
-    for (let x = 96; x < WORLD.w; x += 160) {
-      ctx.fillRect(x, bayLaneY + bayLaneHeight / 2 - 6, 56, 12);
-      ctx.fillStyle = 'rgba(10, 10, 16, 0.45)';
-      ctx.fillRect(x, bayLaneY + bayLaneHeight / 2 - 1, 56, 2);
-      ctx.fillStyle = 'rgba(23, 21, 30, 0.65)';
-    }
-
-    const lightPositions = [0.18, 0.5, 0.82];
-    for (const pos of lightPositions) {
-      const lx = WORLD.w * pos;
-      const topLight = ctx.createRadialGradient(lx, topZoneHeight - 12, 8, lx, topZoneHeight - 12, 180);
-      topLight.addColorStop(0, 'rgba(203, 232, 210, 0.28)');
-      topLight.addColorStop(1, 'rgba(203, 232, 210, 0)');
-      ctx.fillStyle = topLight;
-      ctx.fillRect(lx - 180, 0, 360, topZoneHeight + 120);
-
-      const bottomLight = ctx.createRadialGradient(lx, cv.height - bottomZoneHeight + 18, 8, lx, cv.height - bottomZoneHeight + 18, 160);
-      bottomLight.addColorStop(0, 'rgba(221, 65, 17, 0.22)');
-      bottomLight.addColorStop(1, 'rgba(221, 65, 17, 0)');
-      ctx.fillStyle = bottomLight;
-      ctx.fillRect(lx - 180, cv.height - bottomZoneHeight - 120, 360, bottomZoneHeight + 120);
+    const topHorizontalCrosswalkY = blockRect.y - sidewalkWidth - 16;
+    const bottomHorizontalCrosswalkY = blockRect.y + blockRect.h + sidewalkWidth + 4;
+    const leftHorizontalStart = roadMargin - crosswalkSize / 2;
+    const rightHorizontalStart = WORLD.w - roadMargin - crosswalkSize / 2;
+    for (let offset = 0; offset < crosswalkSize; offset += crosswalkSpacing * 2) {
+      ctx.fillRect(leftHorizontalStart + offset, topHorizontalCrosswalkY, crosswalkSpacing, 12);
+      ctx.fillRect(leftHorizontalStart + offset, bottomHorizontalCrosswalkY, crosswalkSpacing, 12);
+      ctx.fillRect(rightHorizontalStart + offset, topHorizontalCrosswalkY, crosswalkSpacing, 12);
+      ctx.fillRect(rightHorizontalStart + offset, bottomHorizontalCrosswalkY, crosswalkSpacing, 12);
     }
 
     ctx.save();
+    ctx.beginPath();
+    ctx.rect(blockRect.x, blockRect.y, blockRect.w, blockRect.h);
+    ctx.clip();
+    const lightPositions = [0.18, 0.5, 0.82];
+    for (const pos of lightPositions) {
+      const lx = blockRect.x + blockRect.w * pos;
+      const topLight = ctx.createRadialGradient(lx, blockRect.y + topZoneHeight - 12, 8, lx, blockRect.y + topZoneHeight - 12, 180);
+      topLight.addColorStop(0, 'rgba(203, 232, 210, 0.28)');
+      topLight.addColorStop(1, 'rgba(203, 232, 210, 0)');
+      ctx.fillStyle = topLight;
+      ctx.fillRect(lx - 180, blockRect.y - 60, 360, topZoneHeight + 120);
+
+      const bottomLight = ctx.createRadialGradient(lx, blockRect.y + blockRect.h - bottomZoneHeight + 18, 8, lx, blockRect.y + blockRect.h - bottomZoneHeight + 18, 160);
+      bottomLight.addColorStop(0, 'rgba(221, 65, 17, 0.22)');
+      bottomLight.addColorStop(1, 'rgba(221, 65, 17, 0)');
+      ctx.fillStyle = bottomLight;
+      ctx.fillRect(lx - 180, blockRect.y + blockRect.h - bottomZoneHeight - 120, 360, bottomZoneHeight + 120);
+    }
+    ctx.restore();
+
+    ctx.save();
     ctx.fillStyle = 'rgba(15, 12, 20, 0.75)';
-    const signY = bayLaneY - 78;
+    const signY = garageFloor.y - 78;
     ctx.fillRect(WORLD.w / 2 - 220, signY - 40, 440, 82);
     ctx.strokeStyle = 'rgba(241, 165, 18, 0.5)';
     ctx.lineWidth = 3;

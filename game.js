@@ -1339,14 +1339,13 @@
 
     for (let y = 12; y < 96; y += 24) {
       for (let x = 12; x < 96; x += 24) {
-        const glow = g.createRadialGradient(x, y, 0, x, y, 8);
-        glow.addColorStop(0, 'rgba(252, 226, 182, 0.45)');
-        glow.addColorStop(0.55, 'rgba(252, 226, 182, 0.15)');
+        const glow = g.createRadialGradient(x, y, 0, x, y, 14);
+        glow.addColorStop(0, 'rgba(252, 232, 196, 0.32)');
+        glow.addColorStop(0.45, 'rgba(252, 232, 196, 0.18)');
+        glow.addColorStop(0.75, 'rgba(252, 226, 182, 0.08)');
         glow.addColorStop(1, 'rgba(252, 226, 182, 0)');
         g.fillStyle = glow;
-        g.beginPath();
-        g.arc(x, y, 8, 0, Math.PI * 2);
-        g.fill();
+        g.fillRect(x - 14, y - 14, 28, 28);
       }
     }
 

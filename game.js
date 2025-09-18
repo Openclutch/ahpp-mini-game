@@ -182,6 +182,12 @@
     if (!Number.isFinite(progressMs) || progressMs < 0) progressMs = 0;
     if (progressMs > installMs) progressMs = installMs;
     const hydrated = { ...build, installMs, progressMs };
+    if (hydrated.dead) {
+      const deadAt = Number(hydrated.deadAt);
+      hydrated.deadAt = Number.isFinite(deadAt) ? deadAt : 0;
+    } else {
+      hydrated.deadAt = null;
+    }
     if (!Number.isFinite(hydrated.repairCost) || hydrated.repairCost <= 0) {
       const mod = MODS[hydrated.kind];
       hydrated.repairCost = Math.round((mod?.cost || 0) * 1.5) || 0;
@@ -1028,6 +1034,7 @@
       rotChance: 0,
       tuning: null,
       dead: false,
+      deadAt: null,
       extraLoot: null,
       repairCost: Math.round((mod?.cost || 0) * 1.5) || 0,
     };
@@ -1052,6 +1059,7 @@
   }
 
   const ROT_OVERHEAT_RATE_PER_SEC = 0.048;
+  const EXPLOSION_DURATION_MS = 2000;
 
   function advanceBuilds(deltaMs) {
     if (!Number.isFinite(deltaMs) || deltaMs <= 0) return;
@@ -1071,6 +1079,7 @@
         const chance = 1 - Math.exp(-ROT_OVERHEAT_RATE_PER_SEC * dtSec);
         if (chance > 0 && Math.random() < chance) {
           build.dead = true;
+          if (!Number.isFinite(build.deadAt)) build.deadAt = Date.now();
           const repairCost = repairCostOf(build);
           if (repairCost > 0) {
             log(`A build blew its engine during tuning — the owner wants ${formatCredits(repairCost)} to cover damages.`);
@@ -1634,6 +1643,82 @@
     ctx.restore();
   }
 
+  function drawExplosionEffect(stage, elapsedMs) {
+    const progress = Math.min(1, Math.max(0, elapsedMs / EXPLOSION_DURATION_MS));
+    const cx = stage.x + stage.w / 2;
+    const cy = stage.y + stage.h / 2;
+    const maxRadius = Math.min(stage.w, stage.h) * 0.75;
+    const radius = maxRadius * (0.35 + 0.65 * progress);
+    const flicker = 0.85 + 0.15 * Math.sin(elapsedMs / 60);
+
+    ctx.save();
+    const core = ctx.createRadialGradient(cx, cy, radius * 0.1, cx, cy, radius);
+    core.addColorStop(0, `rgba(255, 244, 214, ${0.8 * flicker})`);
+    core.addColorStop(0.35, `rgba(249, 165, 18, ${0.65 * flicker})`);
+    core.addColorStop(0.7, `rgba(221, 65, 17, ${0.5 * flicker})`);
+    core.addColorStop(1, 'rgba(71, 16, 32, 0)');
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    const shockwaveRadius = maxRadius * (0.2 + 0.8 * progress);
+    ctx.strokeStyle = `rgba(249, 228, 193, ${0.6 * (1 - progress)})`;
+    ctx.lineWidth = 6 - 4 * progress;
+    ctx.beginPath();
+    ctx.arc(cx, cy, shockwaveRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const shardCount = 6;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = `rgba(203, 232, 210, ${0.45 * (1 - progress)})`;
+    for (let i = 0; i < shardCount; i++) {
+      const angle = (i / shardCount) * Math.PI * 2 + (elapsedMs / 160);
+      const inner = radius * 0.4;
+      const outer = inner + maxRadius * (0.35 + 0.35 * (1 - progress));
+      const sx = cx + Math.cos(angle) * inner;
+      const sy = cy + Math.sin(angle) * inner;
+      const ex = cx + Math.cos(angle) * outer;
+      const ey = cy + Math.sin(angle) * outer;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawSmokeEffect(stage, elapsedMs) {
+    const baseX = stage.x + stage.w / 2;
+    const baseY = stage.groundY;
+    const plumeCount = 3;
+    ctx.save();
+    for (let i = 0; i < plumeCount; i++) {
+      const cycle = 2200 + i * 320;
+      const t = ((elapsedMs + i * 400) % cycle) / cycle;
+      const rise = stage.h * (0.35 + i * 0.1);
+      const puffX = baseX + Math.sin((elapsedMs / 520) + i * 1.2) * (12 + i * 6);
+      const puffY = baseY - t * rise - 8 - i * 4;
+      const radius = 18 + i * 6 - t * 4;
+      const opacity = 0.28 * (1 - t);
+      const smoke = ctx.createRadialGradient(puffX, puffY, Math.max(1, radius * 0.2), puffX, puffY, Math.max(radius, 1));
+      smoke.addColorStop(0, `rgba(220, 220, 220, ${opacity})`);
+      smoke.addColorStop(0.5, `rgba(140, 140, 140, ${opacity * 0.7})`);
+      smoke.addColorStop(1, 'rgba(40, 40, 40, 0)');
+      ctx.fillStyle = smoke;
+      ctx.beginPath();
+      ctx.arc(puffX, puffY, Math.max(radius, 1), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = 'rgba(32, 32, 32, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(baseX, baseY - 4, stage.w * 0.18, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   const INSTALL_SCENE_MAP = {
     coldair: drawSceneColdAir,
     turbo: drawSceneTurbo,
@@ -1689,7 +1774,16 @@
     }
 
     if (build.dead) {
-      ctx.fillStyle = 'rgba(221,65,17,0.35)';
+      const now = Date.now();
+      const deathTime = Number.isFinite(build.deadAt) ? build.deadAt : null;
+      const elapsed = deathTime != null ? Math.max(0, now - deathTime) : Infinity;
+      if (elapsed < EXPLOSION_DURATION_MS) {
+        drawExplosionEffect(stage, elapsed);
+      } else {
+        const smokeElapsed = Number.isFinite(elapsed) ? elapsed - EXPLOSION_DURATION_MS : 0;
+        drawSmokeEffect(stage, Math.max(0, smokeElapsed));
+      }
+      ctx.fillStyle = 'rgba(221,65,17,0.28)';
       ctx.fillRect(0, 0, bay.w, bay.h);
       ctx.strokeStyle = RETRO.orange;
       ctx.lineWidth = 3;

@@ -2393,19 +2393,22 @@
 
   function drawGuideCharacter(x, y, scale = 4) {
     const palette = {
-      hairDark: '#586172',
-      hairMid: '#6e7a8d',
-      hairLight: '#8b95a7',
+      hairDark: '#4b2d1c',
+      hairMid: '#6a3f1f',
+      hairLight: '#8a5a34',
       skin: '#f2c9b0',
       blush: '#f5b6a6',
       eyeLight: '#f8fbff',
-      iris: '#4fb5ff',
-      top: '#1b1d29',
-      shorts: '#3e5f88',
-      shortsLight: '#5f84ad',
-      shoes: '#1a1a21',
-      lace: '#2c2c38',
-      tattoo: '#caa87d',
+      iris: '#3a9f52',
+      shirt: '#efe1ce',
+      shirtShadow: '#d9c7b1',
+      overalls: '#1f3f63',
+      overallsLight: '#2f5c8d',
+      patch: '#f5d58a',
+      patchText: '#2a3c58',
+      grease: '#4f4033',
+      boots: '#2e2621',
+      bootHighlight: '#433730',
       outline: '#0d111f',
     };
 
@@ -2449,32 +2452,45 @@
     // neck
     px(8, 16, 4, 2, palette.skin);
 
-    // top
-    px(5, 18, 10, 4, palette.top);
-    px(4, 18, 1, 5, palette.skin);
-    px(15, 18, 1, 5, palette.skin);
+    // undershirt and arms
+    px(5, 18, 10, 3, palette.shirt);
+    px(5, 21, 10, 1, palette.shirtShadow);
+    px(4, 18, 1, 7, palette.skin);
+    px(15, 18, 1, 7, palette.skin);
 
-    // tattoo on arm
-    px(4, 20, 1, 3, palette.tattoo);
-    px(4, 23, 1, 2, palette.tattoo);
-    px(4, 25, 1, 2, palette.tattoo);
-    px(4, 27, 1, 2, palette.tattoo);
+    // overall straps
+    px(6, 18, 2, 6, palette.overalls);
+    px(12, 18, 2, 6, palette.overalls);
+    px(6, 19, 2, 1, palette.overallsLight);
+    px(12, 19, 2, 1, palette.overallsLight);
 
-    // shorts
-    px(5, 22, 10, 6, palette.shorts);
-    px(5, 22, 3, 2, palette.shortsLight);
-    px(12, 22, 3, 2, palette.shortsLight);
+    // name patch
+    px(8, 19, 4, 2, palette.patch);
+    px(8, 19, 1, 2, palette.patchText); // L
+    px(8, 20, 2, 1, palette.patchText);
+    px(10, 19, 2, 1, palette.patchText); // G
+    px(10, 20, 1, 1, palette.patchText);
+    px(11, 20, 1, 1, palette.patchText);
+
+    // overalls body
+    px(5, 22, 10, 8, palette.overalls);
+    px(5, 22, 2, 3, palette.overallsLight);
+    px(13, 22, 2, 3, palette.overallsLight);
     px(8, 28, 4, 1, palette.outline);
+
+    // grease stain on leg
+    px(8, 29, 2, 2, palette.grease);
+    px(9, 31, 2, 1, palette.grease);
 
     // legs
     px(7, 28, 3, 6, palette.skin);
     px(10, 28, 3, 6, palette.skin);
 
-    // shoes
-    px(6, 34, 4, 3, palette.shoes);
-    px(10, 34, 4, 3, palette.shoes);
-    px(7, 34, 2, 1, palette.lace);
-    px(11, 34, 2, 1, palette.lace);
+    // boots
+    px(6, 34, 4, 3, palette.boots);
+    px(10, 34, 4, 3, palette.boots);
+    px(7, 34, 2, 1, palette.bootHighlight);
+    px(11, 34, 2, 1, palette.bootHighlight);
 
     // outline hints
     px(5, 18, 10, 1, palette.outline);

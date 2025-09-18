@@ -153,7 +153,7 @@
     eventUntil: 0,
     challenge: null,
     hints: { parts: true, race: true },
-    guide: { active: false, step: 0 },
+    guide: { active: false, step: 0, manual: false },
   };
 
   function normalizeHints(hints) {
@@ -169,6 +169,7 @@
     if (typeof localStorage !== 'undefined' && !localStorage.getItem(GUIDE_STORAGE_KEY)) {
       state.guide.active = true;
       state.guide.step = 0;
+      state.guide.manual = false;
     }
   } catch (err) {
     console.warn('Unable to read guide storage flag', err);
@@ -346,6 +347,7 @@
   const tooltip = document.getElementById('tooltip');
   const eventsPanel = document.getElementById('events');
   const toggleBtn = document.getElementById('toggleEvents');
+  const btnHelp = document.getElementById('btnHelp');
   const btnDevReset = document.getElementById('btnDevReset');
   const btnDevFunds = document.getElementById('btnDevFunds');
   const btnDevFinish = document.getElementById('btnDevFinish');
@@ -1365,6 +1367,12 @@
   patterns.metal = makeMetalPattern();
   patterns.neon = makeNeonGridPattern();
   patterns.plaza = makePlazaPattern();
+  if (btnHelp) {
+    btnHelp.addEventListener('click', () => {
+      if (state.guide?.active && !state.guide.manual) return;
+      openGuide(1, { manual: true });
+    });
+  }
   toggleBtn.onclick = () => {
     eventsPanel.classList.toggle('open');
   };
@@ -2485,9 +2493,23 @@
     ctx.textBaseline = 'alphabetic';
   }
 
+  function openGuide(stepIndex = 0, options = {}) {
+    if (!state.guide) state.guide = { active: false, step: 0, manual: false };
+    const maxIndex = Math.max(0, GUIDE_STEPS.length - 1);
+    const clamped = Math.max(0, Math.min(stepIndex, maxIndex));
+    state.guide.step = clamped;
+    state.guide.active = true;
+    state.guide.manual = options.manual === true;
+  }
+
   function advanceGuide() {
-    if (!state.guide) state.guide = { active: false, step: 0 };
+    if (!state.guide) state.guide = { active: false, step: 0, manual: false };
     if (!state.guide.active) return;
+    if (state.guide.manual) {
+      state.guide.active = false;
+      state.guide.manual = false;
+      return;
+    }
     state.guide.step += 1;
     if (state.guide.step >= GUIDE_STEPS.length) {
       state.guide.active = false;
@@ -2538,7 +2560,10 @@
 
     ctx.font = '14px "Courier New", monospace';
     ctx.fillStyle = '#63e7ff';
-    ctx.fillText(`(${state.guide.step + 1}/${GUIDE_STEPS.length}) Press Space to continue`, boxX + 24, boxY + boxHeight - 24);
+    const footerText = state.guide.manual
+      ? 'Press Space to close'
+      : `(${state.guide.step + 1}/${GUIDE_STEPS.length}) Press Space to continue`;
+    ctx.fillText(footerText, boxX + 24, boxY + boxHeight - 24);
     ctx.restore();
   }
 

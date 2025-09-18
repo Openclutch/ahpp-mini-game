@@ -1278,17 +1278,29 @@
     const c = document.createElement('canvas');
     c.width = 48; c.height = 48;
     const g = c.getContext('2d');
-    g.fillStyle = RETRO.plum;
+
+    const base = g.createLinearGradient(0, 0, 0, 48);
+    base.addColorStop(0, '#c7ccd3');
+    base.addColorStop(0.45, '#a5abb4');
+    base.addColorStop(1, '#7e848c');
+    g.fillStyle = base;
     g.fillRect(0, 0, 48, 48);
-    g.fillStyle = RETRO.berry;
+
+    g.fillStyle = 'rgba(255, 255, 255, 0.28)';
     for (let i = 0; i < 6; i++) {
       g.fillRect(0, i * 8, 48, 2);
     }
+    g.fillStyle = 'rgba(0, 0, 0, 0.16)';
+    for (let i = 0; i < 6; i++) {
+      g.fillRect(0, i * 8 + 2, 48, 1);
+    }
+
     g.globalAlpha = 0.25;
-    g.fillStyle = 'rgba(241, 165, 18, 0.6)';
+    g.fillStyle = 'rgba(255, 255, 255, 0.6)';
     g.fillRect(0, 0, 48, 3);
     g.fillRect(0, 45, 48, 3);
     g.globalAlpha = 1;
+
     return g.createPattern(c, 'repeat');
   }
 

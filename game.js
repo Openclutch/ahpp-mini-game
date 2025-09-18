@@ -138,7 +138,6 @@
     bays: [],
     p1: { x: 220, y: 450, w: 42, h: 42, speedBase: 3.2, credits: 1000, inventory: {}, stash: {}, selected: DEFAULT_MOD, crewMember: null, crew: [] },
     shopOpen: null,
-    raceOpen: false,
     activeEvent: null,
     eventUntil: 0,
     challenge: null,
@@ -244,7 +243,6 @@
     state.p1.crewMember = null;
     state.p1.crew = state.p1.crew || [];
     state.shopOpen = null;
-    state.raceOpen = false;
     state.hints = normalizeHints(saved.hints);
 
     if (state.p1.credits == null) state.p1.credits = 1000;
@@ -324,9 +322,7 @@
   const btnDevFunds = document.getElementById('btnDevFunds');
   const btnDevFinish = document.getElementById('btnDevFinish');
   const shopPanel = document.getElementById('shopPanel');
-  const sellPanel = document.getElementById('sellPanel');
   const partsHelp = document.getElementById('partsHelp');
-  const raceHelp = document.getElementById('sellInfo');
   const modListEl = document.getElementById('modList');
   const p1Controls = document.getElementById('p1Controls');
 
@@ -334,15 +330,12 @@
     p1moneyEl,
     p1hud,
     shopPanel,
-    sellPanel,
     partsHelp,
-    raceHelp,
     modListEl,
   });
 
   function updateHelpVisibility() {
     if (partsHelp) partsHelp.hidden = !state.hints?.parts;
-    if (raceHelp) raceHelp.hidden = !state.hints?.race;
   }
 
   function dismissHint(kind) {
@@ -594,19 +587,19 @@
 
   const STATION_W = 220;
   const STATION_H = 140;
-  const STATION_GAP = 48;
+  const STATION_MARGIN = 80;
   const PLAZA_TOP = 40;
   const plazaCenterX = WORLD.w / 2;
 
   const STATIONS = {
     parts: {
-      x: Math.round(plazaCenterX - STATION_W - STATION_GAP / 2),
+      x: STATION_MARGIN,
       y: PLAZA_TOP,
       w: STATION_W,
       h: STATION_H,
     },
     race: {
-      x: Math.round(plazaCenterX + STATION_GAP / 2),
+      x: WORLD.w - STATION_W - STATION_MARGIN,
       y: PLAZA_TOP,
       w: STATION_W,
       h: STATION_H,
@@ -782,7 +775,6 @@
 
     if (isAtStation(p, STATIONS.parts)) {
       state.shopOpen = state.shopOpen === who ? null : who;
-      state.raceOpen = false;
       log('You toggled the Parts Vendor.');
       dismissHint('parts');
       if (state.shopOpen) { generateModStock(); }
@@ -791,8 +783,9 @@
     }
     if (isAtStation(p, STATIONS.race)) {
       const sold = sellAll(p);
-      if (sold > 0) { log(`You banked ${formatCredits(sold)} in race winnings.`); state.raceOpen = true; state.shopOpen = null; }
-      else { log('You have no completed builds to race.'); state.raceOpen = true; state.shopOpen = null; }
+      if (sold > 0) { log(`You banked ${formatCredits(sold)} in race winnings.`); }
+      else { log('You have no completed builds to race.'); }
+      state.shopOpen = null;
       syncVendorUi();
       dismissHint('race');
       return;

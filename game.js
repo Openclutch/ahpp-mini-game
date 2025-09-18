@@ -54,7 +54,7 @@
   }
 
   const REPAIR_COST = 250;
-  const DEFAULT_MOD = 'nitro';
+  const DEFAULT_MOD = 'nos';
 
   const CREW = [
     { id: 'mechanic', name: 'Brett', emoji: '🛠️', payoutMult: 1.15, perk: 'Race payouts +15%' },

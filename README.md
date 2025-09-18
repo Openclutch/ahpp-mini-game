@@ -5,7 +5,7 @@ AHPP Underground Manager is a fast arcade-inspired single-player browser game. B
 
 * **Movement:** Use `WASD` to walk around the garage.
 * **Actions:** Press `E` to work the current bay, `Q` to swap to the next mod kit, number keys select specific kits.
-* **Objective:** Buy kits at the Parts Vendor, install them in your own bays, then cash out finished builds at the Race Terminal. Keep bays clear — overheated builds must be purged for $250.
+* **Objective:** Buy kits at the Parts Vendor, install them in your own bays, then cash out finished builds at the Race Terminal. Keep bays clear — if a tune blows the engine, you owe 150% of that mod's cost to get the car out of the shop.
 * **Events & Crew:** Watch the Street Feed (`H`) for time-limited boosts. Charge the plaza spotlight to recruit unique crew members with powerful perks.
 
 Touch-friendly controls are included for mobile play.

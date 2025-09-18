@@ -53,7 +53,16 @@
     }
   }
 
-  const REPAIR_COST = 250;
+  function repairCostOf(build) {
+    if (!build) return 0;
+    if (Number.isFinite(build.repairCost) && build.repairCost > 0) {
+      return Math.round(build.repairCost);
+    }
+    const mod = MODS[build.kind];
+    const baseCost = mod?.cost || 0;
+    const computed = Math.round(baseCost * 1.5);
+    return computed > 0 ? computed : 0;
+  }
   const DEFAULT_MOD = 'nos';
   const STARTING_CREDITS = 1000;
 
@@ -171,7 +180,12 @@
     let progressMs = Number(build.progressMs);
     if (!Number.isFinite(progressMs) || progressMs < 0) progressMs = 0;
     if (progressMs > installMs) progressMs = installMs;
-    return { ...build, installMs, progressMs };
+    const hydrated = { ...build, installMs, progressMs };
+    if (!Number.isFinite(hydrated.repairCost) || hydrated.repairCost <= 0) {
+      const mod = MODS[hydrated.kind];
+      hydrated.repairCost = Math.round((mod?.cost || 0) * 1.5) || 0;
+    }
+    return hydrated;
   }
 
   function migrateLegacy() {
@@ -836,13 +850,20 @@
     }
 
     if (bay.build.dead) {
-      if (p.credits >= REPAIR_COST) {
-        p.credits -= REPAIR_COST;
+      const repairCost = repairCostOf(bay.build);
+      if (repairCost <= 0) {
         bay.build = null;
-        log(`You cleared the bay for ${formatCredits(REPAIR_COST)}.`);
+        log('You cleared the bay after the blown tune.');
+        save();
+        return;
+      }
+      if (p.credits >= repairCost) {
+        p.credits -= repairCost;
+        bay.build = null;
+        log(`You covered ${formatCredits(repairCost)} to release the car.`);
         save();
       } else {
-        log(`You need ${formatCredits(REPAIR_COST)} to clear this bay.`);
+        log(`You need ${formatCredits(repairCost)} to settle the repair and release the car.`);
       }
       return;
     }
@@ -871,7 +892,10 @@
   function showTooltip(p, bay) {
     let txt = 'Install in progress…';
     if (bay.build && bay.build.dead) {
-      txt = `Overheated. Press Action to clear for ${formatCredits(REPAIR_COST)}.`;
+      const repairCost = repairCostOf(bay.build);
+      txt = repairCost > 0
+        ? `Engine blew mid-tune. Press Action to cover ${formatCredits(repairCost)} and release it.`
+        : 'Engine blew mid-tune. Press Action to clear the bay.';
     } else if (bay.build) {
       const build = bay.build;
       const mod = MODS[build.kind];
@@ -909,6 +933,7 @@
       tuning: null,
       dead: false,
       extraLoot: null,
+      repairCost: Math.round((mod?.cost || 0) * 1.5) || 0,
     };
     if (installer && installer.crewMember) {
       const crew = CREW.find(x => x.id === installer.crewMember.id);
@@ -950,7 +975,12 @@
         const chance = 1 - Math.exp(-ROT_OVERHEAT_RATE_PER_SEC * dtSec);
         if (chance > 0 && Math.random() < chance) {
           build.dead = true;
-          log('A build overheated and stalled.');
+          const repairCost = repairCostOf(build);
+          if (repairCost > 0) {
+            log(`A build blew its engine during tuning — the owner wants ${formatCredits(repairCost)} to cover damages.`);
+          } else {
+            log('A build blew its engine during tuning — clear the bay to try again.');
+          }
         }
       }
     }

@@ -621,7 +621,7 @@
 
   const SPOTLIGHT_POSITION = {
     x: Math.round(plazaCenterX),
-    y: STATIONS.parts.y + STATIONS.parts.h + 90,
+    y: STATIONS.parts.y + STATIONS.parts.h / 2,
     r: 60,
   };
 

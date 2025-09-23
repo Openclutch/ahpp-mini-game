@@ -32,6 +32,12 @@
       border-bottom:1px solid rgba(241,165,18,0.45);
       text-shadow:0 1px 3px rgba(22,6,13,0.55);
     }
+    header .logo {
+      height:clamp(38px, 7vw, 64px);
+      width:auto;
+      display:block;
+      filter:drop-shadow(0 3px 6px rgba(10,0,0,0.5));
+    }
     header .pill {
       background: rgba(16, 8, 14, 0.32);
       padding:8px 14px;
@@ -270,6 +276,7 @@
 <body>
 <div id="wrap">
   <header>
+    <img src="Lees_Garage_png.png" alt="Lee's Garage" class="logo" />
     <div class="pill" id="p1money">Credits: $0</div>
     <div class="pill" id="p1hud">Parts: — | Builds: —</div>
     <button id="toggleEvents" title="Toggle Street Feed (H)">Street Feed</button>

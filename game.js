@@ -34,6 +34,13 @@
   };
 
   const CREDIT_SYMBOL = '$';
+
+  const garageLogo = new Image();
+  garageLogo.src = 'Lees_Garage_png.png';
+  let garageLogoReady = false;
+  garageLogo.onload = () => {
+    garageLogoReady = true;
+  };
   function formatCredits(value) {
     const amount = Number(value ?? 0);
     const safeAmount = Number.isFinite(amount) ? amount : 0;
@@ -1526,14 +1533,30 @@
     ctx.strokeRect(WORLD.w / 2 - 220, signY - 40, 440, 82);
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = 18;
-    ctx.font = 'bold 40px "Courier New", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(241, 165, 18, 0.85)';
-    ctx.fillText("LEE'S GARAGE", WORLD.w / 2, signY + 4);
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(203, 232, 210, 0.4)';
-    ctx.strokeText("LEE'S GARAGE", WORLD.w / 2, signY + 4);
+    const signCenterX = WORLD.w / 2;
+    const signCenterY = signY + 4;
+    if (garageLogoReady) {
+      const naturalWidth = Math.max(1, garageLogo.naturalWidth || garageLogo.width || 0);
+      const naturalHeight = Math.max(1, garageLogo.naturalHeight || garageLogo.height || 0);
+      const maxLogoWidth = 360;
+      const maxLogoHeight = 56;
+      const scale = Math.min(1, maxLogoWidth / naturalWidth, maxLogoHeight / naturalHeight);
+      const drawWidth = naturalWidth * scale;
+      const drawHeight = naturalHeight * scale;
+      const drawX = signCenterX - drawWidth / 2;
+      const drawY = signCenterY - drawHeight / 2;
+      ctx.drawImage(garageLogo, drawX, drawY, drawWidth, drawHeight);
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.font = 'bold 40px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(241, 165, 18, 0.85)';
+      ctx.fillText("LEE'S GARAGE", signCenterX, signCenterY);
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(203, 232, 210, 0.4)';
+      ctx.strokeText("LEE'S GARAGE", signCenterX, signCenterY);
+    }
     ctx.restore();
 
     drawStation(STATIONS.parts, 'Parts Vendor', RETRO.gold, '🔧');

@@ -1526,20 +1526,23 @@
 
     ctx.save();
     ctx.fillStyle = 'rgba(15, 12, 20, 0.75)';
+    const signWidth = 1200;
+    const signHeight = 216;
     const signY = garageFloor.y - 78;
-    ctx.fillRect(WORLD.w / 2 - 220, signY - 40, 440, 82);
+    const signCenterX = WORLD.w / 2;
+    const signTop = signY - signHeight / 2;
+    ctx.fillRect(signCenterX - signWidth / 2, signTop, signWidth, signHeight);
     ctx.strokeStyle = 'rgba(241, 165, 18, 0.5)';
     ctx.lineWidth = 3;
-    ctx.strokeRect(WORLD.w / 2 - 220, signY - 40, 440, 82);
+    ctx.strokeRect(signCenterX - signWidth / 2, signTop, signWidth, signHeight);
     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     ctx.shadowBlur = 18;
-    const signCenterX = WORLD.w / 2;
-    const signCenterY = signY + 4;
+    const signCenterY = signTop + signHeight / 2 + 4;
     if (garageLogoReady) {
       const naturalWidth = Math.max(1, garageLogo.naturalWidth || garageLogo.width || 0);
       const naturalHeight = Math.max(1, garageLogo.naturalHeight || garageLogo.height || 0);
-      const maxLogoWidth = 360;
-      const maxLogoHeight = 56;
+      const maxLogoWidth = 1080;
+      const maxLogoHeight = 168;
       const scale = Math.min(1, maxLogoWidth / naturalWidth, maxLogoHeight / naturalHeight);
       const drawWidth = naturalWidth * scale;
       const drawHeight = naturalHeight * scale;

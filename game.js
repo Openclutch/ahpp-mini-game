@@ -686,11 +686,27 @@
     { x: Math.round((WORLD.w - GARAGE_W) / 2), y: GARAGE_TOP, w: GARAGE_W, h: GARAGE_H, cols: 5, rows: 4, owner: 'P1' },
   ];
 
-  const SPOTLIGHT_POSITION = {
-    x: Math.round(plazaCenterX),
-    y: STATIONS.parts.y + STATIONS.parts.h / 2,
-    r: 60,
-  };
+  const SPOTLIGHT_POSITIONS = [
+    {
+      x: Math.round(STATIONS.parts.x + STATIONS.parts.w / 2),
+      y: STATIONS.parts.y + STATIONS.parts.h / 2,
+      r: 60,
+    },
+    {
+      x: Math.round(STATIONS.race.x + STATIONS.race.w / 2),
+      y: STATIONS.race.y + STATIONS.race.h / 2,
+      r: 60,
+    },
+  ];
+
+  function randomSpotlightPosition() {
+    const positions = SPOTLIGHT_POSITIONS;
+    if (!positions.length) {
+      return { x: Math.round(plazaCenterX), y: STATIONS.parts.y + STATIONS.parts.h / 2, r: 60 };
+    }
+    const choice = positions[Math.floor(Math.random() * positions.length)];
+    return { x: choice.x, y: choice.y, r: choice.r };
+  }
 
   function buildGarageLayout(owner) {
     const g = GARAGES.find(g => g.owner === owner);
@@ -1221,7 +1237,7 @@
     if (state.challenge && now < state.challenge.endsAt) return;
     if (!maybeSpawnChallenge.nextAt) maybeSpawnChallenge.nextAt = now + (50000 + Math.random() * 40000);
     if (now < maybeSpawnChallenge.nextAt) return;
-    state.challenge = { ...SPOTLIGHT_POSITION, goal: 12, progress: 0, endsAt: now + 28000 };
+    state.challenge = { ...randomSpotlightPosition(), goal: 12, progress: 0, endsAt: now + 28000 };
     maybeSpawnChallenge.nextAt = now + 80000 + Math.random() * 45000;
     log('Neon Spotlight ignites in the plaza! Park inside and hit Action repeatedly to hype the crowd.');
   }

@@ -132,6 +132,8 @@
     document.head.appendChild(style);
   };
 
+  let iframeBootstrapped = false;
+
   const setOverlayVisible = (visible) => {
     const overlay = document.getElementById(OVERLAY_ID);
     const toggle = document.getElementById(TOGGLE_ID);
@@ -145,6 +147,14 @@
     toggle.setAttribute('aria-expanded', String(visible));
 
     if (visible) {
+      if (!iframeBootstrapped) {
+        const iframe = overlay.querySelector('iframe[data-src]');
+        if (iframe && !iframe.src) {
+          iframe.src = iframe.getAttribute('data-src');
+          iframe.removeAttribute('data-src');
+          iframeBootstrapped = true;
+        }
+      }
       document.body.classList.add(NO_SCROLL_CLASS);
       toggle.style.display = 'none';
     } else {
@@ -169,7 +179,7 @@
     shell.className = 'embed-shell';
 
     const iframe = document.createElement('iframe');
-    iframe.src = GAME_URL;
+    iframe.setAttribute('data-src', GAME_URL);
     iframe.title = 'AHPP Underground Garage Tycoon — Retro street racing garage sim';
     iframe.loading = 'lazy';
     iframe.referrerPolicy = 'no-referrer';

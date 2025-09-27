@@ -119,6 +119,7 @@
 
   const SAVE_KEY = 'neon-drift-main';
   const LEGACY_KEYS = ['garden-duo-main', 'garden-duo-v3'];
+  const OVERLAY_VISIBILITY_MESSAGE = 'neon-drift-overlay-visibility';
 
   const TUNINGS = [
     { id: 'precision', label: 'Precision Tune', effect: build => build.installMs *= 0.75 },
@@ -162,6 +163,7 @@
     hints: { parts: true, race: true },
     guide: { active: false, step: 0, manual: false },
   };
+  let externallyPaused = false;
 
   function normalizeHints(hints) {
     return {
@@ -2739,6 +2741,9 @@
   const NUMBER_KEYS = ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','Digit0'];
 
   function update() {
+    if (externallyPaused) {
+      return;
+    }
     if (state.guide?.active) {
       if (justPressed('Space') || justPressed('Enter') || justPressed('NumpadEnter') || justPressed('Escape')) {
         advanceGuide();
@@ -2765,6 +2770,18 @@
   const nowMs = () => (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
   let lastFrameTime = nowMs();
 
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('message', (event) => {
+      const data = event?.data;
+      if (!data || typeof data !== 'object' || data.type !== OVERLAY_VISIBILITY_MESSAGE) {
+        return;
+      }
+      const shouldPause = data.visible === false;
+      externallyPaused = shouldPause;
+      lastFrameTime = nowMs();
+    });
+  }
+
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -2777,6 +2794,10 @@
     const now = nowMs();
     const delta = Math.max(0, Math.min(now - lastFrameTime, 250));
     lastFrameTime = now;
+    if (externallyPaused) {
+      requestAnimationFrame(loop);
+      return;
+    }
     if (!(typeof document !== 'undefined' && document.hidden) && !state.guide?.active) {
       advanceBuilds(delta);
     }

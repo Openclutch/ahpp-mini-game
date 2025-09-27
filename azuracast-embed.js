@@ -4,6 +4,7 @@
   const TOGGLE_ID = 'neon-drift-garage-toggle';
   const STYLE_ID = 'neon-drift-garage-overlay-style';
   const NO_SCROLL_CLASS = 'neon-drift-garage-overlay-open';
+  const VISIBILITY_MESSAGE = 'neon-drift-overlay-visibility';
 
   const injectStyles = () => {
     if (document.getElementById(STYLE_ID)) {
@@ -134,6 +135,17 @@
 
   let iframeBootstrapped = false;
 
+  let overlayIframe = null;
+
+  const notifyGameVisibility = (visible) => {
+    if (overlayIframe && overlayIframe.contentWindow) {
+      overlayIframe.contentWindow.postMessage({
+        type: VISIBILITY_MESSAGE,
+        visible,
+      }, '*');
+    }
+  };
+
   const setOverlayVisible = (visible) => {
     const overlay = document.getElementById(OVERLAY_ID);
     const toggle = document.getElementById(TOGGLE_ID);
@@ -162,6 +174,8 @@
       toggle.style.display = '';
       toggle.focus({ preventScroll: true });
     }
+
+    notifyGameVisibility(visible);
   };
 
   const ensureOverlay = () => {
@@ -183,6 +197,8 @@
     iframe.title = 'AHPP Underground Garage Tycoon — Retro street racing garage sim';
     iframe.loading = 'lazy';
     iframe.referrerPolicy = 'no-referrer';
+
+    overlayIframe = iframe;
 
     const link = document.createElement('a');
     link.className = 'launch-link';

@@ -357,9 +357,6 @@
   const eventsPanel = document.getElementById('events');
   const toggleBtn = document.getElementById('toggleEvents');
   const btnHelp = document.getElementById('btnHelp');
-  const btnDevReset = document.getElementById('btnDevReset');
-  const btnDevFunds = document.getElementById('btnDevFunds');
-  const btnDevFinish = document.getElementById('btnDevFinish');
   const shopPanel = document.getElementById('shopPanel');
   const partsHelp = document.getElementById('partsHelp');
   const modListEl = document.getElementById('modList');
@@ -605,52 +602,7 @@
     while (feed.childElementCount > 60) feed.lastChild.remove();
   }
 
-  if (btnDevReset) {
-    btnDevReset.addEventListener('click', () => {
-      if (!confirm('Reset all progress and reload the garage?')) return;
-      if (PERSISTENCE_ENABLED) {
-        skipSaving = true;
-        try {
-          localStorage.removeItem(SAVE_KEY);
-          localStorage.removeItem(GUIDE_STORAGE_KEY);
-          for (const key of LEGACY_KEYS) {
-            try {
-              localStorage.removeItem(key);
-            } catch (err) {
-              console.warn('Unable to clear legacy key', key, err);
-            }
-          }
-        } catch (err) {
-          console.warn('Unable to clear save key', err);
-        }
-        window.removeEventListener('beforeunload', save);
-      }
-      location.reload();
-    });
-  }
-
-  if (btnDevFunds) {
-    btnDevFunds.addEventListener('click', () => {
-      const bonus = 10000;
-      const current = Math.max(0, Number(state.p1.credits) || 0);
-      state.p1.credits = current + bonus;
-      log(`Dev boost: Added ${formatCredits(bonus)} to your wallet.`);
-      save();
-    });
-  }
-
-  if (btnDevFinish) {
-    btnDevFinish.addEventListener('click', () => {
-      let completed = 0;
-      for (const bay of state.bays) {
-        if (!bay || !bay.build) continue;
-        bay.build.progressMs = bay.build.installMs;
-        completed += 1;
-      }
-      log(`Dev boost: Marked ${completed} build${completed === 1 ? '' : 's'} as complete.`);
-      save();
-    });
-  }
+  
   // ---------- WORLD LAYOUT ----------
   const cv = document.getElementById('game');
   const ctx = cv.getContext('2d');

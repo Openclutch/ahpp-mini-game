@@ -73,27 +73,6 @@
     }
     header button:hover { color:#fff; border-color:rgba(241,165,18,0.75); box-shadow:0 0 16px rgba(241,165,18,0.4); background:rgba(221,65,17,0.75); }
     header .hint, header .pill { filter:none; }
-    .devbar {
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-left:auto;
-      padding-left:12px;
-      border-left:1px solid rgba(241,165,18,0.3);
-    }
-    .devbar button {
-      border:1px dashed rgba(161,212,177,0.65);
-      background:rgba(43,175,144,0.18);
-      color:#a1d4b1;
-      box-shadow:0 0 8px rgba(43,175,144,0.22);
-    }
-    .devbar button:hover {
-      border-style:solid;
-      color:#fff;
-      background:rgba(43,175,144,0.32);
-      box-shadow:0 0 12px rgba(161,212,177,0.35);
-    }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
     #gameArea {
@@ -283,11 +262,6 @@
     <div class="pill" id="p1hud">Parts: — | Builds: —</div>
     <button id="toggleEvents" title="Toggle Street Feed (H)">Street Feed</button>
     <button id="btnHelp" title="Show controls guide">Help</button>
-    <div class="devbar" id="devTools">
-      <button id="btnDevReset" title="Clear all local progress and reload">Reset Progress</button>
-      <button id="btnDevFunds" title="Grant bonus credits for testing">+10k Credits</button>
-      <button id="btnDevFinish" title="Complete installs currently in progress">Finish Builds</button>
-    </div>
     <div class="hint">Keep your crew sharp and the bays busy. If a tune goes bad and the engine blows, cover 150% of that upgrade's cost to get the car out. Fill the spotlight in the plaza to recruit rare crew.</div>
     <div id="eventBanner" class="event-banner" role="status" aria-live="polite" aria-hidden="true"></div>
   </header>
